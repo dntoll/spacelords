@@ -25,35 +25,3 @@ export function renderPlanetGlyph(
   sketch.fill(230, 245, 230, 80);
   sketch.circle(point.x - size * 0.15, point.y - size * 0.15, size * 0.15);
 }
-
-export function renderShipyardGlyph(
-  sketch: p5,
-  selected: boolean,
-  image?: p5.Image,
-): void {
-  if (image) {
-    sketch.image(image, -20, -20, 40, 40);
-    if (selected) {
-      sketch.noFill();
-      sketch.circle(0, 0, 42);
-    }
-  } else sketch.rect(-10, -8, 20, 16);
-}
-
-export function renderSalvageGlyph(
-  sketch: p5,
-  kind: 'yard' | 'wreck',
-  zoom: number,
-  selected: boolean,
-  image?: p5.Image,
-): void {
-  if (kind === 'yard') {
-    renderShipyardGlyph(sketch, selected, image);
-    return;
-  }
-  // kartobjekt-foljer-zoom: the cross uses world units inside the map scale.
-  void zoom;
-  sketch.line(-8, -7, 8, 7);
-  sketch.line(-8, 7, 8, -7);
-  sketch.circle(0, 0, 6);
-}

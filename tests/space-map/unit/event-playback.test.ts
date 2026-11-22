@@ -178,7 +178,8 @@ describe('sekventiella-arshandelser', () => {
   function controlledTurn() {
     vi.useFakeTimers();
     const model = new AppModel();
-    model.build('Research station');
+    // A year with an event: the home fleet arrives one hex away.
+    model.setDestination('fleet-home', 1, 0);
     model.openResearch();
     let emit!: IntentHandler;
     const render = vi.fn();
@@ -214,7 +215,6 @@ describe('sekventiella-arshandelser', () => {
     await vi.advanceTimersByTimeAsync(449);
     expect(model.snapshot.eventPlayback?.index).toBe(0);
     await vi.advanceTimersByTimeAsync(1);
-    // grupperade-planethandelser: construction and population file together.
     expect(model.snapshot.eventPlayback).toBeNull();
     expect(model.snapshot.screen).toBe('research');
     expect(model.snapshot.events).toEqual(history);
@@ -228,6 +228,7 @@ describe('sekventiella-arshandelser', () => {
 
   it('natural completion restores the original camera and selection', () => {
     const model = new AppModel();
+    model.setDestination('fleet-home', 1, 0);
     model.pan({ x: 50, y: -30 });
     model.zoom(0.5, { x: 70, y: -20 });
     const before = model.snapshot;
@@ -313,34 +314,14 @@ describe('sekventiella-arshandelser', () => {
 });
 
 describe('handelser-pa-kartan', () => {
-  it('records event-time arrival and production positions and keeps research global', () => {
+  it('records the event-time arrival position', () => {
     const game = new Game(createExampleGalaxy());
     game.setDestination('fleet-home', new HexCoordinate(3, 0));
-    game.scheduleBuild(game.galaxy.homePlanet, 'Research station');
-    // byggtid-per-byggnad: the Research station is done after three rounds.
-    for (let round = 0; round < 3; round++) {
-      collectTurnFrames(game);
-      game.finishTurn();
-    }
+    collectTurnFrames(game);
+    game.finishTurn();
     const arrival = game.events.find((event) =>
       event.text.includes('arrived'),
     )!;
-    expect(arrival.position).toEqual({ q: 3, r: 0 });
-    for (const event of game.events.filter((event) =>
-      /completed|Population/.test(event.text),
-    ))
-      expect(event.position).toEqual(game.galaxy.homePlanet.position);
-    game.setDestination('fleet-home', new HexCoordinate(4, 0));
-    game.selectResearch('Rocket engine factory');
-    collectTurnFrames(game);
-    game.finishTurn();
-    expect(
-      game.events.find((event) => event.text.startsWith('Research completed:'))
-        ?.position,
-    ).toBeUndefined();
-    expect(
-      game.events.some((event) => event.text.startsWith('Research completed:')),
-    ).toBe(true);
     expect(arrival.position).toEqual({ q: 3, r: 0 });
     expect(Object.isFrozen(arrival.position)).toBe(true);
     const restored = Game.restore(game.exportState());

@@ -5,7 +5,6 @@ import { renderTerrain } from '../TerrainMapView.js';
 import { createStarTextures, renderStarGlyph } from '../StarGlyph.js';
 import { showMapHex } from '../../models/star-map/StarAppearance.js';
 import starSprite from '../../assets/stars/plasma-star.webp';
-import { salvageMarkers } from '../../models/star-map/SalvageMapLayout.js';
 import { renderMapOverlays } from './MapOverlayView.js';
 import p5 from 'p5';
 import type { AppReadModel } from '../../../app/models/AppModel.js';
@@ -20,7 +19,7 @@ import { SHIP_SPRITES, type ShipSpriteType } from '../ShipImages.js';
 import { FleetMapLayout } from '../../models/star-map/FleetMapLayout.js';
 import { pirateAsFleet } from '../../models/PirateFleet.js';
 import { MapArtwork } from '../MapArtwork.js';
-import { renderPlanetGlyph, renderSalvageGlyph } from '../PlanetGlyph.js';
+import { renderPlanetGlyph } from '../PlanetGlyph.js';
 
 const STAR_MAP_LABEL =
   'Star map. Click a fleet or trade route to select it. Drag a fleet onto a route to assign it, or elsewhere to set its destination. Escape cancels. Drag empty space to pan; pinch or use the mouse wheel to zoom. Plus and minus keys zoom. Arrow keys pan; Home returns to your homeworld; Enter selects the central hex.';
@@ -68,10 +67,6 @@ export class GalaxyMapView implements MapPort {
           this.#canvas?.setAttribute(
             'data-planet-images-ready',
             String(this.#artwork.planetCount),
-          );
-          this.#canvas?.setAttribute(
-            'data-shipyard-image-ready',
-            String(!!this.#artwork.station),
           );
           this.#requestDraw();
         });
@@ -263,7 +258,7 @@ export class GalaxyMapView implements MapPort {
       this.#canvas.setAttribute(
         'aria-label',
         model.screen === 'orders'
-          ? 'Orders map. Choose the requested fleet, wreck, planet or Patrol center. Drag empty space to pan; pinch or use the wheel to zoom. Enter selects the central hex.'
+          ? 'Orders map. Choose the requested fleet, planet or Patrol center. Drag empty space to pan; pinch or use the wheel to zoom. Enter selects the central hex.'
           : model.screen === 'fleets'
             ? 'Fleets map. Click a fleet to select it; drag a fleet to set its destination. Planets and trade routes are background landmarks. Escape cancels. Drag empty space to pan; pinch or use the mouse wheel to zoom. Plus and minus keys zoom. Arrow keys pan; Home returns to your homeworld; Enter selects the central hex.'
             : model.screen === 'production'
@@ -304,34 +299,6 @@ export class GalaxyMapView implements MapPort {
           model.screen === 'fleets',
         );
     renderMapOverlays(sketch, model, movementPoints, this.#shipImages);
-    for (const marker of salvageMarkers(
-      model.wrecks ?? [],
-      model.shipyards ?? [],
-      model.camera.zoom,
-    )) {
-      sketch.push();
-      sketch.translate(marker.point.x, marker.point.y);
-      sketch.stroke(
-        marker.id === model.salvageSelection ? '#ffffff' : '#e8bd76',
-      );
-      sketch.strokeWeight(marker.kind === 'yard' ? 2 / model.camera.zoom : 2);
-      sketch.fill('#152936');
-      renderSalvageGlyph(
-        sketch,
-        marker.kind,
-        model.camera.zoom,
-        marker.id === model.salvageSelection,
-        this.#artwork.station,
-      );
-      sketch.pop();
-    }
-    for (const choice of model.shipyardPlacement?.choices ?? []) {
-      const point = HexGeometry.toPoint(choice);
-      sketch.noFill();
-      sketch.stroke('#e8bd76');
-      sketch.strokeWeight(2 / model.camera.zoom);
-      sketch.circle(point.x, point.y, 32);
-    }
     if (this.#canvas)
       this.#canvas.style.cursor = model.fleetDragging
         ? 'grabbing'

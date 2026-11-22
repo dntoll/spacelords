@@ -1,6 +1,5 @@
 import { pirateAsFleet } from '../PirateFleet.js';
-import type { MapViewport } from '../ProductionMap.js';
-import { hitSalvageMarker } from './SalvageMapLayout.js';
+import type { MapViewport } from '../MapScreen.js';
 import { FleetMapLayout } from './FleetMapLayout.js';
 import { fleetCategory, type FleetCategory } from '../fleets/FleetCategory.js';
 import {
@@ -21,20 +20,14 @@ export class StarMapFacade {
           kind: 'patrol',
           position: { q: position.q, r: position.r },
         });
-      else if (
-        this.host.orderSelection.page === 'colonize' ||
-        this.host.orderSelection.page === 'explore-planet'
-      ) {
+      else if (this.host.orderSelection.page === 'explore-planet') {
         const intel = this.host.game.planetIntel(position);
-        const valid =
-          this.host.orderSelection.page === 'colonize'
-            ? intel?.surveyed
-            : intel && !intel.surveyed;
-        const planet = valid
-          ? this.host.game.galaxy.systems
-              .flatMap((system) => system.planets)
-              .find((planet) => planet.position.key === position.key)
-          : null;
+        const planet =
+          intel && !intel.surveyed
+            ? this.host.game.galaxy.systems
+                .flatMap((system) => system.planets)
+                .find((planet) => planet.position.key === position.key)
+            : null;
         if (planet)
           this.host.completeOrder({
             kind: this.host.orderSelection.page,
@@ -43,18 +36,7 @@ export class StarMapFacade {
       }
       return;
     }
-    if (this.host.shipyardPlacement) {
-      this.host.placeShipyard(position);
-      return;
-    }
-    this.host.salvageSelection = null;
     if (!this.host.game.galaxy.cellAt(position)) {
-      if (this.host.screen === 'production') {
-        this.host.selected = position;
-        this.host.mapProjectId = null;
-        this.host.mapProductionOption = null;
-        this.host.mapProductionPage = 0;
-      }
       if (this.host.screen === 'fleets' && !this.host.destinationFleetId) {
         this.host.cancelShipTransfer();
         this.host.cancelFleetRename();
@@ -63,36 +45,13 @@ export class StarMapFacade {
       return;
     }
     if (this.host.destinationFleetId) {
-      if (this.host.destinationOrder === 'salvage') {
-        const wrecks = this.host.game.wrecks.filter(
-          (wreck) =>
-            wreck.position.key === position.key &&
-            !wreck.reservedBy &&
-            !wreck.towedBy &&
-            !wreck.yardId,
-        );
-        if (wrecks.length !== 1)
-          throw new Error(
-            'Choose a specific available wreck marker or select a wreck from the list.',
-          );
-        this.host.selectSalvage(wrecks[0]!.id);
-      } else if (this.host.destinationOrder === 'colonize')
-        this.host.game.setColonization(this.host.destinationFleetId, position);
-      else
-        this.host.game.setDestination(this.host.destinationFleetId, position);
+      this.host.game.setDestination(this.host.destinationFleetId, position);
       this.host.destinationFleetId = null;
-      this.host.destinationOrder = 'move';
     } else {
       this.host.cancelShipTransfer();
       this.host.cancelFleetRename();
-      if (this.host.selected.key !== position.key) {
-        this.host.mapProductionOption = null;
-        this.host.mapProductionPage = 0;
-        this.host.mapProjectId = null;
-      }
       this.host.selected = position;
       this.host.mapFleetId = null;
-      this.host.fitProduction();
     }
   }
 
@@ -102,12 +61,7 @@ export class StarMapFacade {
       this.host.orderSelection?.page !== 'fleets'
     )
       return null;
-    if (
-      !this.host.isMapScreen() ||
-      this.host.screen === 'production' ||
-      this.host.destinationFleetId
-    )
-      return null;
+    if (!this.host.isMapScreen() || this.host.destinationFleetId) return null;
     return FleetMapLayout.hit(
       [
         ...this.host.game
@@ -152,7 +106,6 @@ export class StarMapFacade {
       }
       return;
     }
-    this.host.salvageSelection = null;
     if (!this.host.isMapScreen() || this.host.screen === 'production') return;
     const pirate = this.host.game
       .pirateSnapshots()
@@ -235,10 +188,6 @@ export class StarMapFacade {
     this.host.selected = this.host.game.galaxy.homePlanet.position;
     this.host.requestMapFocus(this.host.selected);
     this.host.mapFleetId = null;
-    this.host.mapProjectId = null;
-    this.host.mapProductionOption = null;
-    this.host.mapProductionPage = 0;
-    this.host.fitProduction();
   }
 
   resizeMap(viewport: MapViewport): void {
@@ -271,126 +220,5 @@ export class StarMapFacade {
       });
       this.host.pendingMapFocus = null;
     }
-    this.host.fitProduction();
-  }
-
-  salvageAtPoint(point: Point): string | null {
-    if (
-      this.host.screen === 'orders' &&
-      this.host.orderSelection?.page !== 'salvage'
-    )
-      return null;
-    if (
-      !this.host.isMapScreen() ||
-      (this.host.destinationFleetId &&
-        this.host.destinationOrder !== 'salvage') ||
-      this.host.shipyardPlacement
-    )
-      return null;
-    return (
-      hitSalvageMarker(
-        this.host.game.wrecks,
-        this.host.game.shipyards,
-        this.host.camera.snapshot.zoom,
-        this.host.camera.screenToWorld(point),
-      )?.id ?? null
-    );
-  }
-
-  selectSalvage(id: string): void {
-    if (this.host.screen === 'orders') {
-      if (this.host.orderSelection?.page === 'salvage')
-        this.host.completeOrder({ kind: 'salvage', wreckId: id });
-      return;
-    }
-    if (
-      this.host.destinationFleetId &&
-      this.host.destinationOrder === 'salvage'
-    ) {
-      this.host.orderSalvage(this.host.destinationFleetId, id);
-      this.host.destinationFleetId = null;
-      this.host.destinationOrder = 'move';
-      return;
-    }
-    this.host.shipyardPlacement = null;
-    this.host.screen = 'map';
-    this.host.salvageSelection = id;
-    this.host.mapFleetId = null;
-  }
-
-  orderSalvage(fleetId: string, wreckId: string): void {
-    this.host.game.orderSalvage(fleetId, wreckId);
-    this.host.salvageSelection = null;
-    this.host.mapFleetId = fleetId;
-  }
-
-  dropSalvage(point: Point): void {
-    const fleetId = this.host.salvageDropTarget(point);
-    if (!fleetId || !this.host.salvageSelection)
-      throw new Error('Drop the wreck onto a fleet with a Salvage ship.');
-    this.host.orderSalvage(fleetId, this.host.salvageSelection);
-    this.host.hoveredFleetId = null;
-  }
-
-  previewSalvage(point: Point): void {
-    this.host.hoveredFleetId = this.host.salvageDropTarget(point);
-  }
-
-  returnToShipyard(id: string): void {
-    this.host.game.returnToShipyard(id);
-  }
-
-  releaseWreck(fleetId: string, id: string): void {
-    this.host.game.releaseWreck(fleetId, id);
-  }
-
-  beginShipyardPlacement(
-    planetId: string,
-    site?: number,
-    yardId: string | null = null,
-  ): void {
-    const choices = this.host.game.freeShipyardHexes(planetId);
-    if (!choices.length)
-      throw new Error('No free neighboring hex is available.');
-    this.host.shipyardPlacement = Object.freeze({
-      planetId,
-      site,
-      yardId,
-      choices,
-    });
-    this.host.screen = 'map';
-    this.host.salvageSelection = null;
-    this.host.mapFleetId = null;
-  }
-
-  rebuildShipyard(id: string): void {
-    const yard = this.host.game.shipyards.find((item) => item.id === id);
-    if (yard) this.host.beginShipyardPlacement(yard.planetId, undefined, id);
-  }
-
-  moveRepair(yardId: string, wreckId: string, index: number): void {
-    this.host.game.moveRepair(yardId, wreckId, index);
-  }
-
-  cancelShipyardPlacement(): void {
-    this.host.shipyardPlacement = null;
-  }
-
-  placeShipyard(position: HexCoordinate): void {
-    const placement = this.host.shipyardPlacement;
-    if (!placement) return;
-    if (placement.yardId)
-      this.host.game.scheduleRebuildShipyard(placement.yardId, position);
-    else
-      this.host.game.scheduleBuild(
-        this.host.game.galaxy.systems
-          .flatMap((system) => system.planets)
-          .find((planet) => planet.id === placement.planetId)!,
-        'Orbital shipyard',
-        placement.site,
-        position,
-      );
-    this.host.shipyardPlacement = null;
-    this.host.notice = Object.freeze({ kind: 'shipyard-queued' });
   }
 }

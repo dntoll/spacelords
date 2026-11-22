@@ -32,7 +32,6 @@ it('destinationer-for-aktiva-skepp: retains the current order target beyond the 
     fleets: [outbound],
     pirates: [],
     cells: [],
-    ownedPlanets: [],
   };
   const playback = new TurnMovementPlayback(origin);
   playback.record(
@@ -75,7 +74,7 @@ it('samtidig-automatisk-flottanimation / geografisk-arsuppspelning: groups autom
       position: new HexCoordinate(8, 0),
     },
   ];
-  const origin = { fleets, pirates: [], cells: [], ownedPlanets: [] };
+  const origin = { fleets, pirates: [], cells: [] };
   const playback = new TurnMovementPlayback(origin);
   const moves = fleets.map((fleet) => ({
     fleetId: fleet.id,
@@ -124,13 +123,12 @@ it('samtidig-automatisk-flottanimation: groups every autonomous order while manu
       id: 'patrol',
       patrol: { center: new HexCoordinate(0, 0), range: 1 },
     },
-    { ...base, id: 'salvage', automation: 'salvage' as const },
     { ...base, id: 'manual' },
   ].map((fleet, index) => ({
     ...fleet,
     position: new HexCoordinate(index, 0),
   }));
-  const origin = { fleets, pirates: [], cells: [], ownedPlanets: [] };
+  const origin = { fleets, pirates: [], cells: [] };
   const playback = new TurnMovementPlayback(origin);
   playback.record(
     {
@@ -145,7 +143,7 @@ it('samtidig-automatisk-flottanimation: groups every autonomous order while manu
   );
   expect(
     playback.batches.map((batch) => batch.map((track) => track[0]!.fleetId)),
-  ).toEqual([['explore', 'patrol', 'salvage'], ['manual']]);
+  ).toEqual([['explore', 'patrol'], ['manual']]);
 });
 
 function scene(game: Game): MovementScene {
@@ -153,7 +151,6 @@ function scene(game: Game): MovementScene {
     fleets: game.fleetSnapshots(),
     pirates: game.pirateSnapshots(),
     cells: game.mapSnapshot(),
-    ownedPlanets: game.ownedPlanetSnapshots(),
   };
 }
 
@@ -204,7 +201,6 @@ describe('en-flotta-i-taget / osynliga-flottor-utan-animation', () => {
         fleets: [first, second],
         pirates: [oldContact],
         cells,
-        ownedPlanets: [],
       };
       const after: MovementScene = {
         ...before,
@@ -290,10 +286,6 @@ describe('en-flotta-i-taget / osynliga-flottor-utan-animation', () => {
         const after = model.snapshot;
         const expected = Detection.coverage(
           [
-            ...after.ownedPlanets.map((planet) => ({
-              position: planet.position,
-              range: planet.detectionRange ?? 1,
-            })),
             ...after.fleets
               .filter((fleet) => fleet.position)
               .map((fleet) => ({
@@ -474,7 +466,6 @@ describe('en-flotta-i-taget / osynliga-flottor-utan-animation', () => {
       if (order[index] !== order[index - 1]) switches++;
     expect(switches).toBe(1);
     expect(order.every((id) => !id.startsWith('pirate-'))).toBe(true);
-    expect(model.snapshot.eventPlayback).not.toBeNull();
     controller.dispose();
   });
 
@@ -495,7 +486,6 @@ describe('en-flotta-i-taget / osynliga-flottor-utan-animation', () => {
     emit({ type: 'end-turn' });
     expect(animate).not.toHaveBeenCalled();
     expect(model.snapshot.turnMovement).toBeNull();
-    expect(model.snapshot.eventPlayback?.stage).toBe('announcing');
     controller.dispose();
   });
 });

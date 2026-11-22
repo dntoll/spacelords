@@ -1,6 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
 import { researchStationState } from '../../fixtures/research-station.js';
-import { tradeNetworkState } from '../../fixtures/trade-network.js';
 import type { GameState } from '../../../src/client/space-map/models/Game.js';
 import { startFirstSlot } from './save-helpers.js';
 
@@ -175,52 +174,6 @@ test('forskningsdetaljer-vid-val: dragging from a research tile pans without ins
     'Select a technology',
   );
   await expect(page.locator('.research-queue article')).toHaveCount(0);
-});
-
-test('fabriksstatus-i-byggval: built, queued and absent factories have distinct status labels', async ({
-  page,
-}) => {
-  const state = tradeNetworkState();
-  state.colonies[0]![1].projects = [
-    {
-      id: 'queued-station',
-      type: 'Research station',
-      slotIndex: 2,
-      factoryId: null,
-      destinationFleetId: null,
-    },
-  ];
-  await seed(page, state);
-  await page.getByRole('button', { name: 'Factories', exact: true }).click();
-  await page
-    .getByRole('button', { name: 'Empty site 4 on Tellus', exact: true })
-    .click();
-  const options = page.locator('.factory-option');
-  const built = options.filter({
-    has: page.locator('.factory-option-title', {
-      hasText: 'Rocket engine factory',
-    }),
-  });
-  const queued = options.filter({
-    has: page.locator('.factory-option-title', { hasText: 'Research station' }),
-  });
-  const absent = options.filter({
-    has: page.locator('.factory-option-title', {
-      hasText: 'Transport ship factory',
-    }),
-  });
-  await expect(built).toHaveClass(/presence-built/);
-  await expect(built).toContainText('1 in group');
-  await expect(queued).toHaveClass(/presence-building/);
-  await expect(queued).toContainText('1 under construction');
-  await expect(absent).toHaveClass(/presence-absent/);
-  await expect(absent).toContainText('Not in group');
-  const colors = await Promise.all(
-    [built, queued, absent].map((row) =>
-      row.evaluate((node) => getComputedStyle(node).borderLeftColor),
-    ),
-  );
-  expect(new Set(colors).size).toBe(3);
 });
 
 test('uppmarksamhet-vid-titel / kompakt-ny-flotta / flyttmal-pa-kartan / inga-hexkoordinater: header and fleet controls save mobile space', async ({

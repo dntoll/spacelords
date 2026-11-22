@@ -35,7 +35,7 @@ server --> shared : map-format
 space_battle ..> app : AppModel, ViewContracts, typer
 space_battle --> common : HexCoordinate, dom
 space_battle --> space_map : models, views
-space_map --> app : AppModel, PlayerNotice, ViewContracts
+space_map ..> app : AppModel, ViewContracts, typer
 space_map --> boarding : models
 space_map --> common : HexCoordinate, dom
 space_map --> space_battle : models

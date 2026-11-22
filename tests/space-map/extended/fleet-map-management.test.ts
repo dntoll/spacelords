@@ -1,7 +1,4 @@
-import {
-  Game,
-  type GameState,
-} from '../../../src/client/space-map/models/Game.js';
+import { Game } from '../../../src/client/space-map/models/Game.js';
 import { createExampleGalaxy } from '../../../src/client/space-map/models/exampleGalaxy.js';
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -13,7 +10,6 @@ import { MasterController } from '../../../src/client/app/controllers/MasterCont
 import { playerNoticeText } from '../../../src/client/app/views/playerNoticeText.js';
 import { AppView } from '../../../src/client/app/views/AppView.js';
 import { tradeNetworkState } from '../../fixtures/trade-network.js';
-import { salvageState } from '../../fixtures/salvage.js';
 import { BrowserSaveRepository } from '../../../src/client/space-map/storage/BrowserSaveRepository.js';
 import {
   HexCoordinate,
@@ -21,78 +17,6 @@ import {
 } from '../../../src/client/common/HexCoordinate.js';
 
 beforeEach(() => document.body.replaceChildren());
-
-it('flottval-vid-varv: the shipyard panel opens a co-located fleet so its automatic order can be cancelled', () => {
-  const initial = salvageState();
-  const state = {
-    ...initial,
-    researched: [...initial.researched, 'Automated salvage'] as const,
-    fleets: initial.fleets.map((f) => ({
-      ...f,
-      automation: 'salvage' as const,
-      position: { q: 2, r: 0 },
-    })),
-  };
-  const model = new AppModel(undefined, {
-    load: () => ({ lastPlayed: '2026-10-30', state }),
-    save() {},
-    clear() {},
-  });
-  model.startSlot(1);
-  model.selectSalvage('yard');
-  const { root, click, view } = setup(model);
-  click('Show fleet Home Fleet');
-  expect(root.querySelector('.selected-fleet-card')).not.toBeNull();
-  click('Cancel automatic order');
-  expect(model.snapshot.fleets[0]!.automation).toBeUndefined();
-  view.dispose();
-});
-
-it('forskade-automatiska-order: Auto salvage is visible but locked before research and saves its order after unlocking', () => {
-  const initial = salvageState();
-  let saved: GameState = { ...initial, researched: [...initial.researched] };
-  const model = new AppModel(undefined, {
-    load: () => ({ lastPlayed: '2026-10-30', state: saved }),
-    save(_slot, next) {
-      saved = { ...next.state, researched: [...next.state.researched] };
-    },
-    clear() {},
-  });
-  model.startSlot(1);
-  model.openFleet('fleet-home');
-  const first = setup(model);
-  first.click('Orders');
-  const locked = first.root.querySelector<HTMLButtonElement>(
-    '[aria-label="Auto salvage"]',
-  )!;
-  expect(locked.disabled).toBe(true);
-  expect(locked.title).toBe('Research Automated salvage first.');
-  first.view.dispose();
-  saved = { ...saved, researched: [...saved.researched, 'Automated salvage'] };
-  const unlocked = new AppModel(undefined, {
-    load: () => ({ lastPlayed: '2026-10-30', state: saved }),
-    save(_slot, next) {
-      saved = { ...next.state, researched: [...next.state.researched] };
-    },
-    clear() {},
-  });
-  unlocked.startSlot(1);
-  unlocked.openFleet('fleet-home');
-  const second = setup(unlocked);
-  second.click('Orders');
-  second.click('Auto salvage');
-  expect(
-    unlocked.snapshot.fleets.find((f) => f.id === 'fleet-home')!.automation,
-  ).toBe('salvage');
-  expect(saved.fleets.find((f) => f.id === 'fleet-home')!.automation).toBe(
-    'salvage',
-  );
-  second.click('Cancel automatic order');
-  expect(
-    saved.fleets.find((f) => f.id === 'fleet-home')!.automation,
-  ).toBeUndefined();
-  second.view.dispose();
-});
 
 function setup(model = new AppModel()) {
   const root = document.createElement('div');
@@ -112,60 +36,7 @@ function setup(model = new AppModel()) {
   return { model, root, view, click };
 }
 
-it('bargningsorder-fran-flotta: Salvage opens a wreck picker, commits the mission and lets Stop release its reservation', () => {
-  const model = new AppModel(undefined, {
-    load: () => ({ lastPlayed: '2026-10-30', state: salvageState() }),
-    save() {},
-    clear() {},
-  });
-  model.startSlot(1);
-  model.openFleet('fleet-home');
-  const { root, click, view } = setup(model);
-  click('Orders');
-  click('Deliberate salvage');
-  const picker = root.querySelector<HTMLSelectElement>(
-    '[aria-label="Salvage wreck"]',
-  )!;
-  expect(picker).not.toBeNull();
-  expect([...picker.options].map((option) => option.value)).toEqual([
-    '',
-    'advanced-wreck',
-  ]);
-  picker.value = 'advanced-wreck';
-  picker.dispatchEvent(new Event('change', { bubbles: true }));
-  expect(model.snapshot.fleets[0]!.salvage!.targets).toEqual([
-    'advanced-wreck',
-  ]);
-  click('Orders');
-  expect(
-    root.querySelector<HTMLButtonElement>('[aria-label="Deliberate salvage"]')!
-      .disabled,
-  ).toBe(true);
-  click('Back');
-  click('Cancel salvage');
-  expect(model.snapshot.fleets[0]!.salvage).toBeNull();
-  expect(model.snapshot.wrecks[0]!.reservedBy).toBeNull();
-  view.dispose();
-});
-
 describe('flottadministration / flottval-pa-kartan', () => {
-  it('planetoppning-i-kartrubrik: places Open planet beside the displayed planet name without coordinates without Create route', () => {
-    const { model, root, view, click } = setup();
-    model.select(new HexCoordinate(0, 1));
-    model.selectMapFleet('fleet-home');
-    view.render(model.snapshot);
-    const heading = root.querySelector(
-      '.map-fleet-management .map-location-heading',
-    )!;
-    expect(heading).not.toBeNull();
-    expect(heading.textContent).toContain('Tellus');
-    expect(heading.querySelector('.coordinate-label')).toBeNull();
-    expect(heading.querySelector('[aria-label="Open planet"]')).not.toBeNull();
-    expect(root.querySelector('[aria-label="Create route"]')).toBeNull();
-    click('Open planet');
-    expect(model.snapshot.screen).toBe('planet');
-    expect(model.snapshot.planet?.name).toBe('Tellus');
-  });
   it('shows ships directly without an expansion control or help disclosure', () => {
     const { root } = setup();
     const panel = root.querySelector('.map-fleet-management')!;

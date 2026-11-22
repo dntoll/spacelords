@@ -9,7 +9,7 @@ import type { IntentHandler } from '../../../src/client/app/views/ViewContracts.
 describe('kompakt-spelgranssnitt', () => {
   it('forskningsstatus-med-tydliga-farger: reserves the completion marker for researched technology while retaining queue and unknown states', () => {
     const research = {
-      ...researchStationModel({ shipFactory: true }).snapshot.research,
+      ...researchStationModel().snapshot.research,
       completed: ['Rocket engine factory', 'Telescope I factory'] as const,
       queue: ['Telescope II factory', 'Telescope III factory'] as const,
     };
@@ -42,7 +42,7 @@ describe('kompakt-spelgranssnitt', () => {
     ).toBe('Unknown');
   });
   it('kompakt-forskningstrad: shortens only tile titles and exposes status without a visible status row', () => {
-    const model = researchStationModel({ shipFactory: true });
+    const model = researchStationModel();
     const emit = vi.fn();
     const page = renderResearch(
       model.snapshot.research,
@@ -76,7 +76,7 @@ describe('kompakt-spelgranssnitt', () => {
   it.each(['tap', 'drag', 'cancel'] as const)(
     'research-med-ett-tryck: touch activation works without a synthetic click and cannot order after a drag or cancellation (%s)',
     (action) => {
-      const model = researchStationModel({ shipFactory: true });
+      const model = researchStationModel();
       const emit = vi.fn<IntentHandler>();
       const page = renderResearch(
         model.snapshot.research,
@@ -122,7 +122,7 @@ describe('kompakt-spelgranssnitt', () => {
   it.each(['mouse', 'touch'])(
     'research-med-ett-tryck: the first button press after panning queues once (%s)',
     (pointerType) => {
-      const model = researchStationModel({ shipFactory: true });
+      const model = researchStationModel();
       const emit = vi.fn<IntentHandler>();
       const page = renderResearch(
         model.snapshot.research,
@@ -175,7 +175,7 @@ describe('kompakt-spelgranssnitt', () => {
   });
 
   it('colony-ship-efter-rocket-engine: reveals Colony ship after engines without requiring exploration or telescopes', () => {
-    const model = researchStationModel({ shipFactory: true });
+    const model = researchStationModel();
     model.research('Colony ship factory');
     expect(model.snapshot.research.queue).toEqual([
       'Rocket engine factory',
@@ -194,7 +194,7 @@ describe('kompakt-spelgranssnitt', () => {
   });
 
   it('forskningsdetaljer-vid-val: only the selected technology has details and an explicit Research action outside the tree', () => {
-    const model = researchStationModel({ shipFactory: true });
+    const model = researchStationModel();
     const emit = vi.fn();
     const page = renderResearch(
       model.snapshot.research,
@@ -231,8 +231,7 @@ describe('kompakt-spelgranssnitt', () => {
   });
 
   it('forskningsdetaljer-vid-val: keeps an empty selection area and hides the name and action of unknown research', () => {
-    const research = researchStationModel({ shipFactory: true }).snapshot
-      .research;
+    const research = researchStationModel().snapshot.research;
     const empty = renderResearch(research, false, vi.fn());
     expect(empty.querySelector('.research-details')!.textContent).toContain(
       'Select a technology',

@@ -21,12 +21,11 @@ export class TurnFacade {
       selected: this.host.selected,
       mapFleetId: this.host.mapFleetId,
       selectedFleetId: this.host.selectedFleetId,
-      salvageSelection: this.host.salvageSelection,
       camera: this.host.camera.snapshot,
     };
     this.host.cancelMapPointer();
     if (
-      !['research', 'planet'].includes(this.host.screen) &&
+      !['research', 'production'].includes(this.host.screen) &&
       !this.host.isMapScreen()
     )
       this.host.screen = 'map';
@@ -225,13 +224,6 @@ export class TurnFacade {
     this.host.selectedFleetId =
       context.selectedFleetId && this.host.game.fleet(context.selectedFleetId)
         ? context.selectedFleetId
-        : null;
-    this.host.salvageSelection =
-      context.salvageSelection &&
-      [...this.host.game.wrecks, ...this.host.game.shipyards].some(
-        (item) => item.id === context.salvageSelection,
-      )
-        ? context.salvageSelection
         : null;
     this.host.camera.restore(context.camera);
   }

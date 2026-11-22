@@ -1,4 +1,4 @@
-import type { FleetSnapshot, PlanetGameSnapshot, TurnFrame } from '../Game.js';
+import type { FleetSnapshot, TurnFrame } from '../Game.js';
 import { Detection, type DetectionSource } from '../Detection.js';
 import type { MapCell } from '../Galaxy.js';
 import type { PirateSnapshot } from '../PirateFleet.js';
@@ -8,10 +8,6 @@ import { comparePlaybackPositions } from './PlaybackOrder.js';
 export type TurnMovement = TurnFrame['movements'][number];
 
 export interface MovementScene {
-  readonly ownedPlanets?: readonly Pick<
-    PlanetGameSnapshot,
-    'position' | 'detectionRange'
-  >[];
   readonly fleets: readonly FleetSnapshot[];
   readonly pirates: readonly PirateSnapshot[];
   readonly cells: readonly MapCell[];
@@ -32,7 +28,6 @@ export class TurnMovementPlayback {
   readonly #catalog: Map<string, MapCell>;
   readonly #observations = new Map<TurnMovement, readonly PirateSnapshot[]>();
   readonly #destinations = new Map<TurnMovement, HexCoordinate>();
-  readonly #planets: readonly DetectionSource[];
   #cells: readonly MapCell[];
   #current: readonly TurnMovement[] = Object.freeze([]);
 
@@ -43,12 +38,6 @@ export class TurnMovementPlayback {
       origin.cells.map((cell) => [cell.position.key, cell]),
     );
     this.#cells = origin.cells;
-    this.#planets = (
-      origin.ownedPlanets ?? origin.cells.filter((cell) => cell.object?.owned)
-    ).map((planet) => ({
-      position: planet.position,
-      range: 'detectionRange' in planet ? (planet.detectionRange ?? 1) : 1,
-    }));
   }
 
   record(frame: TurnFrame, before: MovementScene, after: MovementScene): void {
@@ -100,8 +89,7 @@ export class TurnMovementPlayback {
     for (const track of this.tracks) {
       const fleet = this.#tracks.get(track[0]!.fleetId)!.fleet;
       const autonomous =
-        'speed' in fleet &&
-        !!(fleet.exploration || fleet.patrol || fleet.automation);
+        'speed' in fleet && !!(fleet.exploration || fleet.patrol);
       (autonomous ? automatic : manual).push(track);
     }
     manual.sort((a, b) => comparePlaybackPositions(a[0]!.from, b[0]!.from));
@@ -113,11 +101,7 @@ export class TurnMovementPlayback {
 
   isAutonomous(fleetId: string): boolean {
     const fleet = this.#tracks.get(fleetId)?.fleet;
-    return !!(
-      fleet &&
-      'speed' in fleet &&
-      (fleet.exploration || fleet.patrol || fleet.automation)
-    );
+    return !!(fleet && 'speed' in fleet && (fleet.exploration || fleet.patrol));
   }
 
   begin(movements: TurnMovement | readonly TurnMovement[]): void {
@@ -151,8 +135,7 @@ export class TurnMovementPlayback {
       for (const pirate of this.#observations.get(movement) ?? [])
         if (!this.#pirates.has(pirate.id)) this.#pirates.set(pirate.id, pirate);
     }
-    const sources = [
-      ...this.#planets,
+    const sources: DetectionSource[] = [
       ...this.fleets
         .filter(
           (fleet) =>

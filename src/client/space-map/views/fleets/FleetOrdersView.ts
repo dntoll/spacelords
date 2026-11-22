@@ -26,31 +26,19 @@ export function renderFleetOrders(
       !!fleet.destination &&
         !fleet.patrol &&
         !fleet.exploration &&
-        !fleet.automation &&
-        !fleet.salvage &&
-        !fleet.upgrade &&
-        !fleet.colonizationTargetId &&
         !fleet.explorationTargetId &&
         !fleet.joinFleetId,
     ),
   );
   move.disabled = locked;
   const stop = button(
-    fleet.upgrade
-      ? 'Cancel Upgrade'
-      : fleet.automation
-        ? 'Cancel automatic order'
-        : fleet.salvage
-          ? 'Cancel salvage'
-          : fleet.colonizationTargetId
-            ? 'Cancel colonization'
-            : fleet.explorationTargetId
-              ? 'Cancel planet exploration'
-              : fleet.patrol
-                ? 'Cancel patrol'
-                : fleet.joinFleetId
-                  ? 'Cancel reinforcement'
-                  : 'Clear destination',
+    fleet.explorationTargetId
+      ? 'Cancel planet exploration'
+      : fleet.patrol
+        ? 'Cancel patrol'
+        : fleet.joinFleetId
+          ? 'Cancel reinforcement'
+          : 'Clear destination',
     () => emit({ type: 'clear-destination', id: fleet.id }),
     'fleet-order-button',
   );

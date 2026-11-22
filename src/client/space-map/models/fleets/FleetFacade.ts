@@ -1,6 +1,4 @@
 import type { ExplorationOrder } from '../TurnSimulation.js';
-import { shipTransferIssue } from './FleetTransfer.js';
-import { Salvage } from '../Salvage.js';
 import { type ShipType } from '../Game.js';
 import { HexCoordinate } from '../../../common/HexCoordinate.js';
 import type { AppHost } from '../../../app/models/AppModel.js';
@@ -63,7 +61,7 @@ export class FleetFacade {
   chooseShipTransfer(fleetId: string, ship: ShipType, shipId?: string): void {
     if (this.host.game.phase !== 'planning') return;
     const fleet = this.host.game.fleet(fleetId);
-    if (!fleet || shipTransferIssue(fleet) || !(fleet.ships[ship] > 0)) return;
+    if (!fleet || !(fleet.ships[ship] > 0)) return;
     this.host.selectedFleetId = fleetId;
     if (this.host.isMapScreen()) this.host.mapFleetId = fleetId;
     this.host.shipTransfer =
@@ -123,43 +121,16 @@ export class FleetFacade {
   }
 
   beginDestination(id: string): void {
-    this.host.destinationOrder = 'move';
     this.host.cancelShipTransfer();
     this.host.cancelFleetRename();
     if (this.host.game.canIssueFleetOrders(id)) {
       this.host.destinationFleetId = id;
-      if (!this.host.isMapScreen() || this.host.screen === 'production')
-        this.host.screen = 'map';
+      if (!this.host.isMapScreen()) this.host.screen = 'map';
     }
-  }
-
-  upgradeFleet(id: string): void {
-    this.host.game.upgradeFleet(id);
-    this.host.notice = Object.freeze({ kind: 'upgrade-ordered' });
   }
 
   setDestination(id: string, q: number, r: number): void {
     this.host.game.setDestination(id, new HexCoordinate(q, r));
-  }
-
-  beginColonization(id: string): void {
-    if (!this.host.game.fleet(id)?.ships['Colony ship'])
-      throw new Error('A Colony ship is required.');
-    this.host.beginDestination(id);
-    if (this.host.destinationFleetId === id)
-      this.host.destinationOrder = 'colonize';
-  }
-
-  beginSalvage(id: string): void {
-    const fleet = this.host.game.fleet(id);
-    if (!fleet || !this.host.game.canIssueFleetOrders(id))
-      throw new Error('This fleet cannot receive salvage orders now.');
-    if (Salvage.availableCapacity(fleet, this.host.game.wrecks) === 0)
-      throw new Error('One Salvage ship is required for each assigned wreck.');
-    this.host.beginDestination(id);
-    this.host.salvageSelection = null;
-    this.host.shipyardPlacement = null;
-    this.host.destinationOrder = 'salvage';
   }
 
   clearDestination(id: string): void {
@@ -168,12 +139,6 @@ export class FleetFacade {
 
   exploreFleet(id: string, order: ExplorationOrder): void {
     this.host.game.setExploration(id, order);
-  }
-
-  automateSalvage(id: string): void {
-    this.host.destinationFleetId = null;
-    this.host.destinationOrder = 'move';
-    this.host.game.setAutomaticSalvage(id);
   }
 
   patrolFleet(id: string): void {

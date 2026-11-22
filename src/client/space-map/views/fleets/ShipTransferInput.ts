@@ -1,4 +1,3 @@
-import { shipTransferIssue } from '../../models/fleets/FleetTransfer.js';
 import type { AppReadModel } from '../../../app/models/AppModel.js';
 import type { ShipType } from '../../models/Game.js';
 import type { IntentHandler } from '../../../app/views/ViewContracts.js';
@@ -34,7 +33,6 @@ export function bindShipTransfers(
       model.phase === 'planning' &&
       !!from &&
       (target === null || !!to) &&
-      !shipTransferIssue(from) &&
       from.id !== to?.id &&
       from.ships[source.ship] > 0
     );
@@ -78,8 +76,7 @@ export function bindShipTransfers(
       if (
         (event.pointerType === 'mouse' && event.button !== 0) ||
         model.phase !== 'planning' ||
-        !fleet ||
-        shipTransferIssue(fleet)
+        !fleet
       )
         return;
       if (gesture) {

@@ -4,11 +4,9 @@ import { EventPlayback } from '../../../src/client/space-map/models/turn/EventPl
 import { AppModel } from '../../../src/client/app/models/AppModel.js';
 import { MasterController } from '../../../src/client/app/controllers/MasterController.js';
 import {
-  buildRounds,
   Game,
   type GameState,
 } from '../../../src/client/space-map/models/Game.js';
-import { createExampleGalaxy } from '../../../src/client/space-map/models/exampleGalaxy.js';
 import type { SavedGame } from '../../../src/client/space-map/models/saves/SaveRepository.js';
 import type { IntentHandler } from '../../../src/client/app/views/ViewContracts.js';
 import { discoveryState } from '../../fixtures/exploration.js';
@@ -74,9 +72,6 @@ describe('gemensamt-handelseflode', () => {
           (item) => item.decision?.title === 'Battle report',
         ),
       ).not.toBe(true);
-      expect(model.snapshot.wrecks.map((w) => w.id)).toEqual(
-        expect.arrayContaining([...saved.simulation!.battles![0]!.wreckIds]),
-      );
       expect(model.snapshot.events).toEqual(saved.events);
     },
   );
@@ -306,41 +301,6 @@ describe('gemensamt-handelseflode', () => {
       model.snapshot.fleets.find((fleet) => fleet.id === 'fleet-home')!
         .canIssueOrders,
     ).toBe(false);
-    controller.dispose();
-  });
-
-  it('spara-avbrutet-ar: year-end review resumes after production without settling the year again', async () => {
-    const state = new Game(createExampleGalaxy()).exportState();
-    state.colonies[0]![1].projects.push({
-      id: 'detection-factory',
-      type: 'Telescope II factory',
-      slotIndex: 0,
-      factoryId: null,
-      destinationFleetId: null,
-    });
-    // byggtid-per-byggnad: construction is in its last round this year.
-    const game = Game.restore({
-      ...state,
-      construction: {
-        'detection-factory':
-          state.round - buildRounds('Telescope II factory') + 1,
-      },
-    });
-    game.startTurn();
-    while (game.phase === 'simulating') game.applyFrame(game.nextTurnFrame()!);
-    expect(game.interruption?.economyApplied).toBe(true);
-    const checkpoint = game.exportState();
-    const slot = session(checkpoint);
-    const { model, controller, emit } = slot.open();
-    for (let attempt = 0; attempt < 100; attempt++) {
-      if (model.snapshot.eventPlayback?.stage === 'awaiting-choice')
-        emit({ type: 'ignore-discoveries' });
-      await vi.advanceTimersByTimeAsync(1850);
-      if (model.snapshot.phase === 'planning' && !model.snapshot.eventPlayback)
-        break;
-    }
-    expect(slot.saved().state.round).toBe(checkpoint.round + 1);
-    expect(slot.saved().state.colonies).toEqual(checkpoint.colonies);
     controller.dispose();
   });
 });

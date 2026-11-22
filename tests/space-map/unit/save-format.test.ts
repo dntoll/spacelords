@@ -8,9 +8,10 @@ import { createExampleGalaxy } from '../../../src/client/space-map/models/exampl
 describe('sparformat', () => {
   it('loads the current format and rejects older saved games instead of migrating them', () => {
     const state = new Game(createExampleGalaxy()).exportState();
-    expect(state.version).toBe(17);
+    expect(state.version).toBe(18);
     expect(Game.restore(state).exportState()).toEqual(state);
-    for (const version of [2, 9, 16])
+    // single-fleet-rensning: saves from before the Single fleet cleanup are rejected.
+    for (const version of [2, 9, 16, 17])
       expect(() =>
         Game.restore({ ...state, version } as unknown as GameState),
       ).toThrow('This saved game cannot be loaded.');

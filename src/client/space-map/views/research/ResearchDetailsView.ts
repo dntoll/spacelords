@@ -94,9 +94,7 @@ export function renderResearchDetails(
       completed
         ? 'Researched'
         : queue === 0
-          ? research.stations
-            ? `Researching · ${research.progress?.[technology] ?? 0}/${roundsText(technology)}`
-            : 'Waiting for an operating Research station'
+          ? `Researching · ${research.progress?.[technology] ?? 0}/${roundsText(technology)}`
           : queue > 0
             ? `Queued · ${queue + 1} · ${roundsText(technology)}`
             : `Research time: ${roundsText(technology)}`,
@@ -116,7 +114,7 @@ export function renderResearchDetails(
     };
     const choose = button(`Research ${technology}`, order);
     choose.textContent = queue >= 0 ? 'Queued' : 'Research';
-    choose.disabled = locked || !!research.queueBlockedReason || queue >= 0;
+    choose.disabled = locked || queue >= 0;
     bindResearchTouch(choose, order);
     heading.append(choose);
   }

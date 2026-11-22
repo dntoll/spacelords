@@ -2,49 +2,14 @@ import { turnFrames } from '../../fixtures/turn-steps.js';
 import { describe, expect, it } from 'vitest';
 import { AppModel } from '../../../src/client/app/models/AppModel.js';
 
-describe('planetlager / arbetskraft-och-besattning', () => {
-  it('reserves a construction site and workers without spending materials before construction', () => {
-    const model = new AppModel();
-    model.build('Research station');
-    const planet = model.snapshot.planet;
-    expect(planet).toBeNull();
-    model.openPlanet();
-    const budget = model.snapshot.planet!.budget;
-    expect(budget.reservedSlots).toBe(1);
-    expect(budget.reservedWorkers).toBe(600);
-    expect(budget.reservedCrew).toBe(0);
-    expect(model.snapshot.planet!.economy.stock.Iron).toBe(100);
-  });
-});
-
 describe('rundsimulering', () => {
-  it('finishes building construction and advances population and the round', () => {
+  it('advances the round and returns to planning', () => {
     const model = new AppModel();
-    model.openPlanet();
-    const before = model.snapshot.planet!.population;
-    model.openMap();
-    model.build('Research station');
     model.startTurn();
-    const frames = turnFrames(model, false);
-    for (const frame of frames) model.applyTurnFrame(frame);
+    for (const frame of turnFrames(model, false)) model.applyTurnFrame(frame);
     model.finishTurn();
     expect(model.snapshot.round).toBe(2);
     expect(model.snapshot.phase).toBe('planning');
-    expect(model.snapshot.planet).toBeNull();
-    model.openPlanet();
-    expect(model.snapshot.planet!.population).toBe(before + 1200);
-    // byggtid-per-byggnad: a Research station takes three rounds.
-    expect(model.snapshot.planet!.buildings).toHaveLength(0);
-    for (let round = 2; round <= 3; round++) {
-      model.startTurn();
-      for (const frame of turnFrames(model, false)) model.applyTurnFrame(frame);
-      model.finishTurn();
-    }
-    model.openPlanet();
-    expect(model.snapshot.planet!.buildings[0]!.type).toBe('Research station');
-    expect(
-      model.snapshot.fleets.some((fleet) => fleet.ships['Colony ship'] === 0),
-    ).toBe(true);
   });
 });
 

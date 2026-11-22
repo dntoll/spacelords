@@ -34,13 +34,9 @@ export class SaveMapPreview {
         sketch.noLoop();
         sketch.describe('Overview of explored space.');
         this.#ready = true;
-        this.#artwork.load(
-          sketch,
-          () => {
-            void sketch.redraw();
-          },
-          false,
-        );
+        this.#artwork.load(sketch, () => {
+          void sketch.redraw();
+        });
         void sketch
           .loadImage(starSprite)
           .then((sprite) => {

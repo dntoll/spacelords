@@ -51,8 +51,9 @@ spelbar, men bevara fristående strids- och bordningstester.
 - [x] Ta bort `guard-routes`, dess automatiska eskortval och tillhörande tester.
 - [x] Ta bort historiska engångsrensningar för terraforming och utökad galax
       samt deras tester; hantera det nya sparformatet i ett senare steg.
-- [ ] Ta bort planetbaserade fabriker, produktionsnätverk, handelsrutter och
-      automatiska transporter med deras vyer, tester och krav.
+- [x] Ta bort planetbaserade fabriker, produktionsnätverk, handelsrutter och
+      automatiska transporter med deras vyer och tester. Kravtexterna rensas
+      i kravpunkten nedan.
   - [x] Ta bort skärmen `Factories` (fasad, controller, vy, navigering och
         tester) samt beslut som bara hänvisade dit (`factory-`, `supply-`,
         `route-idle-`). Byggnader kan därmed inte längre beställas; spelets
@@ -61,12 +62,24 @@ spelbar, men bevara fristående strids- och bordningstester.
         ruttval och ruttvisning på kartan samt ruttbeslut och deras tester.
         Lastrummen (`hold`) finns kvar tills vidare för bordningsbyte och
         pirater; deras lossning på planeter försvinner med planetekonomin.
-  - [ ] Ta bort produktionsnätverket, byggnader och planetproduktion i `Game`.
+  - [x] Ta bort produktionsnätverket, byggnader, lager, utvinning och
+        planetproduktion i `Game`, kartans produktionsring och planetsidan.
+        `Production` är tills vidare en sida som säger att produktion inte
+        finns än.
 - [ ] Ta bort kolonisation, planetägande, befolkning, Domes och terraforming
       med deras vyer, tester och krav; behåll planeter som platser.
+  - [x] Kolonier, befolkning, Domes, terraforming, kolonisationsordern och
+        Colony ship-beställning är borta ur `Game` och vyerna. Planeter visar
+        typ, habitability och resurser som platsfakta.
+  - [ ] `Planet.colony`, `Colony` och `owned` i kartcellerna finns kvar
+        eftersom startplaneten (`homePlanet`) hittas via sin koloni. Ersätt
+        med en uttrycklig startplats och ta bort ägandet.
 - [ ] Ta bort flera spelarflottor, flottadministration, automatiska order
       och planetköer med deras vyer, tester och krav; behåll skepps- och
       stridsfunktioner som behövs för den kommande flottan.
+  - [x] Ta bort bärgning, vrak, orbitala varv, reparationer och
+        uppgraderingsordern vid varv, som alla krävde spelarens planeter.
+        `Salvage ship` finns kvar som skeppstyp.
   - [x] Ta bort skärmen `Decisions` med beslutslistan, tysta beslut,
         varningen vid rundslut, beslutsvägledning, uppmärksamhetsmarkeringar
         och kartproblem, samt Exploration-, Colonization-, Attack- och
@@ -74,6 +87,12 @@ spelbar, men bevara fristående strids- och bordningstester.
 - [ ] Ta bort planet- och fabriksforskning samt planetbunden produktion och
       anpassa återstående forsknings- och produktionsytor till att invänta
       beslutade ersättningar.
+  - [x] Research kräver inte längre en Research station. Trädet visas och
+        kan köas, men forskningen går inte framåt (`advance(0)`) tills
+        forskningskapaciteten är beslutad.
+  - [ ] Ta bort fabriks-, Dome-, terraformings-, handels- och
+        bärgningsteknikerna ur trädet och `Catalog` (byggnaderna finns kvar
+        som data för trädets bilder och förkunskaper).
 - [ ] Ta bort händelser, beslut, vägledning och navigation som bara stöder
       borttagna funktioner; granska kvarvarande användartexter. Beslut,
       vägledning och köer är borta. Webbläsartesterna (`tests/*/browser`)
@@ -83,6 +102,9 @@ spelbar, men bevara fristående strids- och bordningstester.
       stabila namn för krav som fortfarande gäller och ange deras status.
 - [ ] Hantera godkänd inkompatibilitet för sparningar och verifiera ny start
       när det går utan att föregripa öppna speldesignbeslut.
+  - [x] Sparformatet är version 18 utan kolonier, nätverk, bärgning och
+        produktionsflottor. Version 17 och äldre avvisas med
+        `This saved game cannot be loaded.` och platsen kan rensas.
 - [ ] Kör enhetssviten, relevanta riktade tester och verktygskontroller;
       granska rensningen och dokumentera återstående begränsningar.
 

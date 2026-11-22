@@ -4,7 +4,6 @@ import { MasterController } from '../../../src/client/app/controllers/MasterCont
 import { AppView } from '../../../src/client/app/views/AppView.js';
 import { isResearchIdentified } from '../../../src/client/space-map/models/research/ResearchTree.js';
 import { researchStationModel } from '../../fixtures/research-station-model.js';
-import { renderResearchTree } from '../../../src/client/space-map/views/research/ResearchTreeView.js';
 
 function setup() {
   const model = researchStationModel();
@@ -37,55 +36,6 @@ describe('kompakt-forskningstrad / forskningens-avslojande / forskningsdetaljer-
     expect(tile.isConnected).toBe(true);
     tile.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
     expect(model.snapshot.research.queue).toEqual(['Rocket engine factory']);
-    controller.dispose();
-  });
-  it('dubbelklick-koar-forskning: touch queues once and never orders unknown, completed, queued or blocked research', () => {
-    const { model, root, controller } = setup();
-    Object.assign(root.querySelector('.research-tree-viewport')!, {
-      hasPointerCapture: () => false,
-    });
-    for (let tap = 0; tap < 2; tap++) {
-      const tile = root.querySelector<HTMLButtonElement>(
-        '[aria-label="Inspect Rocket engine factory"]',
-      )!;
-      const pointer = new Event('pointerup', { bubbles: true });
-      Object.defineProperty(pointer, 'pointerType', { value: 'touch' });
-      tile.dispatchEvent(pointer);
-      tile.click();
-    }
-    expect(model.snapshot.research.queue).toEqual(['Rocket engine factory']);
-    const research = model.snapshot.research;
-    for (const [state, locked, technology] of [
-      [research, false, 'Rocket engine factory'],
-      [research, false, 'Fighter factory'],
-      [
-        { ...research, queue: [], completed: ['Rocket engine factory'] },
-        false,
-        'Rocket engine factory',
-      ],
-      [
-        {
-          ...research,
-          queue: [],
-          queueBlockedReason: 'Build a Research station first.',
-        },
-        false,
-        'Rocket engine factory',
-      ],
-      [{ ...research, queue: [] }, true, 'Rocket engine factory'],
-    ] as const) {
-      const intents: unknown[] = [];
-      const tree = renderResearchTree(
-        state,
-        (intent) => intents.push(intent),
-        null,
-        locked,
-      );
-      tree
-        .querySelector(`[data-technology="${technology}"] button`)!
-        .dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
-      expect(intents).toEqual([]);
-    }
     controller.dispose();
   });
 

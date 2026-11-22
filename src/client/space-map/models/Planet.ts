@@ -105,4 +105,10 @@ export class Planet implements PlanetSnapshot {
   get snapshot(): PlanetSnapshot {
     return this;
   }
+
+  /** A fully habitable solid planet counts as Temperate. */
+  get environmentType(): PlanetEnvironmentType | 'Gas' {
+    if (this.type === 'gas') return 'Gas';
+    return this.habitability === 100 ? 'Temperate' : this.environment;
+  }
 }

@@ -1,7 +1,6 @@
 import { ShipOrders } from '../models/ShipOrders.js';
 import { renderFleetOrders } from './fleets/FleetOrdersView.js';
 import { bindFleetOrderDrag } from './fleets/FleetOrderDrag.js';
-import { shipTransferIssue } from '../models/fleets/FleetTransfer.js';
 import type { AppReadModel } from '../../app/models/AppModel.js';
 import type { FleetSnapshot } from '../models/Game.js';
 import type { IntentHandler } from '../../app/views/ViewContracts.js';
@@ -87,7 +86,7 @@ export function renderFleetCard(
     12,
   );
   for (const token of manifest.querySelectorAll<HTMLButtonElement>('button')) {
-    token.disabled = locked || !!shipTransferIssue(fleet);
+    token.disabled = locked;
     token.draggable = false;
     token.classList.toggle(
       'transfer-source',
@@ -117,11 +116,7 @@ export function renderFleetCard(
     const source = model.fleets.find(
       (candidate) => candidate.id === model.shipTransfer!.fleetId,
     );
-    const available =
-      !locked &&
-      !!source &&
-      !shipTransferIssue(source) &&
-      source.id !== fleet.id;
+    const available = !locked && !!source && source.id !== fleet.id;
     hangar.classList.toggle('transfer-available', available);
     const move = button(`Move ship to ${fleet.name}`, () =>
       emit({ type: 'transfer-chosen-ship', target: fleet.id }),
@@ -147,12 +142,7 @@ export function renderFleetCard(
       const source = model.fleets.find(
         (candidate) => candidate.id === model.shipTransfer!.fleetId,
       );
-      if (
-        !locked &&
-        !!source &&
-        !shipTransferIssue(source) &&
-        source.id !== fleet.id
-      )
+      if (!locked && !!source && source.id !== fleet.id)
         emit({ type: 'transfer-chosen-ship', target: fleet.id });
     } else emit({ type: 'map-select-fleet', id: fleet.id });
   });
@@ -165,28 +155,16 @@ export function renderFleetCard(
       assignment.startsWith('En route to ') && fleet.joinFleetId
         ? model.fleets.find((item) => item.id === fleet.joinFleetId)
         : undefined;
-    const planetId = /^(Colonize:|Explore planet:|Upgrade:)/.test(assignment)
-      ? (fleet.colonizationTargetId ??
-        fleet.explorationTargetId ??
-        fleet.upgrade?.planetId)
-      : undefined;
     const status = targetFleet
       ? button(
           `Select fleet ${targetFleet.name}`,
           () => emit({ type: 'map-select-fleet', id: targetFleet.id }),
           'fleet-order-status',
         )
-      : planetId && model.ownedPlanets.some((planet) => planet.id === planetId)
-        ? button(
-            `Open order planet`,
-            () => emit({ type: 'open-planet', id: planetId }),
-            'fleet-order-status',
-          )
-        : element('span', 'fleet-order-status');
+      : element('span', 'fleet-order-status');
     status.textContent = assignment;
     if (fleet.patrol && assignment.startsWith('Patrol:'))
       status.classList.add('fleet-patrol-status');
-    if (fleet.upgrade) status.classList.add('fleet-upgrade-status');
     orderRow.append(status);
   }
   orderRow.append(orders);
@@ -197,23 +175,6 @@ export function renderFleetCard(
       'Asteroid passage requires a full round of movement.'
   )
     footer.append(element('small', 'muted-note', fleet.navigationIssue));
-  if (fleet.salvage?.issue)
-    footer.append(element('small', 'muted-note', fleet.salvage.issue));
-  if (fleet.towing?.length) {
-    const towing = element('details', 'towed-wrecks');
-    towing.append(
-      element('summary', '', `Towing ${fleet.towing.length} wrecks`),
-    );
-    for (const id of fleet.towing) {
-      const wreck = model.wrecks.find((item) => item.id === id);
-      const release = button(`Release ${wreck?.ship.type ?? 'wreck'}`, () =>
-        emit({ type: 'release-wreck', fleetId: fleet.id, id }),
-      );
-      release.disabled = !(fleet.canIssueOrders ?? !locked);
-      towing.append(release);
-    }
-    footer.append(towing);
-  }
   card.title = [
     fleetAssignmentLabel(fleet, model),
     model.fleetDragging && model.mapFleetId === fleet.id
@@ -223,7 +184,6 @@ export function renderFleetCard(
       : fleet.destination
         ? `Destination: ${model.cells.find((cell) => cell.position.key === fleet.destination?.key)?.object?.name ?? 'selected location on map'}`
         : 'No destination',
-    shipTransferIssue(fleet),
   ]
     .filter(Boolean)
     .join('. ');
@@ -245,21 +205,6 @@ export function fleetAssignmentLabel(
   }
   if (fleet.pendingOrder)
     return `Pending: ${ShipOrders.label(fleet.pendingOrder)}`;
-  if (fleet.upgrade) {
-    const planet =
-      model.ownedPlanets.find((planet) => planet.id === fleet.upgrade!.planetId)
-        ?.name ?? 'shipyard';
-    return `Upgrade: ${fleet.upgrade.issue ?? (fleet.destination ? `travelling to ${planet}` : `awaiting components at ${planet}`)}`;
-  }
-  if (fleet.automation === 'salvage')
-    return `Auto salvage: ${fleet.towing?.length ? 'returning to shipyard' : fleet.salvage?.targets.length ? 'collecting a wreck' : 'waiting for an available wreck'}`;
-  if (fleet.colonizationTargetId) {
-    const position = fleet.destination ?? fleet.position;
-    const target = model.cells.find(
-      (cell) => cell.position.key === position?.key,
-    )?.object?.name;
-    return `Colonize: ${target ?? 'selected planet'}`;
-  }
   if (fleet.explorationTargetId) {
     const position = fleet.destination ?? fleet.position;
     const target = model.cells.find(
@@ -269,8 +214,6 @@ export function fleetAssignmentLabel(
   }
   if (fleet.exploration)
     return fleet.exploration === 'explore-stars' ? 'Explore stars' : 'Explore';
-  if (fleet.salvage?.targets.length)
-    return `Salvage: ${fleet.salvage.targets.length} wreck(s) assigned`;
   if (fleet.patrol) {
     return `Patrol: range ${fleet.patrol.range} hex${fleet.patrol.targetPirateId ? ', pursuing Space pirate' : ''}`;
   }

@@ -55,10 +55,6 @@ describe('responsiv-stjarnkarta', () => {
     emit({ type: 'select', position: new HexCoordinate(0, 0) });
     emit({ type: 'pan', delta: { x: 12, y: 0 } });
     expect(renderCamera.mock.lastCall![0].selected?.object?.name).toBe('Sol');
-    emit({ type: 'open-production', planetId: 'sol-0' });
-    emit({ type: 'zoom', factor: 1.2, anchor: { x: 0, y: 0 } });
-    expect(renderCamera.mock.lastCall![0].screen).toBe('production');
-    expect(renderCamera.mock.lastCall![0].planet?.name).toBe('Tellus');
     controller.dispose();
   });
 

@@ -8,30 +8,7 @@ import { planetIllustration } from '../../../src/client/space-map/views/PlanetIm
 import { renderResearchTree } from '../../../src/client/space-map/views/research/ResearchTreeView.js';
 import type p5 from 'p5';
 import { MapArtwork } from '../../../src/client/space-map/views/MapArtwork.js';
-import {
-  renderPlanetGlyph,
-  renderShipyardGlyph,
-  renderSalvageGlyph,
-} from '../../../src/client/space-map/views/PlanetGlyph.js';
-
-it('kartobjekt-foljer-zoom / spelgrafik-kartstation: shipyards and wreck markers both use the map scale', () => {
-  const sketch = {
-    scale: vi.fn(),
-    image: vi.fn(),
-    circle: vi.fn(),
-    rect: vi.fn(),
-    noFill: vi.fn(),
-    line: vi.fn(),
-  };
-  const image = {} as p5.Image;
-  renderSalvageGlyph(sketch as unknown as p5, 'yard', 2, true, image);
-  expect(sketch.scale).not.toHaveBeenCalled();
-  expect(sketch.image).toHaveBeenCalledWith(image, -20, -20, 40, 40);
-  expect(sketch.circle).toHaveBeenCalledWith(0, 0, 42);
-  renderSalvageGlyph(sketch as unknown as p5, 'wreck', 0.25, false, image);
-  expect(sketch.scale).not.toHaveBeenCalled();
-  expect(sketch.line).toHaveBeenCalledWith(-8, -7, 8, 7);
-});
+import { renderPlanetGlyph } from '../../../src/client/space-map/views/PlanetGlyph.js';
 
 it('spelgrafik-symboler: every building has a distinct decorative symbol with a fallback', () => {
   const sources = new Set<string>();
@@ -68,10 +45,7 @@ it('spelgrafik-symboler: unidentified research never reveals its symbol or name'
       ],
       completed: [],
       selected: null,
-      stations: 1,
-      builtStations: 1,
       queue: [],
-      queueBlockedReason: null,
     },
     () => {},
   );
@@ -148,7 +122,7 @@ it('spelgrafik-planeter: map snapshots expose environment only for surveyed plan
   );
 });
 
-it('spelgrafik-planeter / spelgrafik-kartstation: loaded images replace glyphs without losing station selection', () => {
+it('spelgrafik-planeter: loaded images replace planet glyphs', () => {
   const sketch = {
     image: vi.fn(),
     circle: vi.fn(),
@@ -168,17 +142,11 @@ it('spelgrafik-planeter / spelgrafik-kartstation: loaded images replace glyphs w
   );
   expect(sketch.image).toHaveBeenCalledWith(image, 37, 47, 26, 26);
   expect(sketch.circle).not.toHaveBeenCalled();
-  renderShipyardGlyph(sketch as unknown as p5, true, image);
-  expect(sketch.image).toHaveBeenLastCalledWith(image, -20, -20, 40, 40);
-  expect(sketch.circle).toHaveBeenCalledWith(0, 0, 42);
-  expect(sketch.rect).not.toHaveBeenCalled();
-  renderShipyardGlyph(sketch as unknown as p5, false);
-  expect(sketch.rect).toHaveBeenCalledWith(-10, -8, 20, 16);
   renderPlanetGlyph(sketch as unknown as p5, { x: 50, y: 60 }, 26, '#123');
   expect(sketch.circle).toHaveBeenCalledWith(50, 60, 26 * 0.65);
 });
 
-it('spelgrafik-planeter / spelgrafik-kartstation: disposal prevents late image callbacks from reviving a closed map', async () => {
+it('spelgrafik-planeter: disposal prevents late image callbacks from reviving a closed map', async () => {
   const completions: ((image: p5.Image) => void)[] = [];
   const sketch = {
     loadImage: vi.fn(
@@ -188,11 +156,10 @@ it('spelgrafik-planeter / spelgrafik-kartstation: disposal prevents late image c
   const artwork = new MapArtwork();
   const redraw = vi.fn();
   artwork.load(sketch as unknown as p5, redraw);
-  expect(sketch.loadImage).toHaveBeenCalledTimes(7);
+  expect(sketch.loadImage).toHaveBeenCalledTimes(6);
   artwork.dispose();
   for (const complete of completions) complete({} as p5.Image);
   await Promise.resolve();
   expect(redraw).not.toHaveBeenCalled();
   expect(artwork.planetCount).toBe(0);
-  expect(artwork.station).toBeUndefined();
 });

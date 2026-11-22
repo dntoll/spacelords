@@ -1,5 +1,4 @@
 import { type ShipOrder, type OrderKind } from '../../models/ShipOrders.js';
-import { type ShipType } from '../../models/Game.js';
 import type { OrderFacade } from '../../models/orders/OrderFacade.js';
 
 export class OrderController {
@@ -7,10 +6,6 @@ export class OrderController {
 
   openFleetOrders(id: string): void {
     return this.facade.openFleetOrders(id);
-  }
-
-  openShipOrders(ship: ShipType, projectId?: string): void {
-    return this.facade.openShipOrders(ship, projectId);
   }
 
   chooseOrder(kind: OrderKind): void {
@@ -23,9 +18,5 @@ export class OrderController {
 
   orderBack(): void {
     return this.facade.orderBack();
-  }
-
-  clearStartOrder(): void {
-    return this.facade.clearStartOrder();
   }
 }

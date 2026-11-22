@@ -1,5 +1,4 @@
 import { shipImage } from '../ShipView.js';
-import { shipTransferIssue } from '../../models/fleets/FleetTransfer.js';
 import type { AppReadModel } from '../../../app/models/AppModel.js';
 import type { HexCoordinate } from '../../../common/HexCoordinate.js';
 import type { IntentHandler } from '../../../app/views/ViewContracts.js';
@@ -19,13 +18,8 @@ export function renderMapFleetPanel(
   const cell = model.cells.find(
     (candidate) => candidate.position.key === position.key,
   );
-  const planet = model.ownedPlanets.find(
-    (candidate) => candidate.position.key === position.key,
-  );
   const place = renderMapLocationHeading(
     includeLocation ? (cell?.object?.name ?? 'Fleets') : 'Fleets',
-    includeLocation ? planet?.id : undefined,
-    emit,
   );
   place.classList.add('fleet-place');
   const local = model.fleets.filter(
@@ -89,8 +83,7 @@ export function renderMapFleetPanel(
     const move = button('Move ship to new fleet', () =>
       emit({ type: 'transfer-chosen-ship', target: null }),
     );
-    move.disabled =
-      model.phase !== 'planning' || !source || !!shipTransferIssue(source);
+    move.disabled = model.phase !== 'planning' || !source;
     create.append(move);
   }
   cards.append(create);

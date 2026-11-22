@@ -12,7 +12,6 @@ import { researchStationState } from '../../fixtures/research-station.js';
 
 async function seed(page: Page, twoFleets = false) {
   const game = Game.restore(researchStationState());
-  game.scheduleBuild(game.galaxy.homePlanet, 'Iron mine');
   collectTurnFrames(game);
   game.finishTurn();
   game.selectResearch('Rocket engine factory');

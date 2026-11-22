@@ -43,3 +43,8 @@ export function collectTurnFrames(
   }
   return frames;
 }
+
+export function finishYear(game: Game): void {
+  collectTurnFrames(game);
+  game.finishTurn();
+}

@@ -1,10 +1,9 @@
 import {
   SaveFacade,
   ResearchFacade,
-  PlanetFacade,
   FleetFacade,
-  ProductionFacade,
   OrderFacade,
+  ProductionFacade,
   StarMapFacade,
   TurnFacade,
   ShipOrders,
@@ -21,40 +20,26 @@ import {
   type SavedTurnSimulation,
   type PirateSnapshot,
   isMapScreen,
-  BUILD_RING_EXTENT,
   type MapScreen,
   type MapViewport,
-  type ProductionMapSnapshot,
-  type ProductionGuidance,
   type SaveRepository,
   ResearchTreeCamera,
   type ResearchCameraSnapshot,
-  type Component,
-  Salvage,
-  type WreckSnapshot,
-  type ShipyardSnapshot,
-  FleetMapLayout,
   Camera,
   type CameraSnapshot,
   CameraFraming,
   createExampleGalaxy,
   Game,
-  type ProjectType,
-  type ProductionReceipt,
-  type BuildType,
   type FleetSnapshot,
   type GameEvent,
   type GamePhase,
-  type PlanetGameSnapshot,
   type ShipType,
   type TurnFrame,
   type Technology,
   type ResearchSnapshot,
-  type PlanetOrderSnapshot,
   type MapCell,
   FLEET_CATEGORIES,
   type FleetCategory,
-  shipProgress,
 } from '../../space-map/models/index.js';
 import {
   BoardingFacade,
@@ -80,10 +65,8 @@ import {
 } from '../../common/HexCoordinate.js';
 import { actionFailed, type PlayerNotice } from './PlayerNotice.js';
 
-export type PlanetTab = 'overview' | 'sites';
-
 export type Screen =
-  'saves' | 'map' | 'planet' | 'research' | 'fleets' | 'production' | 'orders';
+  'saves' | 'map' | 'research' | 'fleets' | 'production' | 'orders';
 
 export interface SaveSlotSnapshot {
   readonly id: number;
@@ -95,7 +78,6 @@ export interface SaveSlotSnapshot {
 
 export interface AppReadModel {
   readonly orderView?: OrderSelectionSnapshot | null;
-  readonly productionStartOrder?: ShipOrder | null;
   readonly boardingBattle?: BoardingBattleState | null;
   readonly boardingPresentation?: readonly BoardingBattleState[];
   readonly boardingShot?: BoardingShot | null;
@@ -105,27 +87,13 @@ export interface AppReadModel {
   readonly turnMovements: readonly TurnMovement[];
   readonly eventPlayback: EventPlaybackSnapshot | null;
   readonly presentedEventIds: readonly string[];
-  readonly wrecks: readonly WreckSnapshot[];
-  readonly shipyards: readonly ShipyardSnapshot[];
-  readonly salvageSelection: string | null;
-  readonly shipyardPlacement: {
-    readonly planetId: string;
-    readonly site: number | undefined;
-    readonly yardId: string | null;
-    readonly choices: readonly HexCoordinate[];
-  } | null;
-  readonly planetTab: PlanetTab;
   readonly mapFocusRevision: number;
-  readonly productionMap: ProductionMapSnapshot;
-  readonly productionGuidance: ProductionGuidance | null;
-  readonly ownedPlanets: readonly PlanetGameSnapshot[];
   readonly pendingResearchRemoval: Technology | null;
   readonly saveSlots: readonly SaveSlotSnapshot[];
   readonly pendingClearSlot: number | null;
   readonly research: ResearchSnapshot;
   readonly researchCamera: ResearchCameraSnapshot;
   readonly inspectedResearch: Technology | null;
-  readonly planetOrders: readonly PlanetOrderSnapshot[];
   readonly screen: Screen;
   readonly playerName: string;
   readonly radius: number;
@@ -133,7 +101,6 @@ export interface AppReadModel {
   readonly selected: MapCell | null;
   readonly selectedPlanetInfo: ReturnType<Game['planetIntel']>;
   readonly camera: CameraSnapshot;
-  readonly planet: PlanetGameSnapshot | null;
   readonly round: number;
   readonly phase: GamePhase;
   readonly interruption: SavedTurnSimulation | null;
@@ -156,10 +123,8 @@ export interface AppReadModel {
   readonly fleetDestinationPreview: HexCoordinate | null;
   readonly fleetDragging: boolean;
   readonly destinationFleetId: string | null;
-  readonly destinationOrder: 'move' | 'colonize' | 'salvage';
   readonly events: readonly GameEvent[];
   readonly notice: PlayerNotice;
-  readonly productionReceipt: ProductionReceipt | null;
   readonly editorAvailable: boolean;
   readonly editorCatalog: readonly BoardingEditorCatalogItem[];
   readonly editor: BoardingEditorSnapshot | null;
@@ -172,18 +137,13 @@ export class AppModel {
   readonly boarding: BoardingFacade;
   readonly battle: BattleFacade;
   readonly researchCase: ResearchFacade;
-  readonly planet: PlanetFacade;
   readonly fleets: FleetFacade;
-  readonly production: ProductionFacade;
   readonly orders: OrderFacade;
+  readonly production: ProductionFacade;
   readonly starMap: StarMapFacade;
   readonly turn: TurnFacade;
 
   #orderSelection: OrderSelection | null = null;
-  #shipStartOrder: {
-    readonly ship: ShipType;
-    readonly order: ShipOrder;
-  } | null = null;
   #movementPlayback: TurnMovementPlayback | null = null;
   #movementOrigin: AppReadModel | null = null;
   #eventPlayback: EventPlayback | null = null;
@@ -196,12 +156,8 @@ export class AppModel {
     readonly selected: HexCoordinate;
     readonly mapFleetId: string | null;
     readonly selectedFleetId: string | null;
-    readonly salvageSelection: string | null;
     readonly camera: CameraSnapshot;
   } | null = null;
-  #salvageSelection: string | null = null;
-  #shipyardPlacement: AppReadModel['shipyardPlacement'] = null;
-  #planetTab: PlanetTab = 'overview';
   #hiddenFleetCategories = new Set<FleetCategory>();
   #pendingResearchRemoval: Technology | null = null;
   #game: Game;
@@ -213,9 +169,6 @@ export class AppModel {
   #screen: Screen = 'map';
   readonly #researchCamera = new ResearchTreeCamera();
   #inspectedResearch: Technology | null = null;
-  #mapProductionPage = 0;
-  #mapProductionOption: ProjectType | null = null;
-  #mapProjectId: string | null = null;
   #mapViewport: MapViewport | null = null;
   #mapFocusRevision = 0;
   #pendingMapFocus: HexCoordinate | null = null;
@@ -231,9 +184,7 @@ export class AppModel {
   #fleetDestinationPreview: HexCoordinate | null = null;
   #fleetDragging = false;
   #destinationFleetId: string | null = null;
-  #destinationOrder: 'move' | 'colonize' | 'salvage' = 'move';
   #notice: PlayerNotice = null;
-  #productionReceipt: ProductionReceipt | null = null;
 
   #activeSlot: number | null = null;
   #pendingClearSlot: number | null = null;
@@ -256,10 +207,9 @@ export class AppModel {
     this.boarding = new BoardingFacade(host);
     this.battle = new BattleFacade(host);
     this.researchCase = new ResearchFacade(host);
-    this.planet = new PlanetFacade(host);
     this.fleets = new FleetFacade(host);
-    this.production = new ProductionFacade(host);
     this.orders = new OrderFacade(host);
+    this.production = new ProductionFacade(host);
     this.starMap = new StarMapFacade(host);
     this.turn = new TurnFacade(host);
   }
@@ -339,7 +289,6 @@ export class AppModel {
         pirates: this.#movementPlayback.pirates,
         cells: this.#movementPlayback.cells,
         destinationFleetId: null,
-        destinationOrder: 'move',
         // handelser-vid-ankomst: arrival events show during movement.
         eventPlayback: this.#eventPlayback?.snapshot ?? null,
       });
@@ -364,31 +313,14 @@ export class AppModel {
           ...(this.#game.interruption?.presentedEventIds ?? []),
         ]),
       ]),
-      wrecks: this.#game.wrecks,
-      shipyards: this.#game.shipyards,
-      salvageSelection: this.#salvageSelection,
-      shipyardPlacement: this.#shipyardPlacement,
-      planetTab: this.#planetTab,
       orderView: this.#orderSnapshot(),
-      productionStartOrder:
-        this.#shipStartOrder?.ship === this.#mapProductionOption
-          ? this.#shipStartOrder.order
-          : null,
       mapFocusRevision: this.#mapFocusRevision,
-      productionMap: this.#productionMapSnapshot(),
-      productionGuidance:
-        (this.#screen === 'production' || this.#screen === 'planet') &&
-        this.#game.planetAt(this.#selected)
-          ? this.#game.productionGuidance(this.#game.planetAt(this.#selected)!)
-          : null,
-      ownedPlanets: this.#game.ownedPlanetSnapshots(),
       pendingResearchRemoval: this.#pendingResearchRemoval,
       saveSlots: this.#saveSlots,
       pendingClearSlot: this.#pendingClearSlot,
       research: this.#game.research,
       researchCamera: this.#researchCamera.snapshot,
       inspectedResearch: this.#inspectedResearch,
-      planetOrders: this.#game.planetOrders(),
       screen: this.#eventCamera ? 'map' : this.#screen,
       playerName: this.#game.galaxy.player.name,
       radius: this.#game.galaxy.radius,
@@ -399,12 +331,6 @@ export class AppModel {
           .find((cell) => cell.position.key === this.#selected.key) ?? null,
       camera: this.#eventCamera?.snapshot ?? this.#camera.snapshot,
       selectedPlanetInfo: this.#game.planetIntel(this.#selected),
-      planet:
-        this.#screen === 'planet' || this.#screen === 'production'
-          ? this.#game.planetAt(this.#selected)
-            ? this.#game.planetSnapshot(this.#game.planetAt(this.#selected)!)
-            : null
-          : null,
       round: this.#game.round,
       phase: this.#game.phase,
       interruption: this.#game.interruption,
@@ -425,12 +351,8 @@ export class AppModel {
       fleetDestinationPreview: this.#fleetDestinationPreview,
       fleetDragging: this.#fleetDragging,
       destinationFleetId: this.#destinationFleetId,
-      destinationOrder: this.#destinationFleetId
-        ? this.#destinationOrder
-        : 'move',
       events: this.#game.events,
       notice: this.#notice,
-      productionReceipt: this.#productionReceipt,
       editorAvailable: this.editorCase.available,
       editorCatalog: this.editorCase.catalog,
       editor: this.editorCase.editor,
@@ -513,14 +435,6 @@ export class AppModel {
     return this.starMap.selectPoint(point);
   }
 
-  openPlanet(id?: string): void {
-    return this.planet.openPlanet(id);
-  }
-
-  selectPlanetTab(tab: PlanetTab): void {
-    return this.planet.selectPlanetTab(tab);
-  }
-
   inspectResearch(technology: Technology | null): void {
     return this.researchCase.inspectResearch(technology);
   }
@@ -538,10 +452,6 @@ export class AppModel {
     this.#destinationFleetId = null;
     this.#screen = screen;
     if (screen !== 'orders') this.#orderSelection = null;
-    if (screen === 'production') {
-      this.#mapFleetId = null;
-      this.#fitProduction();
-    }
   }
   openMap(): void {
     return this.starMap.openMap();
@@ -552,50 +462,21 @@ export class AppModel {
   #orderSnapshot(): OrderSelectionSnapshot | null {
     const selection = this.#screen === 'orders' ? this.#orderSelection : null;
     if (!selection) return null;
-    const fleet = selection.fleetId
-      ? this.#game.fleet(selection.fleetId)
-      : null;
-    const ships =
-      fleet?.ships ?? (selection.ship ? { [selection.ship]: 1 } : {});
+    const fleet = this.#game.fleet(selection.fleetId);
     return Object.freeze({
       ...selection,
-      options: Object.freeze(
-        ShipOrders.options(
-          ships,
-          this.#game.research.completed,
-          !!fleet?.upgradeable,
-          !!fleet?.towing?.length,
-        ).map((option) =>
-          Object.freeze({
-            ...option,
-            blockedReason:
-              option.kind === 'upgrade' && fleet?.upgrade
-                ? 'An Upgrade order is already active.'
-                : option.kind === 'salvage' &&
-                    fleet &&
-                    Salvage.availableCapacity(fleet, this.#game.wrecks) === 0
-                  ? 'No free Salvage ship is available.'
-                  : option.blockedReason,
-          }),
-        ),
-      ),
+      options: ShipOrders.options(fleet?.ships ?? {}),
       fleetTargets: Object.freeze(
         this.#game
           .fleetSnapshots()
           .filter(
-            (target) =>
-              target.id !== selection.fleetId &&
-              !target.upgrade &&
-              target.position,
+            (target) => target.id !== selection.fleetId && target.position,
           ),
       ),
     });
   }
   openFleetOrders(id: string): void {
     return this.orders.openFleetOrders(id);
-  }
-  openShipOrders(ship: ShipType, projectId?: string): void {
-    return this.orders.openShipOrders(ship, projectId);
   }
   chooseOrder(kind: OrderKind): void {
     return this.orders.chooseOrder(kind);
@@ -606,23 +487,17 @@ export class AppModel {
   orderBack(): void {
     return this.orders.orderBack();
   }
-  clearStartOrder(): void {
-    return this.orders.clearStartOrder();
-  }
   #closeOrders(joinedFleetId?: string): void {
     const selection = this.#orderSelection;
     if (!selection) return;
     this.#orderSelection = null;
     this.#screen =
       selection.returnScreen === 'orders' ? 'fleets' : selection.returnScreen;
-    if (selection.fleetId) {
-      const fleet =
-        this.#game.fleet(selection.fleetId) ??
-        (joinedFleetId ? this.#game.fleet(joinedFleetId) : null);
-      this.#mapFleetId = fleet?.id ?? null;
-      if (fleet?.position) this.#selected = fleet.position;
-    } else this.#selected = selection.origin;
-    this.#fitProduction();
+    const fleet =
+      this.#game.fleet(selection.fleetId) ??
+      (joinedFleetId ? this.#game.fleet(joinedFleetId) : null);
+    this.#mapFleetId = fleet?.id ?? null;
+    this.#selected = fleet?.position ?? selection.origin;
   }
   openFleet(id: string): void {
     return this.fleets.openFleet(id);
@@ -662,166 +537,19 @@ export class AppModel {
   confirmResearchRemoval(): void {
     return this.researchCase.confirmResearchRemoval();
   }
-  openProduction(planetId?: string): void {
-    return this.production.openProduction(planetId);
-  }
-  #focusMapPlanet(id: string): void {
-    const planet = this.#game.ownedPlanetSnapshots().find((p) => p.id === id);
-    if (!planet) return;
-    if (planet.position.key !== this.#selected.key) {
-      this.#mapProductionOption = null;
-      this.#mapProductionPage = 0;
-      this.#mapProjectId = null;
-    }
-    this.#selected = planet.position;
-    this.#requestMapFocus(planet.position);
+  openProduction(): void {
+    return this.production.openProduction();
   }
   #requestMapFocus(position: HexCoordinate): void {
     this.#camera.focus(position);
     this.#pendingMapFocus = position;
     this.#mapFocusRevision += 1;
   }
-  #selectedMapProject(): string | null {
-    const projects = this.#game.planetAt(this.#selected)
-      ? this.#game.planetSnapshot(this.#game.planetAt(this.#selected)!)!
-          .projects
-      : [];
-    return (
-      projects.find((p) => p.id === this.#mapProjectId)?.id ??
-      projects[0]?.id ??
-      null
-    );
-  }
-  #productionMapSnapshot(): ProductionMapSnapshot {
-    const planet =
-      this.#screen === 'production'
-        ? this.#game.planetAt(this.#selected)
-        : null;
-    const options = planet ? this.#game.productionOptions(planet) : [];
-    // produktionsring-utan-kategorier: the ring shows only ships, paged.
-    const filtered = options;
-    const viewport = this.#mapViewport;
-    const pageSize =
-      (viewport?.fontScale ?? 1) > 1.5 ||
-      (!!viewport && viewport.width <= 360 && (viewport.fontScale ?? 1) >= 1.25)
-        ? 2
-        : viewport &&
-            (viewport.width <= 600 ||
-              viewport.availableWidth < 440 ||
-              viewport.availableHeight < 440)
-          ? 4
-          : 8;
-    const radius = viewport
-      ? Math.max(
-          64,
-          Math.min(
-            pageSize === 8 ? 160 : 106,
-            (viewport.availableWidth - 100) / 2,
-            (viewport.availableHeight - 120) / 2,
-          ),
-        )
-      : 160;
-    const pages = Math.max(1, Math.ceil(filtered.length / pageSize));
-    const page = Math.min(this.#mapProductionPage, pages - 1);
-    return Object.freeze({
-      page,
-      pages,
-      radius,
-      options: Object.freeze(
-        filtered.slice(page * pageSize, page * pageSize + pageSize),
-      ),
-      selectedOption:
-        options.find((o) => o.type === this.#mapProductionOption) ?? null,
-      selectedProjectId:
-        this.#screen === 'production' ? this.#selectedMapProject() : null,
-      queue: planet
-        ? shipProgress(
-            planet.id,
-            this.#game.planetSnapshot(planet)!.projects,
-            this.#game.networkSnapshot(),
-          )
-        : Object.freeze([]),
-    });
-  }
-  selectMapProductionPage(page: number): void {
-    return this.production.selectMapProductionPage(page);
-  }
-  selectMapProductionOption(type: ProjectType | null): void {
-    return this.production.selectMapProductionOption(type);
-  }
-  selectMapProject(id: string): void {
-    return this.production.selectMapProject(id);
-  }
-  orderMapProduction(option?: ProjectType): void {
-    return this.production.orderMapProduction(option);
-  }
-  clearProductionReceipt(): void {
-    return this.production.clearProductionReceipt();
-  }
   resizeMap(viewport: MapViewport): void {
     return this.starMap.resizeMap(viewport);
   }
-  #fitProduction(): void {
-    if (
-      this.#screen !== 'production' ||
-      !this.#mapViewport ||
-      !this.#game.planetAt(this.#selected)
-    )
-      return;
-    const viewport = this.#mapViewport;
-    this.#camera.reveal(this.#selected, {
-      left: (viewport.ringLeft ?? BUILD_RING_EXTENT) - viewport.width / 2,
-      right:
-        viewport.availableWidth -
-        (viewport.ringRight ?? BUILD_RING_EXTENT) -
-        viewport.width / 2,
-      top: (viewport.ringTop ?? BUILD_RING_EXTENT) - viewport.height / 2,
-      bottom:
-        viewport.availableHeight -
-        (viewport.ringBottom ?? BUILD_RING_EXTENT) -
-        viewport.height / 2,
-    });
-  }
-
   requestEndTurn(): boolean {
     return this.turn.requestEndTurn();
-  }
-  colonize(id: string): void {
-    return this.planet.colonize(id);
-  }
-  build(type: BuildType, slotIndex?: number): void {
-    return this.planet.build(type, slotIndex);
-  }
-  scheduleShip(
-    ship: ShipType,
-    fleetId: string | null,
-    factoryId?: string,
-  ): void {
-    return this.planet.scheduleShip(ship, fleetId, factoryId);
-  }
-  moveProject(id: string, index: number): void {
-    return this.planet.moveProject(id, index);
-  }
-  scheduleComponent(component: Component): void {
-    return this.planet.scheduleComponent(component);
-  }
-  setProjectFleet(id: string, fleetId: string | null): void {
-    return this.planet.setProjectFleet(id, fleetId);
-  }
-  cancelProject(id: string): void {
-    return this.planet.cancelProject(id);
-  }
-  toggleDemolition(id: string): void {
-    return this.planet.toggleDemolition(id);
-  }
-  upgradeBuilding(id: string): void {
-    return this.planet.upgradeBuilding(id);
-  }
-  produceFighter(): void {
-    return this.planet.produceFighter();
-  }
-  canBuild(type: BuildType): string | null {
-    return this.planet.canBuild(type);
   }
   selectFleet(id: string): void {
     return this.fleets.selectFleet(id);
@@ -868,17 +596,8 @@ export class AppModel {
   beginDestination(id: string): void {
     return this.fleets.beginDestination(id);
   }
-  upgradeFleet(id: string): void {
-    return this.fleets.upgradeFleet(id);
-  }
   setDestination(id: string, q: number, r: number): void {
     return this.fleets.setDestination(id, q, r);
-  }
-  beginColonization(id: string): void {
-    return this.fleets.beginColonization(id);
-  }
-  beginSalvage(id: string): void {
-    return this.fleets.beginSalvage(id);
   }
   clearDestination(id: string): void {
     return this.fleets.clearDestination(id);
@@ -891,9 +610,6 @@ export class AppModel {
   }
   exploreFleet(id: string, order: ExplorationOrder): void {
     return this.fleets.exploreFleet(id, order);
-  }
-  automateSalvage(id: string): void {
-    return this.fleets.automateSalvage(id);
   }
   patrolFleet(id: string): void {
     return this.fleets.patrolFleet(id);
@@ -1030,14 +746,11 @@ export class AppModel {
       const intel = this.#game.planetIntel(
         new HexCoordinate(item.position.q, item.position.r),
       );
-      if (intel?.surveyed)
-        details.push(
-          `Type: ${intel.environment} · Build slots: ${intel.maxBuildSlots}.`,
-        );
+      if (intel?.surveyed) details.push(`Type: ${intel.environment}.`);
     }
     if (interruption!.economyApplied)
       details.push(
-        'The round is paused after production. No movement remains this round.',
+        'The round is paused at the end of the year. No movement remains this round.',
       );
     return Object.freeze({
       title,
@@ -1174,67 +887,6 @@ export class AppModel {
     return this.turn.endMovementPlayback(preserveCamera);
   }
 
-  salvageAtPoint(point: Point): string | null {
-    return this.starMap.salvageAtPoint(point);
-  }
-  selectSalvage(id: string): void {
-    return this.starMap.selectSalvage(id);
-  }
-  orderSalvage(fleetId: string, wreckId: string): void {
-    return this.starMap.orderSalvage(fleetId, wreckId);
-  }
-  dropSalvage(point: Point): void {
-    return this.starMap.dropSalvage(point);
-  }
-  previewSalvage(point: Point): void {
-    return this.starMap.previewSalvage(point);
-  }
-  #salvageDropTarget(point: Point): string | null {
-    const world = this.#camera.screenToWorld(point);
-    return (
-      FleetMapLayout.markers(this.#game.fleetSnapshots())
-        .filter(
-          ({ fleet }) =>
-            this.#game.canIssueFleetOrders(fleet.id) &&
-            Salvage.availableCapacity(fleet, this.#game.wrecks) > 0,
-        )
-        .map((marker) => ({
-          id: marker.fleet.id,
-          distance: Math.hypot(
-            marker.point.x - world.x,
-            marker.point.y - world.y,
-          ),
-        }))
-        .filter((marker) => marker.distance <= 22 / this.#camera.snapshot.zoom)
-        .sort((a, b) => a.distance - b.distance)[0]?.id ?? null
-    );
-  }
-  returnToShipyard(id: string): void {
-    return this.starMap.returnToShipyard(id);
-  }
-  releaseWreck(fleetId: string, id: string): void {
-    return this.starMap.releaseWreck(fleetId, id);
-  }
-  beginShipyardPlacement(
-    planetId: string,
-    site?: number,
-    yardId: string | null = null,
-  ): void {
-    return this.starMap.beginShipyardPlacement(planetId, site, yardId);
-  }
-  rebuildShipyard(id: string): void {
-    return this.starMap.rebuildShipyard(id);
-  }
-  moveRepair(yardId: string, wreckId: string, index: number): void {
-    return this.starMap.moveRepair(yardId, wreckId, index);
-  }
-  cancelShipyardPlacement(): void {
-    return this.starMap.cancelShipyardPlacement();
-  }
-  placeShipyard(position: HexCoordinate): void {
-    return this.starMap.placeShipyard(position);
-  }
-
   #createHost(): AppHost {
     // The object literal cannot see private fields through `this`.
     // eslint-disable-next-line @typescript-eslint/no-this-alias
@@ -1242,9 +894,6 @@ export class AppModel {
     return {
       get orderSelection() {
         return model.#orderSelection;
-      },
-      get shipStartOrder() {
-        return model.#shipStartOrder;
       },
       get movementPlayback() {
         return model.#movementPlayback;
@@ -1269,15 +918,6 @@ export class AppModel {
       },
       get turnContext() {
         return model.#turnContext;
-      },
-      get salvageSelection() {
-        return model.#salvageSelection;
-      },
-      get shipyardPlacement() {
-        return model.#shipyardPlacement;
-      },
-      get planetTab() {
-        return model.#planetTab;
       },
       get hiddenFleetCategories() {
         return model.#hiddenFleetCategories;
@@ -1312,15 +952,6 @@ export class AppModel {
       get inspectedResearch() {
         return model.#inspectedResearch;
       },
-      get mapProductionPage() {
-        return model.#mapProductionPage;
-      },
-      get mapProductionOption() {
-        return model.#mapProductionOption;
-      },
-      get mapProjectId() {
-        return model.#mapProjectId;
-      },
       get mapViewport() {
         return model.#mapViewport;
       },
@@ -1354,14 +985,8 @@ export class AppModel {
       get destinationFleetId() {
         return model.#destinationFleetId;
       },
-      get destinationOrder() {
-        return model.#destinationOrder;
-      },
       get notice() {
         return model.#notice;
-      },
-      get productionReceipt() {
-        return model.#productionReceipt;
       },
       get activeSlot() {
         return model.#activeSlot;
@@ -1374,9 +999,6 @@ export class AppModel {
       },
       set orderSelection(value) {
         model.#orderSelection = value;
-      },
-      set shipStartOrder(value) {
-        model.#shipStartOrder = value;
       },
       set movementPlayback(value) {
         model.#movementPlayback = value;
@@ -1398,15 +1020,6 @@ export class AppModel {
       },
       set turnContext(value) {
         model.#turnContext = value;
-      },
-      set salvageSelection(value) {
-        model.#salvageSelection = value;
-      },
-      set shipyardPlacement(value) {
-        model.#shipyardPlacement = value;
-      },
-      set planetTab(value) {
-        model.#planetTab = value;
       },
       set pendingResearchRemoval(value) {
         model.#pendingResearchRemoval = value;
@@ -1434,15 +1047,6 @@ export class AppModel {
       },
       set inspectedResearch(value) {
         model.#inspectedResearch = value;
-      },
-      set mapProductionPage(value) {
-        model.#mapProductionPage = value;
-      },
-      set mapProductionOption(value) {
-        model.#mapProductionOption = value;
-      },
-      set mapProjectId(value) {
-        model.#mapProjectId = value;
       },
       set mapViewport(value) {
         model.#mapViewport = value;
@@ -1477,14 +1081,8 @@ export class AppModel {
       set destinationFleetId(value) {
         model.#destinationFleetId = value;
       },
-      set destinationOrder(value) {
-        model.#destinationOrder = value;
-      },
       set notice(value) {
         model.#notice = value;
-      },
-      set productionReceipt(value) {
-        model.#productionReceipt = value;
       },
       set activeSlot(value) {
         model.#activeSlot = value;
@@ -1524,8 +1122,6 @@ export class AppModel {
       commitFleetDestination: () => model.commitFleetDestination(),
       cancelMapPointer: () => model.cancelMapPointer(),
       selectPoint: (point: Point) => model.selectPoint(point),
-      openPlanet: (id?: string) => model.openPlanet(id),
-      selectPlanetTab: (tab: PlanetTab) => model.selectPlanetTab(tab),
       inspectResearch: (technology: Technology | null) =>
         model.inspectResearch(technology),
       openResearch: () => model.openResearch(),
@@ -1535,12 +1131,9 @@ export class AppModel {
       openFleets: () => model.openFleets(),
       orderSnapshot: () => model.#orderSnapshot(),
       openFleetOrders: (id: string) => model.openFleetOrders(id),
-      openShipOrders: (ship: ShipType, projectId?: string) =>
-        model.openShipOrders(ship, projectId),
       chooseOrder: (kind: OrderKind) => model.chooseOrder(kind),
       completeOrder: (order: ShipOrder) => model.completeOrder(order),
       orderBack: () => model.orderBack(),
-      clearStartOrder: () => model.clearStartOrder(),
       closeOrders: (joinedFleetId?: string) =>
         model.#closeOrders(joinedFleetId),
       openFleet: (id: string) => model.openFleet(id),
@@ -1559,41 +1152,11 @@ export class AppModel {
       requestResearchRemoval: (type: Technology | null) =>
         model.requestResearchRemoval(type),
       confirmResearchRemoval: () => model.confirmResearchRemoval(),
-      openProduction: (planetId?: string) => model.openProduction(planetId),
-      focusMapPlanet: (id: string) => model.#focusMapPlanet(id),
+      openProduction: () => model.openProduction(),
       requestMapFocus: (position: HexCoordinate) =>
         model.#requestMapFocus(position),
-      selectedMapProject: () => model.#selectedMapProject(),
-      productionMapSnapshot: () => model.#productionMapSnapshot(),
-      selectMapProductionPage: (page: number) =>
-        model.selectMapProductionPage(page),
-      selectMapProductionOption: (type: ProjectType | null) =>
-        model.selectMapProductionOption(type),
-      selectMapProject: (id: string) => model.selectMapProject(id),
-      orderMapProduction: (option?: ProjectType) =>
-        model.orderMapProduction(option),
-      clearProductionReceipt: () => model.clearProductionReceipt(),
       resizeMap: (viewport: MapViewport) => model.resizeMap(viewport),
-      fitProduction: () => model.#fitProduction(),
       requestEndTurn: () => model.requestEndTurn(),
-      colonize: (id: string) => model.colonize(id),
-      build: (type: BuildType, slotIndex?: number) =>
-        model.build(type, slotIndex),
-      scheduleShip: (
-        ship: ShipType,
-        fleetId: string | null,
-        factoryId?: string,
-      ) => model.scheduleShip(ship, fleetId, factoryId),
-      moveProject: (id: string, index: number) => model.moveProject(id, index),
-      scheduleComponent: (component: Component) =>
-        model.scheduleComponent(component),
-      setProjectFleet: (id: string, fleetId: string | null) =>
-        model.setProjectFleet(id, fleetId),
-      cancelProject: (id: string) => model.cancelProject(id),
-      toggleDemolition: (id: string) => model.toggleDemolition(id),
-      upgradeBuilding: (id: string) => model.upgradeBuilding(id),
-      produceFighter: () => model.produceFighter(),
-      canBuild: (type: BuildType) => model.canBuild(type),
       selectFleet: (id: string) => model.selectFleet(id),
       renameFleet: (id: string, name: string) => model.renameFleet(id, name),
       beginFleetRename: (id: string) => model.beginFleetRename(id),
@@ -1615,17 +1178,13 @@ export class AppModel {
       createFleet: (source?: string) => model.createFleet(source),
       deleteFleet: (id: string) => model.deleteFleet(id),
       beginDestination: (id: string) => model.beginDestination(id),
-      upgradeFleet: (id: string) => model.upgradeFleet(id),
       setDestination: (id: string, q: number, r: number) =>
         model.setDestination(id, q, r),
-      beginColonization: (id: string) => model.beginColonization(id),
-      beginSalvage: (id: string) => model.beginSalvage(id),
       clearDestination: (id: string) => model.clearDestination(id),
       startTurn: () => model.startTurn(),
       nextTurnFrame: () => model.nextTurnFrame(),
       exploreFleet: (id: string, order: ExplorationOrder) =>
         model.exploreFleet(id, order),
-      automateSalvage: (id: string) => model.automateSalvage(id),
       patrolFleet: (id: string) => model.patrolFleet(id),
       handleDiscoveries: () => model.handleDiscoveries(),
       focusInterruptedFleet: () => model.#focusInterruptedFleet(),
@@ -1680,36 +1239,12 @@ export class AppModel {
         model.advanceTurnMovement(progress),
       endMovementPlayback: (preserveCamera = false) =>
         model.endMovementPlayback(preserveCamera),
-      salvageAtPoint: (point: Point) => model.salvageAtPoint(point),
-      selectSalvage: (id: string) => model.selectSalvage(id),
-      orderSalvage: (fleetId: string, wreckId: string) =>
-        model.orderSalvage(fleetId, wreckId),
-      dropSalvage: (point: Point) => model.dropSalvage(point),
-      previewSalvage: (point: Point) => model.previewSalvage(point),
-      salvageDropTarget: (point: Point) => model.#salvageDropTarget(point),
-      returnToShipyard: (id: string) => model.returnToShipyard(id),
-      releaseWreck: (fleetId: string, id: string) =>
-        model.releaseWreck(fleetId, id),
-      beginShipyardPlacement: (
-        planetId: string,
-        site?: number,
-        yardId: string | null = null,
-      ) => model.beginShipyardPlacement(planetId, site, yardId),
-      rebuildShipyard: (id: string) => model.rebuildShipyard(id),
-      moveRepair: (yardId: string, wreckId: string, index: number) =>
-        model.moveRepair(yardId, wreckId, index),
-      cancelShipyardPlacement: () => model.cancelShipyardPlacement(),
-      placeShipyard: (position: HexCoordinate) => model.placeShipyard(position),
     };
   }
 }
 
 export interface AppHost {
   orderSelection: OrderSelection | null;
-  shipStartOrder: {
-    readonly ship: ShipType;
-    readonly order: ShipOrder;
-  } | null;
   movementPlayback: TurnMovementPlayback | null;
   movementOrigin: AppReadModel | null;
   eventPlayback: EventPlayback | null;
@@ -1722,12 +1257,8 @@ export interface AppHost {
     readonly selected: HexCoordinate;
     readonly mapFleetId: string | null;
     readonly selectedFleetId: string | null;
-    readonly salvageSelection: string | null;
     readonly camera: CameraSnapshot;
   } | null;
-  salvageSelection: string | null;
-  shipyardPlacement: AppReadModel['shipyardPlacement'];
-  planetTab: PlanetTab;
   readonly hiddenFleetCategories: Set<FleetCategory>;
   pendingResearchRemoval: Technology | null;
   game: Game;
@@ -1739,9 +1270,6 @@ export interface AppHost {
   screen: Screen;
   researchCamera: ResearchTreeCamera;
   inspectedResearch: Technology | null;
-  mapProductionPage: number;
-  mapProductionOption: ProjectType | null;
-  mapProjectId: string | null;
   mapViewport: MapViewport | null;
   mapFocusRevision: number;
   pendingMapFocus: HexCoordinate | null;
@@ -1757,9 +1285,7 @@ export interface AppHost {
   fleetDestinationPreview: HexCoordinate | null;
   fleetDragging: boolean;
   destinationFleetId: string | null;
-  destinationOrder: 'move' | 'colonize' | 'salvage';
   notice: PlayerNotice;
-  productionReceipt: ProductionReceipt | null;
   activeSlot: number | null;
   pendingClearSlot: number | null;
   saveSlots: readonly SaveSlotSnapshot[];
@@ -1784,8 +1310,6 @@ export interface AppHost {
   commitFleetDestination(): void;
   cancelMapPointer(): void;
   selectPoint(point: Point): void;
-  openPlanet(id?: string): void;
-  selectPlanetTab(tab: PlanetTab): void;
   inspectResearch(technology: Technology | null): void;
   openResearch(): void;
   isMapScreen(): boolean;
@@ -1794,11 +1318,9 @@ export interface AppHost {
   openFleets(): void;
   orderSnapshot(): OrderSelectionSnapshot | null;
   openFleetOrders(id: string): void;
-  openShipOrders(ship: ShipType, projectId?: string): void;
   chooseOrder(kind: OrderKind): void;
   completeOrder(order: ShipOrder): void;
   orderBack(): void;
-  clearStartOrder(): void;
   closeOrders(joinedFleetId?: string): void;
   openFleet(id: string): void;
   pan(delta: Point): void;
@@ -1812,34 +1334,10 @@ export interface AppHost {
   moveResearch(type: Technology, index: number): void;
   requestResearchRemoval(type: Technology | null): void;
   confirmResearchRemoval(): void;
-  openProduction(planetId?: string): void;
-  focusMapPlanet(id: string): void;
+  openProduction(): void;
   requestMapFocus(position: HexCoordinate): void;
-  selectedMapProject(): string | null;
-  productionMapSnapshot(): ProductionMapSnapshot;
-  selectMapProductionPage(page: number): void;
-  selectMapProductionOption(type: ProjectType | null): void;
-  selectMapProject(id: string): void;
-  orderMapProduction(option?: ProjectType): void;
-  clearProductionReceipt(): void;
   resizeMap(viewport: MapViewport): void;
-  fitProduction(): void;
   requestEndTurn(): boolean;
-  colonize(id: string): void;
-  build(type: BuildType, slotIndex?: number): void;
-  scheduleShip(
-    ship: ShipType,
-    fleetId: string | null,
-    factoryId?: string,
-  ): void;
-  moveProject(id: string, index: number): void;
-  scheduleComponent(component: Component): void;
-  setProjectFleet(id: string, fleetId: string | null): void;
-  cancelProject(id: string): void;
-  toggleDemolition(id: string): void;
-  upgradeBuilding(id: string): void;
-  produceFighter(): void;
-  canBuild(type: BuildType): string | null;
   selectFleet(id: string): void;
   renameFleet(id: string, name: string): void;
   beginFleetRename(id: string): void;
@@ -1859,15 +1357,11 @@ export interface AppHost {
   createFleet(source?: string): void;
   deleteFleet(id: string): void;
   beginDestination(id: string): void;
-  upgradeFleet(id: string): void;
   setDestination(id: string, q: number, r: number): void;
-  beginColonization(id: string): void;
-  beginSalvage(id: string): void;
   clearDestination(id: string): void;
   startTurn(): void;
   nextTurnFrame(): TurnFrame | null;
   exploreFleet(id: string, order: ExplorationOrder): void;
-  automateSalvage(id: string): void;
   patrolFleet(id: string): void;
   handleDiscoveries(): void;
   focusInterruptedFleet(): void;
@@ -1914,21 +1408,4 @@ export interface AppHost {
   completeTurnMovement(): void;
   advanceTurnMovement(progress: number): boolean;
   endMovementPlayback(preserveCamera?: boolean): void;
-  salvageAtPoint(point: Point): string | null;
-  selectSalvage(id: string): void;
-  orderSalvage(fleetId: string, wreckId: string): void;
-  dropSalvage(point: Point): void;
-  previewSalvage(point: Point): void;
-  salvageDropTarget(point: Point): string | null;
-  returnToShipyard(id: string): void;
-  releaseWreck(fleetId: string, id: string): void;
-  beginShipyardPlacement(
-    planetId: string,
-    site?: number,
-    yardId?: string | null,
-  ): void;
-  rebuildShipyard(id: string): void;
-  moveRepair(yardId: string, wreckId: string, index: number): void;
-  cancelShipyardPlacement(): void;
-  placeShipyard(position: HexCoordinate): void;
 }

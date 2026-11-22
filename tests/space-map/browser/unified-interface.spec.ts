@@ -1,17 +1,8 @@
 import { expect, test, type Page } from '@playwright/test';
-import {
-  Game,
-  type GameState,
-} from '../../../src/client/space-map/models/Game.js';
-import { salvageMarkers } from '../../../src/client/space-map/models/star-map/SalvageMapLayout.js';
-import { salvageState, advancedExplorer } from '../../fixtures/salvage.js';
+import { type GameState } from '../../../src/client/space-map/models/Game.js';
 import { HexCoordinate } from '../../../src/client/common/HexCoordinate.js';
 import { researchStationState } from '../../fixtures/research-station.js';
-import {
-  selectMapHex,
-  selectMapObject,
-  selectMapPoint,
-} from './map-helpers.js';
+import { selectMapHex, selectMapObject } from './map-helpers.js';
 import { startFirstSlot } from './save-helpers.js';
 import { selectMapFleet } from './fleet-helpers.js';
 
@@ -80,38 +71,6 @@ test('skeppssprites-pa-kartan / genererade-skeppssprites: all ship sprites load 
       path: testInfo.outputPath(`${screen.replace(' ', '-')}-sprites.png`),
     });
   }
-});
-test('omordningsbar-reparationsko: Shipyard uses the shared handle and persists the chosen repair order', async ({
-  page,
-}) => {
-  const state = salvageState();
-  state.salvage.wrecks[0]!.position = new HexCoordinate(2, 0);
-  state.salvage.wrecks.push({
-    ...structuredClone(state.salvage.wrecks[0]!),
-    id: 'second',
-    ship: { ...advancedExplorer, id: 'second-ship' },
-  });
-  for (const wreck of state.salvage.wrecks) wreck.yardId = 'yard';
-  state.salvage.yards[0]!.queue = ['advanced-wreck', 'second'];
-  const game = Game.restore(state);
-  await seed(page, state);
-  const point = salvageMarkers(game.wrecks, game.shipyards, 1).find(
-    (marker) => marker.kind === 'yard',
-  )!.point;
-  await selectMapPoint(page, point);
-  const rows = page.locator('.repair-queue .queue-item');
-  await expect(rows).toHaveCount(2);
-  await rows.first().locator('.queue-drag-handle').focus();
-  for (const key of ['Space', 'ArrowDown', 'Enter'])
-    await page.keyboard.press(key);
-  expect((await saved(page)).salvage!.yards[0]!.queue).toEqual([
-    'second',
-    'advanced-wreck',
-  ]);
-  await page.reload();
-  await startFirstSlot(page);
-  await selectMapPoint(page, point);
-  await expect(rows.first()).toHaveAttribute('data-queue-item-id', 'second');
 });
 test('dragbara-koer: research dependencies reject invalid reordering without partial changes', async ({
   page,
@@ -203,35 +162,6 @@ test('gemensam-events-panel / planetinformation-pa-kartan: persistent footer, re
     '8',
   );
   await page.screenshot({ path: testInfo.outputPath('shared-footer.png') });
-});
-
-test('planetsida-informerar: building sites show queued projects and retain them after reload', async ({
-  page,
-}) => {
-  const state = researchStationState();
-  state.colonies[0]![1].projects = [1, 2, 3].map((index) => ({
-    id: `project-${index}`,
-    type: 'Research station',
-    slotIndex: index,
-    factoryId: null,
-    destinationFleetId: null,
-  }));
-  await seed(page, state);
-  await page.getByRole('button', { name: 'Open planet', exact: true }).click();
-  await page
-    .getByRole('button', { name: 'Building sites', exact: true })
-    .click();
-  await expect(
-    page.locator('.building-site').filter({ hasText: 'Research station' }),
-  ).toHaveCount(4);
-  await expect(
-    page.locator('.building-site').filter({ hasText: 'Queued building' }),
-  ).toHaveCount(2);
-  await page.reload();
-  await startFirstSlot(page);
-  expect(
-    (await saved(page)).colonies[0]![1].projects.map((project) => project.id),
-  ).toEqual(['project-1', 'project-2', 'project-3']);
 });
 
 test('forskningskamerans-granser: Fit stops zoom and pan at content, including after resize', async ({

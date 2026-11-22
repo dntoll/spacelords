@@ -167,9 +167,6 @@ describe('upptacktsavbrott / order-under-upptacktsavbrott', () => {
     ).toThrow();
     game.allowOtherFleetOrders();
     game.setDestination('other', new HexCoordinate(2, 0));
-    expect(() =>
-      game.scheduleBuild(game.galaxy.homePlanet, 'Research station'),
-    ).toThrow();
     completeTacticalBattles(game);
     game.continueTurn();
     const combat = game.nextTurnFrame()!;

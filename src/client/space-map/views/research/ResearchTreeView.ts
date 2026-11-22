@@ -103,13 +103,7 @@ export function renderResearchTree(
     let touchClick = false;
     let lastTouch = -Infinity;
     const order = () => {
-      if (
-        !locked &&
-        !research.queueBlockedReason &&
-        identified &&
-        !complete &&
-        queued < 0
-      )
+      if (!locked && identified && !complete && queued < 0)
         emit({ type: 'research', technology: type });
     };
     choose.addEventListener('pointerup', (event) => {
@@ -144,9 +138,7 @@ export function renderResearchTree(
       : complete
         ? 'Researched'
         : queued === 0
-          ? research.stations
-            ? 'Researching'
-            : 'Waiting for station'
+          ? 'Researching'
           : queued > 0
             ? `Queued · ${queued + 1}`
             : ready

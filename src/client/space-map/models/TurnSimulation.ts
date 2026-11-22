@@ -1,5 +1,4 @@
 import type { HexCoordinate } from '../../common/HexCoordinate.js';
-import type { BattleReport } from './Salvage.js';
 import {
   TacticalBattle,
   type BattleState,
@@ -8,6 +7,15 @@ import {
   BoardingEngagement,
   type SavedBoardingEngagement,
 } from '../../boarding/models/index.js';
+
+export interface BattleReport {
+  readonly fleetIds?: readonly string[];
+  readonly eventId?: string;
+  readonly position: { readonly q: number; readonly r: number };
+  readonly fleetId: string | null;
+  readonly title: string;
+  readonly summary: string;
+}
 
 export type ExplorationOrder = 'explore' | 'explore-stars';
 
@@ -120,7 +128,6 @@ export class TurnSimulation {
           Object.freeze({
             ...battle,
             position: Object.freeze({ ...battle.position }),
-            wreckIds: Object.freeze([...battle.wreckIds]),
             ...(battle.fleetIds
               ? { fleetIds: Object.freeze([...battle.fleetIds]) }
               : {}),
@@ -181,7 +188,6 @@ export class TurnSimulation {
               !contains(battle.position) ||
               !battle.title ||
               !battle.summary ||
-              !Array.isArray(battle.wreckIds) ||
               (battle.fleetId !== null && !ids.has(battle.fleetId)),
           ))) ||
       new Set(saved.remaining.map(([id]: readonly [string, number]) => id))

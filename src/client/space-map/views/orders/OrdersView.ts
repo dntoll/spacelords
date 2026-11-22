@@ -36,14 +36,6 @@ export function renderOrders(
       choices.append(choice);
     }
     section.append(choices);
-    if (view.ship)
-      section.append(
-        button(
-          'Use default order',
-          () => emit({ type: 'clear-start-order' }),
-          'button secondary-button',
-        ),
-      );
   } else if (view.page === 'fleets') {
     section.append(
       element('h3', '', 'Join fleet'),
@@ -93,50 +85,15 @@ export function renderOrders(
     }
     if (!view.fleetTargets.length)
       section.append(element('p', '', 'No eligible positioned fleets.'));
-  } else if (view.page === 'salvage') {
-    section.append(
-      element('h3', '', 'Deliberate salvage'),
-      element('p', '', 'Choose an available wreck on the map or below.'),
-    );
-    const picker = element('select');
-    picker.setAttribute('aria-label', 'Salvage wreck');
-    const placeholder = element('option', '', 'Choose a wreck');
-    placeholder.value = '';
-    picker.append(placeholder);
-    for (const wreck of model.wrecks.filter(
-      (wreck) => !wreck.reservedBy && !wreck.towedBy && !wreck.yardId,
-    )) {
-      const option = element('option', '', `${wreck.ship.type} · ${wreck.id}`);
-      option.value = wreck.id;
-      picker.append(option);
-    }
-    picker.addEventListener('change', () => {
-      if (picker.value)
-        emit({
-          type: 'apply-ship-order',
-          order: { kind: 'salvage', wreckId: picker.value },
-        });
-    });
-    section.append(picker);
   } else
     section.append(
-      element(
-        'h3',
-        '',
-        view.page === 'patrol'
-          ? 'Patrol'
-          : view.page === 'explore-planet'
-            ? 'Explore planet'
-            : 'Colonize',
-      ),
+      element('h3', '', view.page === 'patrol' ? 'Patrol' : 'Explore planet'),
       element(
         'p',
         '',
         view.page === 'patrol'
           ? 'Choose the Patrol center on the map. Travel there before patrolling.'
-          : view.page === 'explore-planet'
-            ? 'Choose a discovered unexplored planet on the map.'
-            : 'Choose a known uninhabited planet on the map.',
+          : 'Choose a discovered unexplored planet on the map.',
       ),
     );
   return section;
