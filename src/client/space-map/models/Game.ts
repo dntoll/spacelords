@@ -614,16 +614,9 @@ export class Game {
       for (const building of colony.buildings) delete building.queue;
       for (const project of colony.projects)
         if (project.initialOrder) {
-          if (
-            (project.initialOrder as { kind?: string }).kind ===
-            'auto-transport'
-          )
-            delete project.initialOrder;
-          else {
-            ShipOrders.validate(project.initialOrder);
-            if (!projectDefinition(project.type).ship)
-              throw new Error('Invalid saved ship order.');
-          }
+          ShipOrders.validate(project.initialOrder);
+          if (!projectDefinition(project.type).ship)
+            throw new Error('Invalid saved ship order.');
         }
       const upgradeTargets = new Set<string>();
       for (const project of colony.projects) {

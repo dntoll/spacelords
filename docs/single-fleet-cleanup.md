@@ -115,7 +115,8 @@ Den gamla sparversionen avvisas ännu inte uttryckligen; se checklistan.
 Genomfört och pushat: befolkningsutjämning, gamla engångsrensningar,
 automatisk rutteskort, automatisk ombemanning, automatisk rutttilldelning,
 samt den gamla persontransportordern och dess modell och visning är borta.
-Nybyggda transportskepp får ingen automatisk rutt. Civilian shuttle som
+Nybyggda transportskepp får ingen automatisk rutt. Den äldre migreringen av
+`auto-transport` i sparade produktionsorder är också borttagen. Civilian shuttle som
 skepp behålls tills dess framtida roll har diskuterats. Kvarvarande manuell
 handel, fabriksekonomi, planetägande, kolonisation, population och övriga
 automatiska order ska rensas enligt checklistan.
