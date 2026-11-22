@@ -1,5 +1,9 @@
 # Förenklad produktion (utforskning)
 
+> Historisk beskrivning från `simple_production`: `befolkningsutjamning-i-grupp`
+> har tagits bort i `single_fleet`. Övrig äldre mekanik rensas stegvis enligt
+> [rensningsplanen](single-fleet-cleanup.md).
+
 **Utforskning på branchen `simple_production`.** Kraven gäller bara inom
 utforskningen. De följer med till `development` först när användaren ber om
 det, och försvinner om konceptet kastas.

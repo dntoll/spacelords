@@ -1,5 +1,9 @@
 # Flottor och order
 
+> Historisk beskrivning från `simple_production`: `befolkningsutjamning-i-grupp`
+> har tagits bort i `single_fleet`. Övrig äldre mekanik rensas stegvis enligt
+> [rensningsplanen](../single-fleet-cleanup.md).
+
 `Fleets` visar flottorna på kartan, färgade efter kategori, och en lista
 med order. Flottor kan flytta, utforska, kolonisera, patrullera, bärga,
 eskortera rutter, delas och slås ihop samt uppgraderas vid varv. Nybyggda

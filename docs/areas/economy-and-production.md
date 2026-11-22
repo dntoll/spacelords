@@ -1,5 +1,9 @@
 # Ekonomi, Factories, Production och planeter
 
+> Historisk beskrivning från `simple_production`: `befolkningsutjamning-i-grupp`
+> har tagits bort i `single_fleet`. Övrig äldre mekanik rensas stegvis enligt
+> [rensningsplanen](../single-fleet-cleanup.md).
+
 Ekonomin bygger på produktionsnätverket i utforskningen `simple_production`.
 Planeter som förbinds av fraktskepp delar råvaror och delar. Bara utvinning
 och slutprodukter är platsbundna. `Factories` är platsen för allt byggande:

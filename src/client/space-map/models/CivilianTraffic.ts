@@ -26,19 +26,6 @@ export interface CivilianFleet {
   homeRouteId?: string;
 }
 
-export interface CivilianPlanet {
-  id: string;
-  name: string;
-  position: HexCoordinate;
-  population: number;
-  capacity: number;
-  workforce: number;
-}
-
-/**
- * Civilian transport orders. befolkningsutjamning-i-grupp replaces the old
- * passenger trips; PopulationLevelling moves the settlers.
- */
 export class CivilianTraffic {
   static order(): CivilianOrder {
     return {
@@ -46,7 +33,7 @@ export class CivilianTraffic {
       reserved: 0,
       path: [],
       stopping: false,
-      status: 'Levelling population in the group',
+      status: 'Inactive',
     };
   }
 

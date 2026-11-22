@@ -34,8 +34,9 @@ kontroller har körts. Dela punkter i mindre commits vid behov och notera
 spelbar, men bevara fristående strids- och bordningstester.
 
 - [x] Dokumentera beslut, omfattning och fortsättningsbar checklista.
-- [ ] Inventera kopplingar och välj små, byggbara borttagningssteg; notera
+- [x] Inventera kopplingar och välj små, byggbara borttagningssteg; notera
       beroenden och tillfälliga begränsningar nedan.
+- [x] Ta bort automatisk befolkningsutjämning och dess isolerade tester.
 - [ ] Ta bort planetbaserade fabriker, produktionsnätverk, handelsrutter och
       automatiska transporter med deras vyer, tester och krav.
 - [ ] Ta bort kolonisation, planetägande, befolkning, Domes och terraforming
@@ -64,6 +65,35 @@ arbete: hämta origin, läs denna fil och `docs/single-fleet.md`, kontrollera
 senaste commit och lokalt arbetsläge. Integrera till `single_fleet` enligt
 projektets utforskningsflöde när en sammanhängande ändring är klar.
 
-Inga rensningssteg har ännu slutförts. Tid, AP, resursernas detaljer,
+Delsteg klart: automatisk befolkningsutjämning mellan planeter har tagits
+bort, inklusive dess modell, tillstånd, rundanrop och tillhörande enhets- och webbläsartester.
+Gamla automatiska transportorder och användargränssnitt finns fortfarande
+kvar och ska tas bort i ett senare steg. Den äldre områdesdokumentationen
+beskriver tills vidare den ärvda mekaniken och ska rensas enligt checklistan. Tid, AP, resursernas detaljer,
 startbesättning och övriga öppna designfrågor ska diskuteras och låsas med
 användaren innan ny spelmekanik implementeras.
+
+## Identifierade beroenden
+
+`Game` binder ihop planetägande, flottorder, forskning, produktion och
+rundsimulering. `Factories`, `Production`, `Orders`, `Fleets` och kartan
+har egna fasader och vyer, men delar modell och navigering via app-skalet.
+Rensa ett sammanhängande beteende åt gången och kontrollera kompilering och
+tester innan nästa steg. `CivilianTraffic` och transportorder är kvar efter
+utjämningen; ta bort dem tillsammans med anrop, vyer och beroende tester.
+Rymdstrid och bordning delar delar av skeppsmodellen och ska bevaras.
+
+Den befintliga `test:fast`-konfigurationen inkluderar för närvarande
+`tests/boarding/extended/boarding-maps-http.test.ts` trots regeln att hålla
+HTTP-integration separat. I sandlådan nekades dess serverbindning. Kör vid
+behov Vitest med `--exclude tests/boarding/extended/boarding-maps-http.test.ts`
+för den avsedda enhetssviten, och hantera HTTP-integrationen separat.
+
+Kontroller efter befolkningsutjämningen: typkontroll, ESLint och 1 413
+Vitest-tester utan HTTP-integrationen passerade. `test:tooling` klarade
+arkitekturkarta, branchflöde och publicering men två tester misslyckades i
+miljön: `check-runner` fick tom npm-versionsutdata och `mobile-config` fick
+`EPERM` när Node skulle starta Playwright. HTTP-testets serverbindning gav
+också `EPERM`. Miljön använder Node 24 medan projektet anger Node 26; följ
+upp kontrollerna i en miljö med rätt version och tillåtna processer.
+Den gamla sparversionen avvisas ännu inte uttryckligen; se checklistan.
