@@ -139,3 +139,6 @@ Ordningen är ett planeringsförslag, inte en beställning att implementera.
 Inga numeriska balansvärden, nya resurslistor, rolluppsättningar eller
 stödskeppsfunktioner är låsta av denna plan. Den här dokumentationsändringen
 ändrar inte spelet eller sparformatet.
+
+Se även [spelvisionen 2026-11-22](vision-2026-11-22.md), ett arbetsunderlag
+vars idéer stäms av mot kraven här innan de implementeras.

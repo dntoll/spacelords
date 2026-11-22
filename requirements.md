@@ -70,6 +70,9 @@ som har tagits bort med planetekonomin, så att deras namn går att spåra.
 ## Övriga dokument
 
 - [Produktkrav](docs/product-requirements.md): kort och otekniskt om spelet.
+- [Spelvision och gränssnitt 2026-11-22](docs/vision-2026-11-22.md):
+  arbetsunderlag med idéer om flottan, strid, bordning, världen och
+  skärmarna. Inte beslutade krav.
 - [Tekniska krav](docs/technical-requirements.md) och
   [arbetsregler](AGENTS.md).
 - [Domänmodell](docs/domain-model.puml) och
