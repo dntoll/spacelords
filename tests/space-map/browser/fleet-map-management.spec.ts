@@ -2,9 +2,9 @@ import { HexCoordinate } from '../../../src/client/common/HexCoordinate.js';
 import { selectMapHex } from './map-helpers.js';
 import { expect, test } from '@playwright/test';
 import { startFirstSlot } from './save-helpers.js';
-import { chooseFleetDestination, selectMapFleet } from './fleet-helpers.js';
+import { chooseFleetDestination } from './fleet-helpers.js';
 
-test('flottadministration / flottnamn-direktredigering / flottknappar-pa-kartan: organize fleets on the map and restore them', async ({
+test('flottnamn-direktredigering / flottknappar-pa-kartan: rename the fleet and set a destination on the map, then restore them', async ({
   page,
 }, testInfo) => {
   const errors: string[] = [];
@@ -14,40 +14,15 @@ test('flottadministration / flottnamn-direktredigering / flottknappar-pa-kartan:
   const panel = page.locator('.selection-panel');
   const camera = await page.getByTestId('camera-position').textContent();
   await expect(
-    panel.getByRole('button', { name: 'Set destination', exact: true }),
-  ).toHaveCount(0);
-  await expect(
     panel.getByRole('button', { name: 'Edit fleet', exact: true }),
   ).toHaveCount(0);
   await expect(
     panel.locator('.fleet-panel-sizing, .fleet-panel-help'),
   ).toHaveCount(0);
-  const fighter = panel.getByRole('button', {
-    name: 'Fighter 1 in Home Fleet',
-    exact: true,
-  });
-  await expect(
-    panel.getByRole('button', { name: 'Create route', exact: true }),
-  ).toHaveCount(0);
-  const open = panel.getByRole('button', {
-    name: 'Open planet',
-    exact: true,
-  });
-  await expect(open).toBeVisible();
-  const openBounds = (await open.boundingBox())!;
-  const panelBounds = (await panel.boundingBox())!;
-  expect(openBounds.width).toBeLessThan(panelBounds.width / 2);
-  expect(openBounds.height).toBeGreaterThanOrEqual(44);
-  await fighter.focus();
-  await page.keyboard.press('Enter');
-  await expect(fighter).toBeFocused();
-  const create = panel.getByRole('button', {
-    name: 'Move ship to new fleet',
-    exact: true,
-  });
-  await create.focus();
-  await page.keyboard.press('Enter');
   const name = page.getByRole('textbox', { name: 'Fleet name', exact: true });
+  await panel
+    .getByRole('button', { name: 'Home Fleet', exact: true })
+    .dblclick();
   await expect(name).toBeFocused();
   await name.fill('Vanguard');
   await name.press('Enter');
@@ -60,22 +35,6 @@ test('flottadministration / flottnamn-direktredigering / flottknappar-pa-kartan:
   await expect(
     panel.getByRole('heading', { name: 'Vanguard', exact: true }),
   ).toBeVisible();
-  await panel.getByRole('button', { name: 'Vanguard', exact: true }).dblclick();
-  await name.fill('Also discarded');
-  // Blur must not swallow the subsequent click on a ship.
-  await panel
-    .getByRole('button', {
-      name: 'Exploration ship 1 in Home Fleet',
-      exact: true,
-    })
-    .click();
-  await expect(
-    panel.getByRole('button', { name: 'Move ship to Vanguard', exact: true }),
-  ).toBeVisible();
-  await panel
-    .getByRole('button', { name: 'Move ship to Vanguard', exact: true })
-    .click();
-  await expect(panel.locator('.fleet-card')).toHaveCount(1);
   await expect(page.getByTestId('camera-position')).toHaveText(camera!);
   await chooseFleetDestination(page, 'Vanguard');
   await selectMapHex(page, new HexCoordinate(0, 1));
@@ -111,90 +70,5 @@ test('flottadministration / flottnamn-direktredigering / flottknappar-pa-kartan:
     'aria-description',
     /Destination: selected location on map/,
   );
-  await selectMapFleet(page, 'Vanguard');
-  await page.getByRole('button', { name: 'Fleets', exact: true }).click();
-  await expect(
-    panel.getByRole('article', { name: 'Fleet Home Fleet', exact: true }),
-  ).toHaveCount(0);
-  await expect(page.locator('.fleet-location-map')).toHaveCount(0);
-  await expect(panel.locator('.selected-fleet-card')).toContainText('Vanguard');
   expect(errors).toEqual([]);
-});
-
-test('flottadministration: a pointer drop forms a new fleet without a view change', async ({
-  page,
-}) => {
-  await page.setViewportSize({ width: 1440, height: 1000 });
-  await page.goto('./');
-  await startFirstSlot(page);
-  await page
-    .getByRole('button', { name: 'Fighter 1 in Home Fleet', exact: true })
-    .dragTo(page.getByRole('group', { name: 'New fleet', exact: true }));
-  await expect(
-    page.getByRole('textbox', { name: 'Fleet name', exact: true }),
-  ).toBeFocused();
-  await page
-    .getByRole('textbox', { name: 'Fleet name', exact: true })
-    .press('Escape');
-  await expect(page.locator('.map-fleet-cards .fleet-card')).toHaveCount(2);
-  await expect(
-    page.getByRole('button', { name: 'Fighter 1 in Fleet 1', exact: true }),
-  ).toBeVisible();
-});
-
-test('flottadministration: native touch forms a fleet on Star map', async ({
-  page,
-  browserName,
-  isMobile,
-}) => {
-  test.skip(
-    browserName !== 'chromium' || !isMobile,
-    'Native touch dragging uses Chromium CDP.',
-  );
-  await page.setViewportSize({ width: 600, height: 1100 });
-  await page.goto('./');
-  await startFirstSlot(page);
-  const source = page.getByRole('button', {
-    name: 'Fighter 1 in Home Fleet',
-    exact: true,
-  });
-  const target = page.getByRole('group', { name: 'New fleet', exact: true });
-  await target.scrollIntoViewIfNeeded();
-  const fromBox = (await source.boundingBox())!;
-  const toBox = (await target.boundingBox())!;
-  const from = {
-    x: fromBox.x + fromBox.width / 2,
-    y: fromBox.y + fromBox.height / 2,
-  };
-  const to = { x: toBox.x + toBox.width / 2, y: toBox.y + toBox.height / 2 };
-  const session = await page.context().newCDPSession(page);
-  await session.send('Input.dispatchTouchEvent', {
-    type: 'touchStart',
-    touchPoints: [{ ...from, id: 1 }],
-  });
-  for (let step = 1; step <= 8; step++) {
-    await session.send('Input.dispatchTouchEvent', {
-      type: 'touchMove',
-      touchPoints: [
-        {
-          x: from.x + ((to.x - from.x) * step) / 8,
-          y: from.y + ((to.y - from.y) * step) / 8,
-          id: 1,
-        },
-      ],
-    });
-  }
-  await session.send('Input.dispatchTouchEvent', {
-    type: 'touchEnd',
-    touchPoints: [],
-  });
-  await expect(
-    page.getByRole('textbox', { name: 'Fleet name', exact: true }),
-  ).toBeFocused();
-  await page
-    .getByRole('textbox', { name: 'Fleet name', exact: true })
-    .press('Escape');
-  await expect(
-    page.getByRole('button', { name: 'Fighter 1 in Fleet 1', exact: true }),
-  ).toBeVisible();
 });

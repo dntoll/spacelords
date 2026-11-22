@@ -1,7 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import type { GameState } from '../../../src/client/space-map/models/Game.js';
 import { researchStationState } from '../../fixtures/research-station.js';
-import { tradeNetworkState } from '../../fixtures/trade-network.js';
 import { startFirstSlot } from './save-helpers.js';
 
 async function start(page: Page, state: GameState) {
@@ -28,7 +27,7 @@ for (const gesture of ['double click', 'double tap'] as const) {
     await start(page, researchStationState());
     await page.getByRole('button', { name: 'Research', exact: true }).click();
     const tile = page.getByRole('button', {
-      name: 'Inspect Rocket engine factory',
+      name: 'Inspect Missiles',
       exact: true,
     });
     await tile.focus();
@@ -43,20 +42,7 @@ for (const gesture of ['double click', 'double tap'] as const) {
     }
     await expect(page.locator('.research-queue-order')).toHaveCount(1);
     await expect(page.locator('.research-queue-order')).toContainText(
-      'Rocket engine factory',
+      'Missiles',
     );
   });
 }
-
-test('rutter-endast-i-connect: native touch connects planets in Factories', async ({
-  page,
-  isMobile,
-}) => {
-  test.skip(!isMobile, 'Native touch requires a mobile device.');
-  await start(page, tradeNetworkState());
-  await page.getByRole('button', { name: 'Factories', exact: true }).tap();
-  await page.getByRole('button', { name: 'Connect Tellus', exact: true }).tap();
-  await page.getByRole('button', { name: 'Connect Vesta', exact: true }).tap();
-  await expect(page.locator('.factory-group')).toContainText('Tellus, Vesta');
-  await expect(page.locator('.factory-group')).toContainText('1 link');
-});

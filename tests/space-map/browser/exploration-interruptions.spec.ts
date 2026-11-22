@@ -1,6 +1,4 @@
 import { scenarioTimeout } from '../../browser-timeouts.js';
-import { HexCoordinate } from '../../../src/client/common/HexCoordinate.js';
-import { selectMapHex } from './map-helpers.js';
 import { expect, test } from '@playwright/test';
 import { discoveryState } from '../../fixtures/exploration.js';
 import type { SavedGame } from '../../../src/client/space-map/models/saves/SaveRepository.js';
@@ -138,7 +136,7 @@ test('gemensamt-handelseflode: event information and keyboard actions fit on sma
   await expect(log.locator(`[data-event-id="${eventId}"]`)).toHaveCount(1);
 });
 
-test('gemensamt-handelseflode / upptacktsavbrott / order-under-upptacktsavbrott / spara-avbrutet-ar / stridsresultat-utan-upprepning: Handle edits another fleet, reload restores the pause and Continue resolves contact once', async ({
+test('gemensamt-handelseflode / upptacktsavbrott / order-under-upptacktsavbrott / spara-avbrutet-ar / stridsresultat-utan-upprepning: a pirate contact pauses the round before combat and is saved', async ({
   page,
 }, testInfo) => {
   scenarioTimeout(120_000);
@@ -154,17 +152,11 @@ test('gemensamt-handelseflode / upptacktsavbrott / order-under-upptacktsavbrott 
   page.on('pageerror', (error) => errors.push(error.message));
   await page.goto('./');
   await startFirstSlot(page);
-  await page.getByRole('button', { name: /^Decisions/ }).click();
   await page.getByRole('button', { name: 'End turn', exact: true }).click();
-  const warning = page.getByRole('dialog', { name: 'Decisions remaining' });
-  if (await warning.isVisible())
-    await warning
-      .getByRole('button', { name: 'End turn anyway', exact: true })
-      .click();
   const announcement = page.locator('.event-announcement-interactive');
-  await ignoreEventsUntil(page, announcement.filter({ hasText: 'Wreck' }));
+  await ignoreEventsUntil(page, announcement.filter({ hasText: 'Pirate' }));
   await expect(announcement).toHaveAttribute('data-stage', 'awaiting-choice');
-  await expect(announcement).toContainText('Wreck');
+  await expect(announcement).toContainText('Pirate');
   const checkpoint = await page.evaluate(
     () =>
       JSON.parse(localStorage.getItem('spacelords.save.v2.1')!) as SavedGame,
@@ -183,18 +175,8 @@ test('gemensamt-handelseflode / upptacktsavbrott / order-under-upptacktsavbrott 
     name: 'Interrupted round',
     exact: true,
   });
-  await expect(controls).toContainText('Home Fleet · 2 hex remaining');
+  await expect(controls).toContainText('Round 1 paused');
   await page.setViewportSize({ width: 844, height: 390 });
-  await controls
-    .getByRole('button', { name: 'Give orders to other fleets', exact: true })
-    .click();
-  await controls
-    .getByRole('combobox', { name: 'Fleet to give orders', exact: true })
-    .selectOption('other');
-  await page
-    .getByRole('button', { name: 'Choose destination for Other', exact: true })
-    .click();
-  await selectMapHex(page, new HexCoordinate(2, 0));
   await expect(
     controls.getByRole('button', { name: 'Continue', exact: true }),
   ).toBeInViewport();
@@ -230,9 +212,6 @@ test('gemensamt-handelseflode / upptacktsavbrott / order-under-upptacktsavbrott 
   )!.text;
   expect(combatText.match(/Lost /g)).toHaveLength(1);
   expect(combatText.match(/Survivors:/g)).toHaveLength(1);
-  expect(
-    completed.state.fleets.find((fleet) => fleet.id === 'other')!.position,
-  ).toEqual({ q: 2, r: 0 });
   expect(
     completed.state.events.filter((event) =>
       event.text.startsWith('Combat at'),

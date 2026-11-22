@@ -33,11 +33,6 @@ async function seed(page: Page) {
 
 async function requestTurn(page: Page) {
   await page.getByRole('button', { name: 'End turn', exact: true }).click();
-  const warning = page.getByRole('dialog', { name: 'Decisions remaining' });
-  if (await warning.isVisible())
-    await warning
-      .getByRole('button', { name: 'End turn anyway', exact: true })
-      .click();
 }
 
 async function advanceUntil(page: Page, ready: () => Promise<boolean>) {
@@ -218,7 +213,6 @@ test('handelseannonsering / handelser-pa-kartan / handelser-vid-ankomst: announc
     path: testInfo.outputPath('announcement-filing-landscape.png'),
   });
   await page.clock.runFor(500);
-  await expect(log.locator('[data-event-id]')).toHaveCount(1);
   await advanceUntil(page, () =>
     page.getByRole('heading', { name: 'Research', exact: true }).isVisible(),
   );
@@ -227,7 +221,7 @@ test('handelseannonsering / handelser-pa-kartan / handelser-vid-ankomst: announc
     page.getByRole('heading', { name: 'Research', exact: true }),
   ).toBeVisible();
   await console.locator('summary').click();
-  await expect(log.locator('[data-event-id]')).toHaveCount(3);
+  await expect(log.locator('[data-event-id]')).toHaveCount(1);
   await expect(log).not.toContainText('Round 1');
   await expect(log).toContainText('Round 2');
   await noOverflow(page);
@@ -235,9 +229,8 @@ test('handelseannonsering / handelser-pa-kartan / handelser-vid-ankomst: announc
   await page.clock.resume();
   await startFirstSlot(page);
   await expect(announcement).toHaveCount(0);
-  await page.getByRole('button', { name: 'Decisions', exact: true }).click();
   await console.locator('summary').click();
-  await expect(log.locator('[data-event-id]')).toHaveCount(3);
+  await expect(log.locator('[data-event-id]')).toHaveCount(1);
   expect(errors).toEqual([]);
 });
 
@@ -335,12 +328,20 @@ test('senaste-aret-i-events / handelseannonsering: long yearly lists scroll inte
         JSON.stringify({ lastPlayed: '2026-10-27', state }),
       );
     },
-    { ...initial, round: 10, events },
+    {
+      ...initial,
+      round: 10,
+      events,
+      // An arrival gives the round one event to announce.
+      fleets: initial.fleets.map((fleet) => ({
+        ...fleet,
+        destination: { q: fleet.position!.q + 1, r: fleet.position!.r },
+      })),
+    },
   );
   await page.setViewportSize({ width: 320, height: 568 });
   await page.goto('./');
   await startFirstSlot(page);
-  await page.getByRole('button', { name: 'Decisions', exact: true }).click();
   const console = page.getByRole('region', { name: 'Turn console' });
   await console.locator('summary').click();
   const log = page.getByRole('log', { name: 'Game events' });

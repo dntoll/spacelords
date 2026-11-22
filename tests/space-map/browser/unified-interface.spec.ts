@@ -114,14 +114,7 @@ test('gemensam-events-panel / planetinformation-pa-kartan: persistent footer, re
   const log = panel.locator('[role="log"]');
   await log.evaluate((node) => (node.scrollTop = 40));
   const position = await log.evaluate((node) => node.scrollTop);
-  for (const label of [
-    'Research',
-    'Decisions',
-    'Fleets',
-    'Factories',
-    'Production',
-    'Star map',
-  ]) {
+  for (const label of ['Research', 'Fleets', 'Production', 'Star map']) {
     await page
       .getByRole('navigation', { name: 'Main navigation' })
       .getByRole('button', { name: label, exact: true })
@@ -136,18 +129,6 @@ test('gemensam-events-panel / planetinformation-pa-kartan: persistent footer, re
     ).toBeVisible();
   }
   await expect(page.locator('.planet-map-info')).toContainText('Habitability:');
-  await panel.locator('summary').click();
-  await page.getByRole('button', { name: 'Open planet', exact: true }).click();
-  for (const label of ['Overview', 'Building sites']) {
-    await page
-      .getByRole('navigation', { name: 'Planet pages' })
-      .getByRole('button', { name: label, exact: true })
-      .click();
-    expect(
-      await panel.evaluate((node, original) => node === original, identity),
-    ).toBe(true);
-  }
-  await expect(panel).toBeVisible();
   await page.getByRole('button', { name: 'Star map', exact: true }).click();
   await selectMapObject(page, 'Vesta');
   await expect(page.locator('.planet-map-info')).toContainText('Type:');

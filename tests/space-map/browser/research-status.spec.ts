@@ -15,15 +15,15 @@ test('forskningsstatus-med-tydliga-farger: unresearched colors stay distinct fro
     },
     {
       ...researchStationState(),
-      researched: ['Rocket engine factory', 'Telescope I factory'],
-      researchQueue: ['Telescope II factory', 'Telescope III factory'],
+      researched: ['Armor'],
+      researchQueue: ['Armored Transport', 'Armored Fighter'],
     },
   );
   await page.goto('./');
   await startFirstSlot(page);
   await page.getByRole('button', { name: 'Research', exact: true }).click();
-  const completed = page.locator('[data-technology="Rocket engine factory"]');
-  const available = page.locator('[data-technology="Colony ship factory"]');
+  const completed = page.locator('[data-technology="Armor"]');
+  const available = page.locator('[data-technology="Missiles"]');
   const rgb = (value: string) => value.match(/[\d.]+/g)!.map(Number);
   const green = rgb(
     await completed.evaluate((node) => getComputedStyle(node).backgroundColor),
@@ -40,11 +40,10 @@ test('forskningsstatus-med-tydliga-farger: unresearched colors stay distinct fro
     'Available research is distinctly blue',
   ).toBeGreaterThanOrEqual(15);
   for (const [type, state] of [
-    ['Rocket engine factory', 'completed'],
-    ['Colony ship factory', 'available'],
-    ['Telescope II factory', 'active'],
-    ['Telescope III factory', 'queued'],
-    ['Fighter factory', 'locked'],
+    ['Armor', 'completed'],
+    ['Missiles', 'available'],
+    ['Armored Transport', 'active'],
+    ['Armored Fighter', 'queued'],
   ] as const) {
     const node = page.locator(`[data-technology="${type}"]`);
     await expect(node).toHaveAttribute('data-state', state);

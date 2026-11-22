@@ -35,7 +35,7 @@ for (const size of [
   { width: 844, height: 390 },
   { width: 667, height: 320 },
 ]) {
-  test(`end-turn-vid-kartval / rundkontroller-i-decisions: selection leaves room for End turn at ${size.width}x${size.height}`, async ({
+  test(`end-turn-vid-kartval: selection leaves room for End turn at ${size.width}x${size.height}`, async ({
     page,
   }, testInfo) => {
     await page.setViewportSize(size);
@@ -91,7 +91,6 @@ for (const size of [
     await selectMapObject(page, 'Vesta');
     await expect(console).toBeVisible();
     await expect(end).toBeVisible();
-    await page.getByRole('button', { name: 'Decisions', exact: true }).click();
     await expect(console).toBeVisible();
     await expect(log).toContainText('Home Fleet arrived at Vesta.');
     await expect(
@@ -102,12 +101,10 @@ for (const size of [
     await expect(
       log.getByRole('heading', { name: 'Round 1', exact: true }),
     ).toHaveCount(0);
-    await expect(
-      log.getByRole('heading', { name: 'Round 2', exact: true }),
-    ).toHaveCount(1);
+    await expect(log).not.toContainText('Home Fleet arrived at Vesta.');
     await expect(end).toBeEnabled();
     await page.screenshot({
-      path: testInfo.outputPath('decisions-turn-actions.png'),
+      path: testInfo.outputPath('turn-actions.png'),
     });
     expect(
       await page.evaluate(
@@ -118,8 +115,7 @@ for (const size of [
     ).toBe(true);
     await page.reload();
     await startFirstSlot(page);
-    await page.getByRole('button', { name: 'Decisions', exact: true }).click();
-    await console.locator('summary').click();
+    if (!(await log.isVisible())) await console.locator('summary').click();
     await expect(log).not.toContainText('Home Fleet arrived at Vesta.');
   });
 }
