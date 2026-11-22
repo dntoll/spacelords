@@ -704,7 +704,6 @@ export class AppModel {
               target.id !== selection.fleetId &&
               !target.routeId &&
               !target.upgrade &&
-              !target.civilian?.passengers &&
               target.position,
           ),
       ),

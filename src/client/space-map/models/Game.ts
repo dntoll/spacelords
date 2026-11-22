@@ -2002,14 +2002,9 @@ export class Game {
     if (option.blockedReason) throw new Error(option.blockedReason);
     if (order.kind === 'join-fleet') {
       const target = this.#fleets.find((fleet) => fleet.id === order.fleetId);
-      if (
-        !target?.position ||
-        target.routeId ||
-        target.upgrade ||
-        target.civilian?.passengers
-      )
+      if (!target?.position || target.routeId || target.upgrade)
         throw new Error(
-          'Choose a positioned fleet without a trade route, Upgrade or passengers.',
+          'Choose a positioned fleet without a trade route or Upgrade.',
         );
     } else if (order.kind === 'join-route') {
       const route = this.#logistics.routes.find(
@@ -3344,7 +3339,6 @@ export class Game {
       );
     const issue = shipTransferIssue({
       ...(source.upgrade ? { upgrade: source.upgrade } : {}),
-      ...(source.civilian ? { civilian: source.civilian } : {}),
       routeId: source.routeId,
       cargo: this.#cargo(source.id),
     });
@@ -3370,8 +3364,6 @@ export class Game {
       target = this.#fleetState(targetId);
       if (target.upgrade)
         throw new Error('Cancel Upgrade before transferring ships.');
-      if (target.civilian?.passengers)
-        throw new Error('Wait until passengers have disembarked.');
       if (target.id === source.id) throw new Error('Choose another fleet.');
       if (target.position && target.position.key !== source.position?.key) {
         const group: Fleet = {
@@ -4168,8 +4160,6 @@ export class Game {
     if (!fleet.position)
       throw new Error('Empty fleets cannot receive destinations.');
     this.#requireManualFleet(fleet);
-    if (fleet.civilian?.passengers)
-      throw new Error('Wait until passengers have disembarked.');
     if (!this.canIssueFleetOrders(id))
       throw new Error(
         'Orders are only available while planning or handling a discovery.',

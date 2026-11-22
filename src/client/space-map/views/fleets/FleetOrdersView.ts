@@ -34,7 +34,7 @@ export function renderFleetOrders(
         !fleet.joinFleetId,
     ),
   );
-  move.disabled = locked || !!fleet.civilian?.passengers;
+  move.disabled = locked;
   const stop = button(
     fleet.routeId
       ? fleet.releaseRequested
@@ -75,7 +75,7 @@ export function renderFleetOrders(
     () => emit({ type: 'open-fleet-orders', id: fleet.id }),
     'fleet-order-button',
   );
-  open.disabled = locked || !!fleet.civilian?.passengers;
+  open.disabled = locked;
   if (fleet.ordersPaused) {
     const resume = button('Resume orders after retreat', () =>
       emit({ type: 'resume-fleet-orders', id: fleet.id }),
