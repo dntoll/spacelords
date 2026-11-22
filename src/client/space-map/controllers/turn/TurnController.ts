@@ -22,8 +22,8 @@ export class TurnController {
     return this.facade.continueTurn();
   }
 
-  requestEndTurn(): boolean {
-    return this.facade.requestEndTurn();
+  canStartTurn(): boolean {
+    return this.facade.canStartTurn();
   }
 
   continueVoyage(): boolean {

@@ -18,6 +18,8 @@ export interface FleetSnapshot {
   readonly navigationIssue?: string | undefined;
   readonly detectionRange?: number;
   readonly remainingMovement?: number | undefined;
+  /** ap-pa-starmap: hexes the fleet can still move this round. */
+  readonly actionPoints?: number;
   readonly canIssueOrders?: boolean;
   readonly ownName?: string;
   readonly cargo?: Readonly<Stock>;

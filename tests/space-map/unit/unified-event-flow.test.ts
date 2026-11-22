@@ -124,7 +124,10 @@ describe('gemensamt-handelseflode', () => {
   it('upptackt-stannar-resan / spara-avbrutet-ar: a discovery flash pauses the round and reload does not replay movement', async () => {
     const slot = session();
     let current = slot.open();
-    current.emit({ type: 'end-turn' });
+    // hexval-med-vag: two taps on the saved destination start the journey.
+    const destination = current.model.snapshot.fleets[0]!.destination!;
+    current.emit({ type: 'select', position: destination });
+    current.emit({ type: 'select', position: destination });
     await vi.advanceTimersByTimeAsync(0);
     expect(current.model.snapshot.phase).toBe('interrupted');
     expect(current.model.snapshot.notice?.kind).toBe('discovery');
@@ -147,6 +150,7 @@ describe('gemensamt-handelseflode', () => {
       await vi.advanceTimersByTimeAsync(1850);
       if (
         current.model.snapshot.phase === 'planning' &&
+        !current.model.snapshot.enemyTurnPending &&
         !current.model.snapshot.eventPlayback
       )
         break;
@@ -154,11 +158,14 @@ describe('gemensamt-handelseflode', () => {
     expect(current.model.snapshot.phase).toBe('planning');
     expect(current.model.snapshot.eventPlayback).toBeNull();
     expect(current.model.snapshot.round).toBe(2);
+    // ap-pa-starmap: the fleet moves before the pirate, so a fight is not
+    // certain here; a reload must never repeat one.
     expect(
       slot
         .saved()
-        .state.events.filter((event) => event.text.startsWith('Combat at')),
-    ).toHaveLength(1);
+        .state.events.filter((event) => event.text.startsWith('Combat at'))
+        .length,
+    ).toBeLessThanOrEqual(1);
     current.controller.dispose();
     current = slot.open();
     expect(current.model.snapshot.eventPlayback).toBeNull();

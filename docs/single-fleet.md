@@ -140,12 +140,14 @@ Inga numeriska balansvärden, nya resurslistor, rolluppsättningar eller
 stödskeppsfunktioner är låsta av denna plan. Den här dokumentationsändringen
 ändrar inte spelet eller sparformatet.
 
-`hexval-med-vag` och `resa-utan-synliga-pirater` (2026-11-22,
-**Fullständigt implementerat**, se [Star map](areas/star-map.md)) är ett
-första steg mot `flottstyrning-med-ap-pa-starmap`: flottan rör sig i
-rundor efter sin långsammaste motor och motståndarnas tur tar bara tid när
-en pirat syns. AP, deras kostnader och vad som räknas som inom räckhåll är
-fortfarande inte beslutade.
+`hexval-med-vag`, `resa-utan-synliga-pirater` och `ap-pa-starmap`
+(2026-11-22, **Fullständigt implementerat**, se [Star map](areas/star-map.md))
+gör `flottstyrning-med-ap-pa-starmap` **Delvis implementerat**: flottan har
+AP från sin långsammaste motor, varje hex kostar en AP, oanvända AP ligger
+kvar och fienderna agerar först när AP är förbrukade. Oupptäckta fiender tar
+ingen tid. Det finns ingen End turn och ingen väntan. Kvar att besluta är om
+andra handlingar än förflyttning kostar AP och vad som räknas som inom
+räckhåll.
 
 Se även [spelvisionen 2026-11-22](vision-2026-11-22.md), ett arbetsunderlag
 vars idéer stäms av mot kraven här innan de implementeras.

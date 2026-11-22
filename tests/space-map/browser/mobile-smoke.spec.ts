@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { endTurn, startFirstSlot } from './save-helpers.js';
+import { finishRound, startFirstSlot } from './save-helpers.js';
 import { expectMapFillsGameArea } from './map-helpers.js';
 
 test('snabb-mobilpublicering / viewport-game-layout / sparat-spel: touch navigation and saved progress survive reload', async ({
@@ -51,7 +51,7 @@ test('snabb-mobilpublicering / viewport-game-layout / sparat-spel: touch navigat
     expect(errors).toEqual([]);
     return;
   }
-  await endTurn(page);
+  await finishRound(page);
   await page.getByRole('button', { name: 'Saved games', exact: true }).tap();
   const slot = page.getByRole('article', { name: 'Save slot 1', exact: true });
   await expect(slot).toContainText('Round 2');

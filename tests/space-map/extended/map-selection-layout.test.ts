@@ -20,9 +20,8 @@ function expectSelection(active: boolean) {
     !active,
   );
   expect(root.querySelector<HTMLElement>('.turn-console')!.hidden).toBe(false);
-  expect(root.querySelector<HTMLButtonElement>('.end-turn')!.hidden).toBe(
-    false,
-  );
+  // ap-pa-starmap: the footer holds only Events; there is no End turn.
+  expect(root.querySelector('.end-turn')).toBeNull();
 }
 
 describe('fokuserat-kartval', () => {

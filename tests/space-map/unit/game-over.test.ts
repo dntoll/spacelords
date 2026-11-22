@@ -57,7 +57,7 @@ describe('game-over-utan-skepp', () => {
     const model = new AppModel(undefined, saves);
     model.startSlot(1);
     expect(model.snapshot.defeated).toBe(true);
-    expect(model.requestEndTurn()).toBe(false);
+    expect(model.canStartTurn()).toBe(false);
     const root = document.createElement('div');
     document.body.append(root);
     const view = new AppView(root, () => ({ render() {}, dispose() {} }));
@@ -65,9 +65,8 @@ describe('game-over-utan-skepp', () => {
     const dialog = root.querySelector('.game-over-dialog');
     expect(dialog?.textContent).toContain('Game over');
     expect(dialog?.textContent).toContain('Home Fleet has no ships left.');
-    expect(root.querySelector<HTMLButtonElement>('.end-turn')?.disabled).toBe(
-      true,
-    );
+    // ap-pa-starmap: there is no End turn; the map cannot start a journey.
+    expect(root.querySelector('.end-turn')).toBeNull();
     dialog
       ?.querySelector<HTMLButtonElement>('[aria-label="Saved games"]')
       ?.click();

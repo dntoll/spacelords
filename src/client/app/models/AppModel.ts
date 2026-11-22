@@ -116,6 +116,8 @@ export interface AppReadModel {
   readonly travelRoute: TravelRoute | null;
   /** resa-utan-synliga-pirater: a confirmed journey that continues by itself. */
   readonly travelling: boolean;
+  /** ap-pa-starmap: the player's AP are spent and the enemies act next. */
+  readonly enemyTurnPending: boolean;
   readonly events: readonly GameEvent[];
   readonly notice: PlayerNotice;
   readonly editorAvailable: boolean;
@@ -335,6 +337,7 @@ export class AppModel {
       destinationFleetId: this.#destinationFleetId,
       travelRoute: this.#travelRoute(),
       travelling: this.#voyage,
+      enemyTurnPending: this.#game.enemyTurnPending,
       events: this.#game.events,
       notice: this.#notice,
       editorAvailable: this.editorCase.available,
@@ -361,6 +364,7 @@ export class AppModel {
           from: fleet.position,
           steps,
           perRound: fleet.speed,
+          available: fleet.actionPoints ?? fleet.speed,
         })
       : null;
   }
@@ -553,8 +557,8 @@ export class AppModel {
   resizeMap(viewport: MapViewport): void {
     return this.starMap.resizeMap(viewport);
   }
-  requestEndTurn(): boolean {
-    return this.turn.requestEndTurn();
+  canStartTurn(): boolean {
+    return this.turn.canStartTurn();
   }
   selectFleet(id: string): void {
     return this.fleets.selectFleet(id);
@@ -1075,7 +1079,7 @@ export class AppModel {
       requestMapFocus: (position: HexCoordinate) =>
         model.#requestMapFocus(position),
       resizeMap: (viewport: MapViewport) => model.resizeMap(viewport),
-      requestEndTurn: () => model.requestEndTurn(),
+      canStartTurn: () => model.canStartTurn(),
       selectFleet: (id: string) => model.selectFleet(id),
       renameFleet: (id: string, name: string) => model.renameFleet(id, name),
       beginFleetRename: (id: string) => model.beginFleetRename(id),
@@ -1233,7 +1237,7 @@ export interface AppHost {
   openProduction(): void;
   requestMapFocus(position: HexCoordinate): void;
   resizeMap(viewport: MapViewport): void;
-  requestEndTurn(): boolean;
+  canStartTurn(): boolean;
   selectFleet(id: string): void;
   renameFleet(id: string, name: string): void;
   beginFleetRename(id: string): void;

@@ -33,7 +33,8 @@ kraven med stabila namn och status. Statusen nedan sammanfattar området.
   version 18). Allt är **Fullständigt implementerat**.
 - **[Stjärnkartan och grafiken](docs/areas/star-map.md):** hexkartan, sikt,
   terräng, kamera, kartobjekt och genererade bilder, samt styrningen med
-  hexval och väg (`hexval-med-vag`), glidande hexsteg
+  hexval och väg (`hexval-med-vag`), AP och turordning utan End turn
+  (`ap-pa-starmap`), glidande hexsteg
   (`glidande-hexsteg`), kamera som följer skeppet
   (`kamera-foljer-skepp`), upptäckter som stannar resan
   (`upptackt-stannar-resan`) och resor som fortsätter när ingen pirat syns

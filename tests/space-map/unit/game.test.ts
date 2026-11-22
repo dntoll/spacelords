@@ -3,12 +3,16 @@ import { describe, expect, it } from 'vitest';
 import { AppModel } from '../../../src/client/app/models/AppModel.js';
 
 describe('rundsimulering', () => {
-  it('advances the round and returns to planning', () => {
+  it('ap-pa-starmap: advances the round once the fleet has spent its AP and the enemies have acted', () => {
     const model = new AppModel();
-    model.startTurn();
-    for (const frame of turnFrames(model, false)) model.applyTurnFrame(frame);
-    model.finishTurn();
-    expect(model.snapshot.round).toBe(2);
+    const fleet = model.snapshot.fleets[0]!;
+    model.setDestination(fleet.id, fleet.position!.q + 6, fleet.position!.r);
+    for (const expected of [1, 2]) {
+      model.startTurn();
+      for (const frame of turnFrames(model, false)) model.applyTurnFrame(frame);
+      model.finishTurn();
+      expect(model.snapshot.round).toBe(expected);
+    }
     expect(model.snapshot.phase).toBe('planning');
   });
 });

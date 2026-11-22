@@ -170,9 +170,6 @@ describe('sekventiella-arshandelser', () => {
   function controlledTurn() {
     vi.useFakeTimers();
     const model = new AppModel();
-    // ingen-ankomstbesked: arriving one hex away no longer creates an announcement.
-    model.setDestination('fleet-home', 1, 0);
-    model.openResearch();
     let emit!: IntentHandler;
     const render = vi.fn();
     const port: AppPort = {
@@ -184,7 +181,8 @@ describe('sekventiella-arshandelser', () => {
     };
     const controller = new MasterController(model, port);
     controller.start();
-    emit({ type: 'end-turn' });
+    // ingen-ankomstbesked: arriving one hex away creates no announcement.
+    travel(emit, model, 1);
     return { model, controller, emit, render };
   }
 
@@ -196,7 +194,7 @@ describe('sekventiella-arshandelser', () => {
     expect(
       model.snapshot.events.some((event) => event.text.includes('arrived')),
     ).toBe(false);
-    expect(model.snapshot.screen).toBe('research');
+    expect(model.snapshot.screen).toBe('map');
     controller.dispose();
     const renders = render.mock.calls.length;
     await vi.advanceTimersByTimeAsync(10000);
@@ -213,12 +211,13 @@ describe('sekventiella-arshandelser', () => {
     model.finishTurn();
     model.beginEventPlayback();
     expect(model.snapshot.eventPlayback).toBeNull();
-    expect(model.requestEndTurn()).toBe(true);
+    expect(model.canStartTurn()).toBe(true);
     expect(model.snapshot.camera).toEqual(before.camera);
     expect(model.snapshot.selected?.position).toEqual(
       before.selected?.position,
     );
-    expect(model.snapshot.round).toBe(before.round + 1);
+    // ap-pa-starmap: unspent AP keep the round open.
+    expect(model.snapshot.round).toBe(before.round);
   });
 
   it('saves interrupted years before review and saves final results before playback, including earlier discoveries', async () => {
@@ -244,7 +243,7 @@ describe('sekventiella-arshandelser', () => {
       dispose() {},
     });
     controller.start();
-    emit({ type: 'end-turn' });
+    travel(emit, model);
     await vi.advanceTimersByTimeAsync(0);
     // handelser-vid-ankomst: the discovery shows during movement playback.
     expect(model.snapshot.phase).toBe('interrupted');
@@ -257,14 +256,17 @@ describe('sekventiella-arshandelser', () => {
     expect(discovery.position).toBeDefined();
     for (
       let attempt = 0;
-      attempt < 100 && model.snapshot.phase !== 'planning';
+      attempt < 100 &&
+      (model.snapshot.phase !== 'planning' ||
+        model.snapshot.enemyTurnPending ||
+        model.snapshot.eventPlayback);
       attempt++
     ) {
       if (
         model.snapshot.phase === 'interrupted' &&
         !model.snapshot.tacticalBattle
       )
-        emit({ type: 'end-turn' });
+        travel(emit, model);
       await vi.advanceTimersByTimeAsync(1850);
       if (model.snapshot.tacticalBattle) {
         completeTacticalBattles(model);
@@ -374,3 +376,17 @@ describe('handelser-pa-kartan', () => {
     expect(model.snapshot.camera).toEqual(before);
   });
 });
+
+/**
+ * hexval-med-vag: two taps on a hex start the journey there, or continue a
+ * paused round. Without a distance the fleet's current destination is used.
+ */
+function travel(emit: IntentHandler, model: AppModel, distance?: number) {
+  const fleet = model.snapshot.fleets[0]!;
+  const target =
+    distance === undefined
+      ? fleet.destination!
+      : new HexCoordinate(fleet.position!.q + distance, fleet.position!.r);
+  emit({ type: 'select', position: target });
+  emit({ type: 'select', position: target });
+}

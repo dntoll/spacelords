@@ -47,8 +47,10 @@ att översättas.
   sparning visas som `Saved game unavailable. Clear this slot to start again.`
   och bevaras tills spelaren rensar platsen. Version 18 saknar kolonier, nätverk, bärgning och planetköer och
   ersatte version 17 med den godkända inkompatibiliteten i
-  `single-fleet-rensning`. Framtida inkompatibla ändringar stäms av enligt
-  `avstamning-sparkompatibilitet`.
+  `single-fleet-rensning`. `ap-pa-starmap` lägger till kvarvarande AP,
+  väntande fiendetur och vilket steg en avbruten runda gäller som valfria
+  fält; version 18-sparningar utan dem laddas med fulla AP. Framtida
+  inkompatibla ändringar stäms av enligt `avstamning-sparkompatibilitet`.
 
 - **Grundkrav:** `flera-skarmstorlekar` är **Fullständigt implementerat**:
   spelet går att använda på mobil, surfplatta och dator.

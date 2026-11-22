@@ -49,12 +49,16 @@ describe('rakare-hexforflyttning', () => {
       fleet.position!.r + 3,
     );
     const directions: string[] = [];
-    for (let turn = 0; turn < 2; turn += 1) {
+    // ap-pa-starmap: player and enemy stages alternate; follow the fleet.
+    for (let stage = 0; stage < 4 && directions.length < 6; stage += 1) {
       for (const frame of turnFrames(model)) {
-        const movement = frame.movements[0]!;
-        directions.push(
-          `${movement.to.q - movement.from.q},${movement.to.r - movement.from.r}`,
+        const movement = frame.movements.find(
+          (candidate) => candidate.fleetId === fleet.id,
         );
+        if (movement)
+          directions.push(
+            `${movement.to.q - movement.from.q},${movement.to.r - movement.from.r}`,
+          );
         model.applyTurnFrame(frame);
       }
       model.finishTurn();

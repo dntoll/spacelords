@@ -288,7 +288,9 @@ describe('en-flotta-i-taget / osynliga-flottor-utan-animation', () => {
       dispose() {},
     });
     controller.start();
-    emit({ type: 'end-turn' });
+    const target = new HexCoordinate(3, 0);
+    emit({ type: 'select', position: target });
+    emit({ type: 'select', position: target });
     await vi.advanceTimersByTimeAsync(0);
     expect(steps).toBeGreaterThan(1);
     controller.dispose();
@@ -320,11 +322,13 @@ describe('en-flotta-i-taget / osynliga-flottor-utan-animation', () => {
     expect(playback.tracks).toHaveLength(1);
   });
 
-  it('introduces no animation or presentation wait for a year with only hidden movement', () => {
+  it('ap-pa-starmap: the enemies’ hidden moves add no animation or wait to a round', async () => {
     vi.useFakeTimers();
     const model = new AppModel();
     let emit!: IntentHandler;
-    const animate = vi.fn(() => Promise.resolve());
+    const animate = vi.fn<(frame: TurnFrame) => Promise<void>>(() =>
+      Promise.resolve(),
+    );
     const controller = new MasterController(model, {
       bind(handler) {
         emit = handler;
@@ -334,9 +338,17 @@ describe('en-flotta-i-taget / osynliga-flottor-utan-animation', () => {
       dispose() {},
     });
     controller.start();
-    emit({ type: 'end-turn' });
-    expect(animate).not.toHaveBeenCalled();
-    expect(model.snapshot.turnMovement).toBeNull();
+    const home = model.snapshot.fleets[0]!.position!;
+    const target = new HexCoordinate(home.q + 8, home.r);
+    emit({ type: 'select', position: target });
+    emit({ type: 'select', position: target });
+    for (let step = 0; step < 40 && model.snapshot.round === 1; step++)
+      await vi.advanceTimersByTimeAsync(500);
+    expect(model.snapshot.round).toBe(2);
+    expect(animate).toHaveBeenCalled();
+    for (const [frame] of animate.mock.calls)
+      for (const movement of frame.movements)
+        expect(movement.fleetId).toBe('fleet-home');
     controller.dispose();
   });
 });

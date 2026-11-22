@@ -8,6 +8,8 @@ import {
 import { createExampleGalaxy } from '../../../src/client/space-map/models/exampleGalaxy.js';
 import { collectTurnFrames } from '../../fixtures/turn-steps.js';
 import { startFirstSlot } from './save-helpers.js';
+import { selectMapHex } from './map-helpers.js';
+import type { SavedGame } from '../../../src/client/space-map/models/saves/SaveRepository.js';
 import { researchStationState } from '../../fixtures/research-station.js';
 
 async function seed(page: Page) {
@@ -31,8 +33,26 @@ async function seed(page: Page) {
   return { homeHex: game.galaxy.homePlanet.position.key };
 }
 
+/** hexval-med-vag: two taps on the saved destination start the journey. */
 async function requestTurn(page: Page) {
-  await page.getByRole('button', { name: 'End turn', exact: true }).click();
+  if (!(await page.locator('.map-page').count()))
+    await page.getByRole('button', { name: 'Star map', exact: true }).click();
+  const state = await page.evaluate(
+    () =>
+      JSON.parse(localStorage.getItem('spacelords.save.v2.1')!) as SavedGame,
+  );
+  const destination = state.state.fleets[0]!.destination ?? {
+    q: state.state.fleets[0]!.position!.q + 3,
+    r: state.state.fleets[0]!.position!.r,
+  };
+  const hex = new HexCoordinate(destination.q, destination.r);
+  await selectMapHex(page, hex);
+  await selectMapHex(page, hex);
+}
+
+/** ap-pa-starmap: the map awaits the player again. */
+function idle(page: Page) {
+  return page.locator('[data-turn-idle="true"]');
 }
 
 async function advanceUntil(page: Page, ready: () => Promise<boolean>) {
@@ -128,15 +148,15 @@ test('handelseannonsering / handelser-pa-kartan / handelser-vid-ankomst: a finis
   await requestTurn(page);
   const log = page.getByRole('log', { name: 'Game events' });
   const console = page.getByRole('region', { name: 'Turn console' });
-  const end = page.getByRole('button', { name: 'End turn', exact: true });
+  const end = idle(page);
   await advanceUntil(page, async () => {
     const notice = page.locator('.game-notice');
-    if ((await notice.isVisible()) && (await end.isEnabled())) {
+    if ((await notice.isVisible()) && (await end.count()) > 0) {
       const text = (await notice.textContent()) ?? '';
-      if (!text.includes('Pirate ship in sight')) await end.click();
+      if (!text.includes('Pirate ship in sight')) await requestTurn(page);
       return false;
     }
-    return (await end.isEnabled()) && !(await notice.isVisible());
+    return (await end.count()) > 0 && !(await notice.isVisible());
   });
   await expect(page.locator('.event-announcement')).toHaveCount(0);
   await expect(log).not.toContainText('arrived at');
@@ -193,13 +213,7 @@ for (const size of [
     ).toBeGreaterThan(20);
     await page.clock.runFor(200);
     expect((await camera()).zoom).toBeCloseTo(initial.zoom);
-    await advanceUntil(
-      page,
-      async () =>
-        !(await page
-          .getByRole('button', { name: 'End turn', exact: true })
-          .isDisabled()),
-    );
+    await advanceUntil(page, async () => (await idle(page).count()) > 0);
     await page.clock.runFor(32);
     const settled = await camera();
     expect(settled.zoom).toBeCloseTo(initial.zoom);
@@ -254,7 +268,7 @@ test('senaste-aret-i-events / handelseannonsering: long yearly lists scroll inte
       .poll(() => log.evaluate((node) => node.scrollHeight > node.clientHeight))
       .toBe(true);
     await expect(
-      page.getByRole('button', { name: 'End turn', exact: true }),
+      page.getByRole('region', { name: 'Turn console' }),
     ).toBeInViewport();
     await noOverflow(page);
   }
@@ -262,9 +276,7 @@ test('senaste-aret-i-events / handelseannonsering: long yearly lists scroll inte
   await expect(page.locator('.event-announcement')).toBeVisible();
   await expect(log.locator('[data-event-id]')).toHaveCount(0);
   await noMenu(page);
-  await expect(
-    page.getByRole('button', { name: 'End turn', exact: true }),
-  ).toBeEnabled({ timeout: 5000 });
+  await expect(idle(page)).toHaveCount(1, { timeout: 5000 });
   await expect(log.locator('[data-event-id]')).toHaveCount(1);
   await expect(log).toContainText('Round 10');
   await expect
@@ -288,8 +300,6 @@ test('handelseannonsering / en-flotta-i-taget: reduced motion retains announceme
     page.locator('canvas[data-rendered="true"]'),
   ).not.toHaveAttribute('data-moving-fleet');
   await noMenu(page);
-  await expect(
-    page.getByRole('button', { name: 'End turn', exact: true }),
-  ).toBeEnabled({ timeout: 12000 });
+  await expect(idle(page)).toHaveCount(1, { timeout: 12000 });
   await expect(page.locator('.event-announcement')).toHaveCount(0);
 });

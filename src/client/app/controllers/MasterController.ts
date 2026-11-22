@@ -274,14 +274,12 @@ export class MasterController {
     }
     if (before.turnMovement) return;
     let mapOrder = false;
-    if (intent.type.startsWith('open-') || intent.type === 'end-turn') {
+    if (intent.type.startsWith('open-')) {
       this.#fleets.cancelFleetRename();
     }
     if (
       intent.type.startsWith('open-') ||
-      ['home', 'pan', 'zoom', 'begin-destination', 'end-turn'].includes(
-        intent.type,
-      )
+      ['home', 'pan', 'zoom', 'begin-destination'].includes(intent.type)
     )
       this.#cancelPointer();
     if (
@@ -494,13 +492,6 @@ export class MasterController {
       case 'clear-destination':
         this.#fleets.clearDestination(intent.id);
         break;
-      case 'end-turn':
-        if (this.#turn.requestEndTurn()) {
-          // upptackt-stannar-resan: End turn finishes the paused round only.
-          void this.#runTurn(this.#model.snapshot.phase === 'interrupted');
-          return;
-        }
-        break;
       case 'pointer-start': {
         this.#gesture.start(intent.id, intent.point);
         if (this.#gesture.pointerCount > 1) {
@@ -651,7 +642,7 @@ export class MasterController {
   /** hexval-med-vag: the confirmed hex starts the round at once. */
   #travel(): void {
     this.#model.save();
-    if (this.#turn.requestEndTurn()) void this.#runTurn();
+    if (this.#turn.canStartTurn()) void this.#runTurn();
     else this.#render();
   }
 

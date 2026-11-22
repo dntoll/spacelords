@@ -1,5 +1,7 @@
 import { scenarioTimeout } from '../../browser-timeouts.js';
 import { expect, test } from '@playwright/test';
+import { HexCoordinate } from '../../../src/client/common/HexCoordinate.js';
+import { selectMapHex } from './map-helpers.js';
 import { discoveryState } from '../../fixtures/exploration.js';
 import type { SavedGame } from '../../../src/client/space-map/models/saves/SaveRepository.js';
 import { startFirstSlot, ignoreEventsUntil } from './save-helpers.js';
@@ -93,7 +95,10 @@ test('gemensamt-handelseflode / upptacktsavbrott / order-under-upptacktsavbrott 
   page.on('pageerror', (error) => errors.push(error.message));
   await page.goto('./');
   await startFirstSlot(page);
-  await page.getByRole('button', { name: 'End turn', exact: true }).click();
+  // hexval-med-vag: two taps on the saved destination start the journey.
+  const destination = new HexCoordinate(10, -4);
+  await selectMapHex(page, destination);
+  await selectMapHex(page, destination);
   await expect(
     page.getByRole('button', { name: 'Handle', exact: true }),
   ).toHaveCount(0);

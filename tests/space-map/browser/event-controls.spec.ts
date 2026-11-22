@@ -1,9 +1,9 @@
 import { expect, test } from '@playwright/test';
 import { Game } from '../../../src/client/space-map/models/Game.js';
 import { createExampleGalaxy } from '../../../src/client/space-map/models/exampleGalaxy.js';
-import { startFirstSlot, endTurn } from './save-helpers.js';
+import { startFirstSlot, finishRound } from './save-helpers.js';
 
-test('senaste-aret-i-events: Events follows the latest round after End turn and can expand and collapse', async ({
+test('senaste-aret-i-events: Events follows the latest round and can expand and collapse', async ({
   page,
 }) => {
   const initial = new Game(createExampleGalaxy()).exportState();
@@ -37,7 +37,7 @@ test('senaste-aret-i-events: Events follows the latest round after End turn and 
   await log.evaluate((node) => {
     node.scrollTop = node.scrollHeight;
   });
-  await endTurn(page);
+  await finishRound(page);
   await expect(log).toContainText('Round 21');
   await expect
     .poll(() =>
@@ -60,7 +60,7 @@ test('senaste-aret-i-events: Events follows the latest round after End turn and 
     .toBeLessThan(8);
 });
 
-test('utvikbara-events: Research retains its view and fits expanded events above End turn', async ({
+test('utvikbara-events: Research retains its view and fits expanded events in the footer', async ({
   page,
 }) => {
   const initial = new Game(createExampleGalaxy()).exportState();
@@ -87,7 +87,7 @@ test('utvikbara-events: Research retains its view and fits expanded events above
   const console = page.getByRole('region', { name: 'Turn console' });
   const log = page.getByRole('log', { name: 'Game events' });
   await expect(console).toBeVisible();
-  await endTurn(page);
+  await finishRound(page);
   await expect(
     page.getByRole('heading', { name: 'Research', exact: true }),
   ).toBeVisible();
@@ -96,8 +96,9 @@ test('utvikbara-events: Research retains its view and fits expanded events above
   await expect(log).toContainText('Home Fleet arrived');
   const latest = log.locator('.event-year').last();
   await expect(latest).toBeInViewport({ ratio: 0.99 });
-  const end = page.getByRole('button', { name: 'End turn', exact: true });
-  await expect(end).toBeInViewport();
+  await expect(
+    page.getByRole('region', { name: 'Turn console' }),
+  ).toBeInViewport();
   expect(
     await page.evaluate(
       () =>

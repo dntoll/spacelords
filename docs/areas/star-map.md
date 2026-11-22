@@ -20,12 +20,22 @@ flotta till ett mål. Planeter är platser; spelaren äger dem inte
   (`kamera-foljer-skepp`), och ett klick träffar hexen under musen
   (`klick-pa-synlig-hex`).
 
+- **AP och turordning:** `ap-pa-starmap` (2026-11-22) är **Fullständigt
+  implementerat**. Star map är turbaserad utan End turn. Flottan har lika
+  många AP per runda som dess långsammaste skepp har fart, och varje hex
+  kostar en AP. AP som inte används ligger kvar: spelaren har inte gjort klart
+  sin tur, och inget annat händer förrän AP är förbrukade. Då, eller när
+  flottan inte har råd med nästa steg, agerar fienderna. Upptäckta fiender
+  syns när de flyttar; oupptäckta flyttar utan animation och tar ingen tid.
+  Därefter börjar nästa runda med fulla AP. Det finns ingen väntan: tiden går
+  bara när flottan flyttar. End turn är borttaget från alla skärmar, vilket
+  ersätter `end-turn-vid-kartval` och End turn i `gemensam-events-panel`.
+
 - **Resa utan synliga pirater:** `resa-utan-synliga-pirater` (2026-11-22) är
-  **Fullständigt implementerat**. Flottan rör sig varje runda så många hex som
-  dess långsammaste skepp tillåter. Syns ingen pirat tar motståndarnas tur
-  ingen tid, och nästa runda börjar av sig själv tills flottan är framme.
-  Syns en pirat stannar resan efter rundan; målet finns kvar och End turn tar
-  flottan vidare medan piraterna agerar. En ny upptäckt stannar resan
+  **Fullständigt implementerat**. En resa längre än flottans AP fortsätter
+  runda för runda av sig själv tills flottan är framme. Syns en pirat efter
+  fiendernas tur stannar resan; målet finns kvar och två tryck på det tar
+  flottan vidare. Det ersätter att End turn tog flottan vidare. En ny upptäckt stannar resan
   (`upptackt-stannar-resan`). Asteroidhexar som kräver en
   hel runda avbryter inte resan, men en resa utan känd väg gör det.
   Ett nytt hexval avbryter resan. En synlig pirat väljs som sin hex:

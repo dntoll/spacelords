@@ -1072,3 +1072,18 @@ markeringsläge till BoardingView, vilket förhindrar att ett redan markerat må
 skjuts. BoardingCameraController panorerar därefter målfiguren till den fria
 kartytans mitt under 300 ms med exakt bevarad zoom. Manuell kameraavbrytning och
 minskad rörelse använder samma regler som övriga automatiska kameraflöden.
+
+## AP och turordning på Star map
+
+`ap-pa-starmap`: `Game.startTurn(stage)` tar `player`, `enemy` eller `round`.
+I `player` rör sig bara spelarens flottor, med kvarvarande AP som budget, och
+rundan avräknas inte. `finishTurn` sparar kvarvarande AP och markerar
+`enemyTurnPending` när AP är slut eller nästa steg inte går att betala. I
+`enemy` rör sig bara piraterna, rundan avräknas och räknas upp och AP fylls
+på. `round` rör alla samtidigt som tidigare och används bara av äldre
+modelltester. Sparningen får de valfria fälten `actionTime`, `turnStage` och
+`enemyTurnPending`; version 18 utan dem laddas med fulla AP. TurnFacade
+väljer steg, och MasterController startar fiendernas steg direkt när
+spelarens AP är förbrukade. Oupptäckta piraters steg ger inga spår och därmed
+ingen animation. AppView markerar rotelementet med `data-turn-idle` när kartan
+väntar på spelaren, vilket webbläsartesterna använder i stället för End turn.

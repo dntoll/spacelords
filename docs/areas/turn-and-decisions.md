@@ -1,7 +1,9 @@
 # Rundan och händelser
 
-En runda börjar med order och slutar med `End turn`. Därefter spelas rundan
-upp: färder och sedan händelser i geografisk ordning. Upptäckter och strider
+En runda består av spelarens drag och fiendernas drag (`ap-pa-starmap`).
+Spelaren flyttar flottan tills dess AP är förbrukade; då agerar fienderna och
+nästa runda börjar. Det finns ingen End turn. Färder och händelser spelas upp
+i geografisk ordning. Upptäckter och strider
 kan avbryta rundan. Skärmen `Decisions` med beslutslistan finns inte längre
 (`single-fleet-rensning`).
 
@@ -55,12 +57,13 @@ kan avbryta rundan. Skärmen `Decisions` med beslutslistan finns inte längre
   är **Fullständigt implementerat**: ett klick träffar hexen under musen i
   den kamera som syns.
 
-- **Events:** `end-turn-vid-kartval`, `sekventiella-arshandelser`,
-  `handelser-pa-kartan`, `handelser`, `senaste-aret-i-events` och
-  `utvikbara-events` är **Fullständigt implementerat**. End turn syns även med
-  kartval. Rundans händelser annonseras och flyttas till Events, som visar
-  senaste rundan i händelseordning och kan fällas ut och in. Events och End
-  turn är alltid tillgängliga enligt `gemensam-events-panel`.
+- **Events:** `sekventiella-arshandelser`, `handelser-pa-kartan`,
+  `handelser`, `senaste-aret-i-events` och `utvikbara-events` är
+  **Fullständigt implementerat**. Rundans händelser annonseras och flyttas
+  till Events, som visar senaste rundan i händelseordning och kan fällas ut
+  och in. Events är alltid tillgängligt enligt `gemensam-events-panel`.
+  `end-turn-vid-kartval` är ersatt av `ap-pa-starmap`: det finns ingen End
+  turn.
 
 ## Borttaget med `single-fleet-rensning`
 

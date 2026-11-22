@@ -100,9 +100,6 @@ describe('senaste-aret-i-events / sekventiella-arshandelser', () => {
     expect(root.querySelector<HTMLDetailsElement>('.turn-console')!.open).toBe(
       true,
     );
-    expect(root.querySelector<HTMLButtonElement>('.end-turn')!.disabled).toBe(
-      true,
-    );
     expect(root.querySelector<HTMLElement>('.selection-panel')!.hidden).toBe(
       true,
     );
@@ -141,9 +138,6 @@ describe('senaste-aret-i-events / sekventiella-arshandelser', () => {
     });
     expect(root.querySelector('.event-announcement')).toBeNull();
     expect(root.querySelector<HTMLElement>('.selection-panel')!.hidden).toBe(
-      false,
-    );
-    expect(root.querySelector<HTMLButtonElement>('.end-turn')!.disabled).toBe(
       false,
     );
     view.dispose();

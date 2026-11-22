@@ -91,8 +91,10 @@ describe('hexval-med-vag / resa-utan-synliga-pirater', () => {
       }
     }
     expect(app.snapshot.fleets[0]!.position?.key).toBe(target.key);
+    // ap-pa-starmap: a round ends only when the AP are spent, so the round
+    // the fleet arrives in stays open when AP are left over.
     expect(app.snapshot.round).toBe(
-      1 + Math.ceil(route.steps.length / route.perRound),
+      1 + Math.floor(route.steps.length / route.perRound),
     );
     expect(app.snapshot.travelling).toBe(false);
     expect(app.snapshot.phase).toBe('planning');

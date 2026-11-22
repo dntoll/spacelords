@@ -11,9 +11,13 @@ import {
 import { AppModel } from '../../../src/client/app/models/AppModel.js';
 import { MasterController } from '../../../src/client/app/controllers/MasterController.js';
 import { AppView } from '../../../src/client/app/views/AppView.js';
+import type {
+  AppPort,
+  IntentHandler,
+} from '../../../src/client/app/views/ViewContracts.js';
 
 describe('handelseannonsering / handelser-pa-kartan', () => {
-  it('gemensamt-handelseflode: keeps interactive event choices above End turn when marker spacing exceeds the available height', () => {
+  it('gemensamt-handelseflode: keeps interactive event choices above the footer when marker spacing exceeds the available height', () => {
     const root = document.createElement('div');
     document.body.replaceChildren(root);
     const model = new AppModel();
@@ -46,9 +50,9 @@ describe('handelseannonsering / handelser-pa-kartan', () => {
       'getBoundingClientRect',
     ).mockReturnValue(new DOMRect(0, 70, 667, 140));
     vi.spyOn(
-      root.querySelector<HTMLButtonElement>('.end-turn')!,
+      root.querySelector<HTMLElement>('.turn-actions')!,
       'getBoundingClientRect',
-    ).mockReturnValue(new DOMRect(580, 270, 80, 44));
+    ).mockReturnValue(new DOMRect(8, 270, 652, 44));
     const announcement = root.querySelector<HTMLElement>(
       '.event-announcement',
     )!;
@@ -145,9 +149,7 @@ describe('handelseannonsering / handelser-pa-kartan', () => {
       screen: 'production',
       phase: 'simulating',
     });
-    expect(root.querySelector<HTMLButtonElement>('.end-turn')!.disabled).toBe(
-      true,
-    );
+    expect(root.querySelector('.turn-console')).not.toBeNull();
     view.dispose();
   });
   it('anchors the announcement below the event and its label using the actual map and camera', () => {
@@ -229,29 +231,38 @@ describe('handelser / arsrundor-och-order', () => {
       ),
     ).toBe(false);
   });
-  it('shows a persistent console ordered by year instead of a dialog and disables End turn during animation', async () => {
+  it('ap-pa-starmap: shows a persistent console ordered by year instead of a dialog and has no End turn', async () => {
     vi.useFakeTimers();
     const root = document.createElement('div');
     document.body.replaceChildren(root);
     const model = new AppModel();
-    model.setDestination('fleet-home', 0, 1);
-    model.select(new HexCoordinate(-2, 0));
+    const home = model.snapshot.fleets[0]!.position!;
+    // hexval-med-vag: a far hex spends the AP, so the enemies act as well.
+    const target = new HexCoordinate(home.q + 8, home.r);
     let resume!: () => void;
     const animation = new Promise<void>((resolve) => {
       resume = resolve;
     });
-    const view = new AppView(root, () => ({
+    const appView = new AppView(root, () => ({
       render() {},
       dispose() {},
-      animateTurnStep: () => animation,
     }));
+    let emit!: IntentHandler;
+    const view: AppPort = {
+      bind(handler) {
+        emit = handler;
+        appView.bind(handler);
+      },
+      render: (snapshot) => appView.render(snapshot),
+      dispose: () => appView.dispose(),
+      animateTurnStep: () => animation,
+    };
     const controller = new MasterController(model, view);
     controller.start();
-    const end = root.querySelector<HTMLButtonElement>('.end-turn')!;
-    end.click();
-    expect(root.querySelector<HTMLButtonElement>('.end-turn')!.disabled).toBe(
-      true,
-    );
+    expect(root.querySelector('.end-turn')).toBeNull();
+    emit({ type: 'select', position: target });
+    emit({ type: 'select', position: target });
+    expect(model.snapshot.phase).toBe('simulating');
     resume();
     await vi.advanceTimersByTimeAsync(0);
     // upptackt-stannar-resan: discoveries flash briefly instead of a dialog.
@@ -267,7 +278,9 @@ describe('handelser / arsrundor-och-order', () => {
     for (
       let step = 0;
       step < 160 &&
-      root.querySelector<HTMLButtonElement>('.end-turn')!.disabled;
+      (model.snapshot.phase !== 'planning' ||
+        model.snapshot.enemyTurnPending ||
+        model.snapshot.eventPlayback);
       step++
     ) {
       dismiss();
@@ -278,9 +291,6 @@ describe('handelser / arsrundor-och-order', () => {
         (item) => item.dataset.eventId,
       ),
     ).toEqual(model.snapshot.events.map((event) => event.id));
-    expect(root.querySelector<HTMLButtonElement>('.end-turn')!.disabled).toBe(
-      false,
-    );
     controller.dispose();
   });
   it('senaste-aret-i-events: shows only the latest year and scrolls to a new event', () => {
@@ -335,7 +345,7 @@ it('utvikbara-events / senaste-aret-i-events: retains every event in the latest 
   view.dispose();
 });
 
-it('rundkontroller-pa-fler-vyer: exposes Events and End turn on Research and Production and keeps the view through a turn', () => {
+it('gemensam-events-panel / ap-pa-starmap: Research and Production show Events without End turn and keep the view through a turn', () => {
   for (const screen of ['research', 'production'] as const) {
     const root = document.createElement('div');
     document.body.replaceChildren(root);
@@ -345,7 +355,7 @@ it('rundkontroller-pa-fler-vyer: exposes Events and End turn on Research and Pro
     const view = new AppView(root, () => ({ render() {}, dispose() {} }));
     view.render(model.snapshot);
     expect(root.querySelector('.turn-console')).not.toBeNull();
-    expect(root.querySelector('.end-turn')).not.toBeNull();
+    expect(root.querySelector('.end-turn')).toBeNull();
     for (const frame of turnFrames(model)) model.applyTurnFrame(frame);
     model.finishTurn();
     expect(model.snapshot.screen).toBe(screen);

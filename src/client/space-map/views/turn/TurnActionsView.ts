@@ -1,7 +1,6 @@
-import type { IntentHandler } from '../../../app/views/ViewContracts.js';
-import { button, element } from '../../../common/dom.js';
+import { element } from '../../../common/dom.js';
 
-export function renderTurnActions(emit: IntentHandler): HTMLElement {
+export function renderTurnActions(): HTMLElement {
   const actions = element('div', 'turn-actions');
   const console = element('details', 'turn-console hud');
   console.setAttribute('role', 'region');
@@ -19,9 +18,7 @@ export function renderTurnActions(emit: IntentHandler): HTMLElement {
     if (console.dataset.playing === 'true') event.preventDefault();
   });
   console.append(summary, log);
-  actions.append(
-    console,
-    button('End turn', () => emit({ type: 'end-turn' }), 'end-turn'),
-  );
+  // ap-pa-starmap: rounds follow the fleet's movement, so there is no End turn.
+  actions.append(console);
   return actions;
 }

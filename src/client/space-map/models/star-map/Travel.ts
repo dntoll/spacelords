@@ -9,6 +9,8 @@ export interface TravelRoute {
   readonly steps: readonly HexCoordinate[];
   /** Hexes the slowest ship lets the fleet move each round. */
   readonly perRound: number;
+  /** ap-pa-starmap: hexes the fleet can still move this round. */
+  readonly available: number;
 }
 
 /**

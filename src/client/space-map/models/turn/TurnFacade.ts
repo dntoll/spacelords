@@ -30,14 +30,17 @@ export class TurnFacade {
     )
       this.host.screen = 'map';
     this.host.destinationFleetId = null;
-    this.host.game.startTurn();
+    // ap-pa-starmap: the enemies act once the player's AP are spent.
+    this.host.game.startTurn(
+      this.host.game.enemyTurnPending ? 'enemy' : 'player',
+    );
   }
 
   nextTurnFrame(): TurnFrame | null {
     return this.host.game.nextTurnFrame();
   }
 
-  requestEndTurn(): boolean {
+  canStartTurn(): boolean {
     // game-over-utan-skepp: a lost home fleet cannot start another round.
     if (this.host.game.defeated) return false;
     return (
@@ -76,8 +79,11 @@ export class TurnFacade {
    * at once, until the fleet arrives or something needs the player.
    */
   continueVoyage(): boolean {
+    if (!this.canStartTurn()) return false;
+    // ap-pa-starmap: spent AP hand the round to the enemies at once.
+    if (this.host.game.phase === 'planning' && this.host.game.enemyTurnPending)
+      return true;
     if (!this.host.voyage) return false;
-    if (!this.requestEndTurn()) return false;
     const fleet = travelFleet(this.host.game, this.host.mapFleetId);
     if (
       !fleet?.destination ||

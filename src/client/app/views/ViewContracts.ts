@@ -74,8 +74,7 @@ export type AppIntent =
         | 'open-fleets'
         | 'home'
         | 'pointer-cancel'
-        | 'map-leave'
-        | 'end-turn';
+        | 'map-leave';
     }
   | {
       readonly type: 'begin-fleet-rename';

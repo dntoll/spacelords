@@ -107,6 +107,9 @@ interface SavedFleet extends Omit<
   readonly ships: Partial<Record<ShipType, number>>;
 }
 
+/** ap-pa-starmap: the parts of a round; `round` moves everyone together. */
+export type TurnStage = 'round' | 'player' | 'enemy';
+
 export interface GameState {
   readonly surveyedPlanets?: readonly string[];
   /** forskningstid: rounds spent per unfinished technology; absent in older saves. */
@@ -137,6 +140,12 @@ export interface GameState {
   };
   readonly round: number;
   readonly phase: 'planning' | 'interrupted';
+  /** ap-pa-starmap: whose part of the round an interruption paused. */
+  readonly turnStage?: TurnStage;
+  /** ap-pa-starmap: unspent movement per fleet, in sixtieths of a round. */
+  readonly actionTime?: Readonly<Record<string, number>>;
+  /** ap-pa-starmap: the player's AP are spent and the enemies act next. */
+  readonly enemyTurnPending?: boolean;
   readonly sequence: number;
   readonly researched: readonly Technology[];
   readonly researchTarget: Technology | null;
@@ -151,6 +160,9 @@ export class Game {
   #surveyedPlanets = new Set<string>();
   #research = new ResearchPlan();
   #round = 1;
+  #stage: TurnStage = 'round';
+  readonly #actionTime = new Map<string, number>();
+  #enemyPending = false;
   #phase: GamePhase = 'planning';
   #sequence = 1;
   #fleets: Fleet[];
@@ -230,6 +242,13 @@ export class Game {
       },
       round: this.#round,
       phase: this.#phase,
+      ...(this.#simulation && this.#stage !== 'round'
+        ? { turnStage: this.#stage }
+        : {}),
+      ...(this.#actionTime.size
+        ? { actionTime: Object.fromEntries(this.#actionTime) }
+        : {}),
+      ...(this.#enemyPending ? { enemyTurnPending: true } : {}),
       sequence: this.#sequence,
       researched: [...this.#research.completed],
       researchTarget: this.#research.queue[0] ?? null,
@@ -300,6 +319,10 @@ export class Game {
       throw new Error('Duplicate fleet ID.');
     game.#round = copy.round;
     game.#phase = 'planning';
+    for (const [id, time] of Object.entries(copy.actionTime ?? {}))
+      if (Number.isFinite(time) && time >= 0 && time <= 60)
+        game.#actionTime.set(id, time);
+    game.#enemyPending = copy.enemyTurnPending === true;
     game.#sequence = copy.sequence;
     const isTechnology = (technology: string): technology is Technology =>
       TECHNOLOGIES.includes(technology as Technology);
@@ -430,6 +453,10 @@ export class Game {
           !!galaxy.cellAt(position(point)),
       );
       game.#phase = 'interrupted';
+      game.#stage =
+        copy.turnStage === 'player' || copy.turnStage === 'enemy'
+          ? copy.turnStage
+          : 'round';
       game.#validateTacticalParticipants();
       // avbryt-gammal-bordning-vid-laddning
       const boarding = game.#simulation.boarding;
@@ -627,6 +654,7 @@ export class Game {
                   : this.#speed(fleet),
               )
             : undefined,
+          actionPoints: this.#actionPoints(fleet),
           canIssueOrders: this.canIssueFleetOrders(fleet.id),
           position: fleet.position,
           destination: fleet.destination,
@@ -1439,13 +1467,42 @@ export class Game {
       this.#fleets[0];
     return !home || this.#shipCount(home.ships) === 0;
   }
-  startTurn(): void {
+  /** ap-pa-starmap: whether the enemies act next, after the player's AP. */
+  get enemyTurnPending(): boolean {
+    return this.#enemyPending;
+  }
+  #actionPoints(fleet: Fleet): number {
+    const speed = this.#speed(fleet);
+    if (this.#simulation && this.#stage === 'player')
+      return this.#simulation.movement(fleet.id, speed);
+    return Math.floor(
+      ((this.#actionTime.get(fleet.id) ?? 60) * speed) / 60 + 1e-9,
+    );
+  }
+  /**
+   * ap-pa-starmap: `player` moves only the player's fleets with their unspent
+   * AP, `enemy` moves only the pirates and ends the round, and `round` moves
+   * everyone at once as before.
+   */
+  startTurn(stage: TurnStage = 'round'): void {
     if (this.defeated) throw new Error('The game is over.');
     this.#requirePlanning();
+    this.#stage = stage;
     this.#simulation = new TurnSimulation([
       ...this.#fleets.map((fleet) => [fleet.id, this.#speed(fleet)] as const),
       ...this.#pirates.map((pirate) => [pirate.id, 1] as const),
     ]);
+    if (stage === 'player') {
+      for (const fleet of this.#fleets)
+        this.#simulation.remaining.set(
+          fleet.id,
+          this.#actionTime.get(fleet.id) ?? 60,
+        );
+      for (const pirate of this.#pirates)
+        this.#simulation.remaining.set(pirate.id, 0);
+    } else if (stage === 'enemy')
+      for (const fleet of this.#fleets)
+        this.#simulation.remaining.set(fleet.id, 0);
     // strid-i-samma-hex: fleets that already share a hex fight before moving.
     if (
       this.#fleets.some(
@@ -1494,6 +1551,8 @@ export class Game {
       (movement) =>
         !pirates.has(movement.fleetId) || !entered.has(movement.from.key),
     );
+    // ap-pa-starmap: the player's part of the round ends without settling it.
+    if (!movements?.length && this.#stage === 'player') return null;
     return (this.#pendingFrame = movements?.length
       ? Object.freeze({ movements: Object.freeze(movements) })
       : Object.freeze({ movements: Object.freeze([]), settlement: true }));
@@ -1580,7 +1639,29 @@ export class Game {
       throw new Error('No turn is being simulated.');
     if (this.#simulation?.awaitingCombat || this.nextTurnFrame())
       throw new Error('Complete the remaining turn steps first.');
-    this.#round += 1;
+    if (this.#stage === 'player') {
+      for (const fleet of this.#fleets) this.#recordArrival(fleet);
+      for (const fleet of this.#fleets)
+        this.#actionTime.set(
+          fleet.id,
+          this.#simulation!.remaining.get(fleet.id) ?? 0,
+        );
+      this.#enemyPending = this.#fleets.some((fleet) => {
+        if (!fleet.position || !this.#shipCount(fleet.ships)) return false;
+        if (this.#actionPoints(fleet) < 1) return true;
+        if (!fleet.destination || fleet.destination.key === fleet.position.key)
+          return false;
+        // A fleet that cannot afford its next step has spent its AP.
+        if (this.routePreview(fleet.id, fleet.destination).length) return true;
+        fleet.destination = null;
+        return false;
+      });
+    } else {
+      this.#round += 1;
+      this.#actionTime.clear();
+      this.#enemyPending = false;
+    }
+    this.#stage = 'round';
     this.#phase = 'planning';
     this.#simulation = null;
   }

@@ -93,8 +93,10 @@ class Fleet {
 note right of Fleet
   Order: två tryck på en hex (inga-move-stop-knappar)
   (hexval-med-vag). Fart per runda = långsammaste skeppet.
+  ap-pa-starmap: AP per runda = långsammaste skeppets fart.
+  Oanvända AP ligger kvar; förbrukade AP ger fiendernas tur.
   resa-utan-synliga-pirater: utan synlig pirat
-  börjar nästa runda direkt tills flottan är framme.
+  fortsätter resan nästa runda tills flottan är framme.
   Tom flotta saknar position.
   enda-spelarflottan (Ej implementerat):
   koden hanterar fortfarande en lista med flottor.

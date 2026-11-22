@@ -112,6 +112,13 @@ export class AppView implements AppPort {
   }
 
   render(model: AppReadModel): void {
+    // ap-pa-starmap: without End turn, this marks when the map awaits the player.
+    this.#root.dataset.turnIdle = String(
+      model.phase === 'planning' &&
+        !model.enemyTurnPending &&
+        !model.eventPlayback &&
+        !model.turnMovement,
+    );
     if (model.editor) {
       this.#editorView ??= new BoardingEditorView(this.#root, (intent) =>
         this.#emit(intent),
@@ -520,17 +527,6 @@ export class AppView implements AppPort {
         .querySelector('.map-page')
         ?.classList.toggle('has-selection', selected);
     }
-    const end = this.#root.querySelector<HTMLButtonElement>('.end-turn');
-    const discoveryPause =
-      model.phase === 'interrupted' &&
-      !model.tacticalBattle &&
-      !!model.interruption?.discoveries.length;
-    if (end)
-      end.disabled =
-        !!model.defeated ||
-        !!model.eventPlayback ||
-        !!model.turnMovement ||
-        (model.phase !== 'planning' && !discoveryPause);
     this.#renderTurnConsole(model);
     if (isMapScreen(model.screen)) this.#measureMap();
     for (const control of this.#root.querySelectorAll<HTMLButtonElement>(
@@ -811,16 +807,16 @@ export class AppView implements AppPort {
         (point.y - model.camera.center.y) * model.camera.zoom;
       const placedHeight = announcement.offsetHeight;
       if (event.decision || event.planetId) {
-        const end = this.#root
-          .querySelector('.end-turn')
+        const footer = this.#root
+          .querySelector('.turn-actions')
           ?.getBoundingClientRect();
         const bottom = Math.min(
           window.innerHeight - 8,
-          (end?.top ?? window.innerHeight) - 8,
+          (footer?.top ?? window.innerHeight) - 8,
         );
         const available = Math.max(80, bottom - markerY - markerGap);
         announcement.style.maxHeight = `${available}px`;
-        // gemensamt-handelseflode: preserve End turn when marker spacing cannot fit.
+        // gemensamt-handelseflode: keep the footer clear when marker spacing cannot fit.
         // --event-origin-y is the top edge, so a later height change grows downward.
         originY = Math.min(markerY + markerGap, bottom - placedHeight);
       } else originY = markerY + markerGap;
@@ -1031,7 +1027,7 @@ export class AppView implements AppPort {
     previousActions: HTMLElement | null,
     previousEventScroll: number,
   ): void {
-    this.#turnActions ??= renderTurnActions((intent) => this.#emit(intent));
+    this.#turnActions ??= renderTurnActions();
     this.#turnActions.classList.add('game-turn-actions');
     this.#root.classList.add('has-game-footer');
     if (this.#turnActions.parentElement !== this.#root) {
@@ -1309,15 +1305,25 @@ export class AppView implements AppPort {
 function travelNote(model: AppReadModel): HTMLElement | null {
   const route = model.travelRoute;
   if (!route) return null;
-  const rounds = Math.ceil(route.steps.length / Math.max(1, route.perRound));
   const fleetName =
     model.fleets.find((fleet) => fleet.id === route.fleetId)?.name ??
     'The fleet';
+  if (model.travelling)
+    return element(
+      'p',
+      'travel-route',
+      `${fleetName} is on its way · ${route.steps.length} hex left.`,
+    );
+  // ap-pa-starmap: the remaining AP cover the first part of the route.
+  const later = Math.max(0, route.steps.length - route.available);
+  const rounds = Math.ceil(later / Math.max(1, route.perRound));
+  const when =
+    rounds === 0
+      ? 'this round'
+      : `${rounds} more ${rounds === 1 ? 'round' : 'rounds'}`;
   return element(
     'p',
     'travel-route',
-    model.travelling
-      ? `${fleetName} is on its way · ${route.steps.length} hex left.`
-      : `${route.steps.length} hex · about ${rounds} ${rounds === 1 ? 'round' : 'rounds'} for ${fleetName}. Select the hex again to travel.`,
+    `${route.steps.length} hex · ${route.available} AP left · arrives ${when}. Select the hex again to travel.`,
   );
 }

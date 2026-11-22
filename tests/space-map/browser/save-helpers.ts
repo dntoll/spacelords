@@ -4,7 +4,13 @@ import {
   PREREQUISITES,
   TECHNOLOGIES,
 } from '../../../src/client/space-map/models/research/Research.js';
-import type { GameState } from '../../../src/client/space-map/models/Game.js';
+import {
+  Game,
+  type GameState,
+} from '../../../src/client/space-map/models/Game.js';
+import { HexCoordinate } from '../../../src/client/common/HexCoordinate.js';
+import type { SavedGame } from '../../../src/client/space-map/models/saves/SaveRepository.js';
+import { selectMapHex } from './map-helpers.js';
 
 export async function chooseResearch(
   page: Page,
@@ -35,7 +41,7 @@ export async function chooseResearch(
     ) {
       if (turn >= TECHNOLOGIES.length)
         throw new Error(`Research stalled: ${prerequisite}`);
-      await endTurn(page);
+      await finishRound(page);
     }
   }
   await page
@@ -76,15 +82,55 @@ export async function startFirstSlot(page: Page): Promise<void> {
     .click();
 }
 
-export async function endTurn(page: Page): Promise<void> {
-  const onMap = (await page.locator('.map-page').count()) > 0;
-  await page.getByRole('button', { name: 'End turn', exact: true }).click();
-  await ignoreEventsUntil(page);
-  await expect(
-    page.getByRole('button', { name: 'End turn', exact: true }),
-  ).toBeEnabled();
-  if (onMap && !(await page.locator('.map-page').count()))
-    await page.getByRole('button', { name: 'Star map', exact: true }).click();
+/**
+ * ap-pa-starmap: there is no End turn, so a round ends when the fleet spends
+ * its AP. Send it further than its AP reach and wait for the next round.
+ */
+export async function finishRound(page: Page): Promise<void> {
+  const saved = async () =>
+    (
+      await page.evaluate(
+        () =>
+          JSON.parse(
+            localStorage.getItem('spacelords.save.v2.1')!,
+          ) as SavedGame,
+      )
+    ).state;
+  const state = await saved();
+  const game = Game.restore(state);
+  const fleet = game
+    .fleetSnapshots()
+    .find(
+      (candidate) =>
+        candidate.position &&
+        Object.values(candidate.ships).some((count) => count > 0),
+    );
+  if (!fleet?.position) throw new Error('No fleet can travel.');
+  const reach = (fleet.actionPoints ?? fleet.speed) + 1;
+  const target = HexCoordinate.disk(reach + 3)
+    .map(
+      (offset) =>
+        new HexCoordinate(
+          fleet.position!.q + offset.q,
+          fleet.position!.r + offset.r,
+        ),
+    )
+    .find(
+      (hex) =>
+        fleet.position!.distanceTo(hex) >= reach &&
+        game.routePreview(fleet.id, hex).length >= reach,
+    );
+  if (!target) throw new Error('No hex beyond the fleet’s AP.');
+  await selectMapHex(page, target);
+  await selectMapHex(page, target);
+  for (let wait = 0; wait < 200; wait++) {
+    if ((await saved()).round > state.round) break;
+    await ignoreEventsUntil(page);
+  }
+  await expect
+    .poll(async () => (await saved()).round)
+    .toBeGreaterThan(state.round);
+  await expect(page.locator('[data-turn-idle="true"]')).toHaveCount(1);
 }
 
 /** gemensamt-handelseflode: acknowledge individual events until the requested checkpoint. */
@@ -114,9 +160,7 @@ export async function ignoreEventsUntil(
         )
       )
         return 'discovery';
-      return (await page
-        .getByRole('button', { name: 'End turn', exact: true })
-        .isEnabled())
+      return (await page.locator('[data-turn-idle="true"]').count())
         ? 'planning'
         : 'running';
     };
@@ -135,7 +179,11 @@ export async function ignoreEventsUntil(
         });
         continue;
       }
-      await page.getByRole('button', { name: 'End turn', exact: true }).click();
+      // upptackt-stannar-resan: two taps on the destination continue the round.
+      const destination = await pausedDestination(page);
+      if (!destination) return;
+      await selectMapHex(page, destination);
+      await selectMapHex(page, destination);
       continue;
     }
     if ((await status()) !== 'event') return;
@@ -153,4 +201,17 @@ export async function ignoreEventsUntil(
     ).toHaveCount(0);
   }
   throw new Error('Event review did not complete.');
+}
+
+async function pausedDestination(page: Page): Promise<HexCoordinate | null> {
+  const state = (
+    await page.evaluate(
+      () =>
+        JSON.parse(localStorage.getItem('spacelords.save.v2.1')!) as SavedGame,
+    )
+  ).state;
+  const destination = state.fleets.find(
+    (fleet) => fleet.destination,
+  )?.destination;
+  return destination ? new HexCoordinate(destination.q, destination.r) : null;
 }

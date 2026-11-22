@@ -124,9 +124,7 @@ test('gemensam-events-panel / planetinformation-pa-kartan: persistent footer, re
       await panel.evaluate((node, original) => node === original, identity),
     ).toBe(true);
     expect(await log.evaluate((node) => node.scrollTop)).toBe(position);
-    await expect(
-      page.getByRole('button', { name: 'End turn', exact: true }),
-    ).toBeVisible();
+    await expect(page.getByRole('button', { name: 'End turn' })).toHaveCount(0);
   }
   await expect(page.locator('.planet-map-info')).toContainText('Habitability:');
   await page.getByRole('button', { name: 'Star map', exact: true }).click();

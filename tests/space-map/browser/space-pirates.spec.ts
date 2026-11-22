@@ -5,7 +5,7 @@ import { createExampleGalaxy } from '../../../src/client/space-map/models/exampl
 import { pirateAsFleet } from '../../../src/client/space-map/models/PirateFleet.js';
 import { FleetMapLayout } from '../../../src/client/space-map/models/star-map/FleetMapLayout.js';
 import { selectMapPoint } from './map-helpers.js';
-import { endTurn, startFirstSlot } from './save-helpers.js';
+import { finishRound, startFirstSlot } from './save-helpers.js';
 import type { SavedGame } from '../../../src/client/space-map/models/saves/SaveRepository.js';
 
 for (const screen of ['Star map', 'Fleets']) {
@@ -60,7 +60,7 @@ for (const screen of ['Star map', 'Fleets']) {
       pirate.locator('button, input, select, [draggable="true"]'),
     ).toHaveCount(0);
     await page.screenshot({ path: testInfo.outputPath('space-pirate.png') });
-    await endTurn(page);
+    await finishRound(page);
     const saved = await page.evaluate(
       () =>
         JSON.parse(localStorage.getItem('spacelords.save.v2.1')!) as SavedGame,

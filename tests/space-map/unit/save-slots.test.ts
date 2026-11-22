@@ -199,13 +199,17 @@ describe('frontend-backend-mock', () => {
     expect(Game.restore(repo.load(1)!.state).fleetSnapshots()[0]?.name).toBe(
       'Saved expedition',
     );
-    model.setDestination('fleet-home', 3, 0);
-    model.save();
-    emit({ type: 'end-turn' });
+    // hexval-med-vag / ap-pa-starmap: a far hex spends the AP, so the
+    // enemies act and the round ends.
+    const home = model.snapshot.fleets[0]!.position!;
+    const target = new HexCoordinate(home.q + 8, home.r);
+    emit({ type: 'select', position: target });
+    emit({ type: 'select', position: target });
     expect(model.snapshot.phase).toBe('simulating');
     expect(repo.load(1)?.state.phase).toBe('planning');
     finishAnimation();
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    for (let wait = 0; wait < 40 && repo.load(1)?.state.round !== 2; wait++)
+      await new Promise((resolve) => setTimeout(resolve, 50));
     expect(repo.load(1)?.state.round).toBe(2);
     expect(repo.load(1)?.state.phase).toBe('planning');
     controller.dispose();

@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { startFirstSlot, endTurn } from './save-helpers.js';
+import { startFirstSlot, finishRound } from './save-helpers.js';
 
 test('tre-sparplatser / sparat-spel / tomm-sparplats: reload, preview, isolation and confirmation', async ({
   page,
@@ -16,7 +16,7 @@ test('tre-sparplatser / sparat-spel / tomm-sparplats: reload, preview, isolation
     fullPage: true,
   });
   await startFirstSlot(page);
-  await endTurn(page);
+  await finishRound(page);
   await page.getByRole('button', { name: 'Saved games', exact: true }).click();
   const first = page.getByRole('article', { name: 'Save slot 1', exact: true });
   const second = page.getByRole('article', {
