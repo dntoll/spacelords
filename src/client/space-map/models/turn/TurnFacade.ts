@@ -7,6 +7,7 @@ import { Camera } from '../Camera.js';
 import { CameraFraming } from './CameraFraming.js';
 import { type TurnFrame } from '../Game.js';
 import { HexGeometry } from '../../../common/HexCoordinate.js';
+import { travelFleet } from '../star-map/Travel.js';
 import type { AppHost, AppReadModel } from '../../../app/models/AppModel.js';
 
 export class TurnFacade {
@@ -42,6 +43,27 @@ export class TurnFacade {
       !this.host.movementPlayback &&
       this.host.game.phase === 'planning'
     );
+  }
+
+  /**
+   * resa-utan-synliga-pirater: with no pirate in sight the next round begins
+   * at once, until the fleet arrives or something needs the player.
+   */
+  continueVoyage(): boolean {
+    if (!this.host.voyage) return false;
+    if (!this.requestEndTurn()) return false;
+    const fleet = travelFleet(this.host.game, this.host.mapFleetId);
+    if (
+      !fleet?.destination ||
+      fleet.position?.key === fleet.destination.key ||
+      !this.host.game.routePreview(fleet.id, fleet.destination).length ||
+      this.host.game.pirateSnapshots().length ||
+      this.host.game.tacticalBattle
+    ) {
+      this.host.voyage = false;
+      return false;
+    }
+    return true;
   }
 
   handleDiscoveries(): void {

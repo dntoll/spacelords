@@ -6,6 +6,7 @@ import { createStarTextures, renderStarGlyph } from '../StarGlyph.js';
 import { showMapHex } from '../../models/star-map/StarAppearance.js';
 import starSprite from '../../assets/stars/plasma-star.webp';
 import { renderMapOverlays } from './MapOverlayView.js';
+import { renderTravelRoute } from './TravelRouteView.js';
 import p5 from 'p5';
 import type { AppReadModel } from '../../../app/models/AppModel.js';
 import { HexGeometry, type Point } from '../../../common/HexCoordinate.js';
@@ -22,7 +23,7 @@ import { MapArtwork } from '../MapArtwork.js';
 import { renderPlanetGlyph } from '../PlanetGlyph.js';
 
 const STAR_MAP_LABEL =
-  'Star map. Click a fleet to select it. Drag a fleet to set its destination. Escape cancels. Drag empty space to pan; pinch or use the mouse wheel to zoom. Plus and minus keys zoom. Arrow keys pan; Home returns to the start planet; Enter selects the central hex.';
+  'Star map. Select a hex to see it and the route there; select it again to travel. Click a fleet to select it. Drag a fleet to set its destination. Escape cancels. Drag empty space to pan; pinch or use the mouse wheel to zoom. Plus and minus keys zoom. Arrow keys pan; Home returns to the start planet; Enter selects the central hex.';
 
 export class GalaxyMapView implements MapPort {
   readonly #container: HTMLElement;
@@ -290,6 +291,7 @@ export class GalaxyMapView implements MapPort {
           model.camera.zoom,
           model.screen === 'fleets',
         );
+    renderTravelRoute(sketch, model.travelRoute, model.camera.zoom);
     renderMapOverlays(sketch, model, movementPoints, this.#shipImages);
     if (this.#canvas)
       this.#canvas.style.cursor = model.fleetDragging

@@ -32,9 +32,10 @@ kraven med stabila namn och status. Statusen nedan sammanfattar området.
   `Saved games`, helskärm, huvudmenyn och sparformatet (`sparformat`,
   version 18). Allt är **Fullständigt implementerat**.
 - **[Stjärnkartan och grafiken](docs/areas/star-map.md):** hexkartan, sikt,
-  terräng, kamera, kartobjekt och genererade bilder. **Fullständigt
-  implementerat** utom `stjarnsystem-och-asteroidbalten`, som är **Delvis
-  implementerat**.
+  terräng, kamera, kartobjekt och genererade bilder, samt styrningen med
+  hexval och väg (`hexval-med-vag`) och resor som fortsätter när ingen pirat
+  syns (`resa-utan-synliga-pirater`). **Fullständigt implementerat** utom
+  `stjarnsystem-och-asteroidbalten`, som är **Delvis implementerat**.
 - **[Flottor och order](docs/areas/fleets.md):** `Fleets`, Move och Stop,
   utforskning av planeter och motorer. Allt kvarvarande är **Fullständigt
   implementerat**.

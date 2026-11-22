@@ -69,7 +69,8 @@ for (const size of [
     await chooseFleetDestination(page);
     await selectMapObject(page, 'Vesta');
     await selectMapHex(page, new HexCoordinate(-2, 0));
-    await expect(panel).toBeHidden();
+    // hexval-med-vag: an empty hex shows the route there instead of nothing.
+    await expect(panel).toContainText('Select the hex again to travel.');
     await expect(console).toBeVisible();
     await expect(end).toBeVisible();
     await console.locator('summary').click();
@@ -88,7 +89,11 @@ for (const size of [
       endBounds.x,
     );
 
+    // On short landscape screens the open log and the route summary leave
+    // little map, so fold the log before choosing the next hex.
+    await console.locator('summary').click();
     await selectMapObject(page, 'Vesta');
+    await console.locator('summary').click();
     await expect(console).toBeVisible();
     await expect(end).toBeVisible();
     await expect(console).toBeVisible();

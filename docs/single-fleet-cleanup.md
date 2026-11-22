@@ -222,6 +222,10 @@ Kända begränsningar:
 - Uppgraderingar (Missiles, Armor) kan inte monteras eftersom Upgrade vid
   varv är borttagen (`utforskade-stridsuppgraderingar`, **Delvis
   implementerat**).
+- Styrningen med hexval (`hexval-med-vag`, `resa-utan-synliga-pirater`) är
+  införd 2026-11-22. På låga liggande skärmar, som 667 × 320, lämnar
+  panelen med vägen och en utfälld Events-lista bara en smal kartremsa.
+  Liggande layout ska göras om enligt visionen.
 - Originalbilder för byggnader och byggnadssymboler finns kvar under
   `assets/original/` som källmaterial.
 

@@ -33,7 +33,7 @@ describe('fokuserat-kartval', () => {
     ).toBeNull();
   });
 
-  it('gemensam-events-panel: keeps turn controls available while selecting planets and empty hexes', () => {
+  it('gemensam-events-panel / hexval-med-vag: keeps turn controls available while selecting planets and empty hexes', () => {
     view.render(model.snapshot);
     expectSelection(true);
     for (const explored of [true, false]) {
@@ -48,10 +48,16 @@ describe('fokuserat-kartval', () => {
       expect(cell).toBeDefined();
       model.select(cell.position);
       view.render(model.snapshot);
-      expectSelection(!explored);
-      expect(root.querySelector('.selection-panel')!.textContent).toBe(
-        explored ? '' : 'Unexplored',
-      );
+      // hexval-med-vag: a reachable empty hex shows the route there; this
+      // replaces the empty panel for explored space in fokuserat-kartval.
+      const route = model.snapshot.travelRoute
+        ? `${model.snapshot.travelRoute.steps.length} hex`
+        : '';
+      expectSelection(!explored || !!route);
+      const text = root.querySelector('.selection-panel')!.textContent;
+      expect(text.startsWith(explored ? '' : 'Unexplored')).toBe(true);
+      if (route) expect(text).toContain('Select the hex again to travel.');
+      else expect(text).toBe(explored ? '' : 'Unexplored');
     }
     model.home();
     view.render(model.snapshot);

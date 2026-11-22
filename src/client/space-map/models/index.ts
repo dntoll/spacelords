@@ -17,6 +17,7 @@ export * from './saves/SaveFacade.js';
 export * from './saves/SaveRepository.js';
 export * from './star-map/FleetMapLayout.js';
 export * from './star-map/StarMapFacade.js';
+export * from './star-map/Travel.js';
 export * from './turn/CameraFraming.js';
 export * from './turn/EventPlayback.js';
 export * from './turn/TurnFacade.js';

@@ -1,6 +1,7 @@
 import { pirateAsFleet } from '../PirateFleet.js';
 import type { MapViewport } from '../MapScreen.js';
 import { FleetMapLayout } from './FleetMapLayout.js';
+import { travelFleet } from './Travel.js';
 import {
   HexGeometry,
   type HexCoordinate,
@@ -8,26 +9,46 @@ import {
 } from '../../../common/HexCoordinate.js';
 import type { AppHost } from '../../../app/models/AppModel.js';
 
+/** What a tap on the map did; the master starts a journey on `travel`. */
+export type MapSelection = 'ignored' | 'selected' | 'destination' | 'travel';
+
 export class StarMapFacade {
   constructor(private readonly host: AppHost) {}
 
-  select(position: HexCoordinate): void {
-    if (!this.host.isMapScreen()) return;
+  /**
+   * hexval-med-vag: the first tap selects a hex and shows the route there; a
+   * second tap on the selected hex sends the fleet on its way.
+   */
+  select(position: HexCoordinate): MapSelection {
+    if (!this.host.isMapScreen()) return 'ignored';
     if (!this.host.game.galaxy.cellAt(position)) {
       if (this.host.screen === 'fleets' && !this.host.destinationFleetId) {
         this.host.cancelFleetRename();
         this.host.mapFleetId = null;
       }
-      return;
+      return 'ignored';
     }
     if (this.host.destinationFleetId) {
       this.host.game.setDestination(this.host.destinationFleetId, position);
       this.host.destinationFleetId = null;
-    } else {
-      this.host.cancelFleetRename();
-      this.host.selected = position;
-      this.host.mapFleetId = null;
+      return 'destination';
     }
+    const fleet = travelFleet(this.host.game, this.host.mapFleetId);
+    if (
+      position.key === this.host.selected.key &&
+      fleet &&
+      this.host.game.phase === 'planning' &&
+      this.host.game.routePreview(fleet.id, position).length
+    ) {
+      this.host.game.setDestination(fleet.id, position);
+      this.host.voyage = true;
+      return 'travel';
+    }
+    this.host.cancelFleetRename();
+    this.host.voyage = false;
+    this.host.selected = position;
+    this.host.mapFleetId = null;
+    return 'selected';
   }
 
   fleetAtPoint(point: Point): string | null {
@@ -98,10 +119,9 @@ export class StarMapFacade {
     this.host.fleetDragging = false;
   }
 
-  selectPoint(point: Point): void {
+  selectPoint(point: Point): MapSelection {
     const world = this.host.camera.screenToWorld(point);
-    const hex = HexGeometry.fromPoint(world);
-    this.host.select(hex);
+    return this.select(HexGeometry.fromPoint(world));
   }
 
   openMap(): void {

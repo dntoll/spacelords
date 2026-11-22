@@ -1,12 +1,15 @@
 import type { MapViewport } from '../../models/MapScreen.js';
 import type { HexCoordinate } from '../../../common/HexCoordinate.js';
 import { type Point } from '../../../common/HexCoordinate.js';
-import type { StarMapFacade } from '../../models/star-map/StarMapFacade.js';
+import type {
+  MapSelection,
+  StarMapFacade,
+} from '../../models/star-map/StarMapFacade.js';
 
 export class StarMapController {
   constructor(private readonly facade: StarMapFacade) {}
 
-  select(position: HexCoordinate): void {
+  select(position: HexCoordinate): MapSelection {
     return this.facade.select(position);
   }
 
@@ -34,7 +37,7 @@ export class StarMapController {
     return this.facade.cancelMapPointer();
   }
 
-  selectPoint(point: Point): void {
+  selectPoint(point: Point): MapSelection {
     return this.facade.selectPoint(point);
   }
 

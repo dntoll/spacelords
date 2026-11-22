@@ -688,6 +688,20 @@ export class Game {
     delete fleet.navigationIssue;
     fleet.courseOrigin = fleet.position!;
   }
+  /** hexval-med-vag: the route a fleet would take, without giving the order. */
+  routePreview(id: string, target: HexCoordinate): readonly HexCoordinate[] {
+    const fleet = this.#fleetState(id);
+    if (!fleet.position || !this.galaxy.cellAt(target))
+      return Object.freeze([]);
+    return Object.freeze([
+      ...this.#navigation.path(
+        fleet.position,
+        target,
+        this.#speed(fleet),
+        this.#knownTerrain,
+      ),
+    ]);
+  }
   clearDestination(id: string): void {
     this.#requireFleetOrders(id);
     this.#fleetState(id).destination = null;

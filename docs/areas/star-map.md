@@ -8,6 +8,24 @@ flotta till ett mål. Planeter är platser; spelaren äger dem inte
 
 ## Krav
 
+- **Styrning med hexval:** `hexval-med-vag` (2026-11-22) är **Fullständigt
+  implementerat**. Ett tryck på en hex markerar den, visar information om
+  hexen och ritar vägen dit för spelarens flotta, med rundans steg ljusare och
+  en punkt där varje runda slutar. Panelen anger antal hex och ungefär hur
+  många rundor resan tar. Ett andra tryck på den markerade hexen ger flottan
+  målet och startar rundan direkt. Ett tryck på en annan hex flyttar bara
+  markeringen. Move, dragning till mål och Stop finns kvar.
+
+- **Resa utan synliga pirater:** `resa-utan-synliga-pirater` (2026-11-22) är
+  **Fullständigt implementerat**. Flottan rör sig varje runda så många hex som
+  dess långsammaste skepp tillåter. Syns ingen pirat tar motståndarnas tur
+  ingen tid, och nästa runda börjar av sig själv tills flottan är framme.
+  Syns en pirat stannar resan efter rundan; målet finns kvar och End turn tar
+  flottan vidare medan piraterna agerar. Upptäckter och strider pausar som
+  förut; när de är avklarade fortsätter resan. Asteroidhexar som kräver en
+  hel runda avbryter inte resan, men en resa utan känd väg gör det.
+  Ett nytt hexval eller Stop avbryter resan.
+
 - **Kartobjekt:** `kartobjekt-foljer-zoom` är **Fullständigt implementerat**.
   Flottor följer kartans skala.
 
@@ -76,8 +94,9 @@ flotta till ett mål. Planeter är platser; spelaren äger dem inte
 
 - **Kartans utrymme:** `fokuserat-kartval` och `rullningsbar-kartpanel` är
   **Fullständigt implementerat**. Kartan saknar objektmeny och kontrollruta.
-  Tomma rutor utan flottor visar ingen panel, och panelen växer innan
-  innehållet rullar. En del av kartan förblir synlig.
+  Panelen växer innan innehållet rullar. `hexval-med-vag` ersätter regeln
+  att tomma utforskade rutor utan flottor inte visar någon panel: en ruta
+  som flottan kan nå visar vägen dit. En del av kartan förblir synlig.
 
 - **Grundkrav för kartan:** `statisk-planetplacering` och `synliga-stjarnor`
   är **Fullständigt implementerat**. Stjärnor och planeter ligger stilla och

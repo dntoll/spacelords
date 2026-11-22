@@ -91,7 +91,10 @@ class Fleet {
   ships: 0..*
 }
 note right of Fleet
-  Order: Move och Stop.
+  Order: Move och Stop, eller två tryck på en hex
+  (hexval-med-vag). Fart per runda = långsammaste skeppet.
+  resa-utan-synliga-pirater: utan synlig pirat
+  börjar nästa runda direkt tills flottan är framme.
   Tom flotta saknar position.
   enda-spelarflottan (Ej implementerat):
   koden hanterar fortfarande en lista med flottor.

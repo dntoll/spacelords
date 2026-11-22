@@ -70,5 +70,6 @@ export class FleetFacade {
 
   clearDestination(id: string): void {
     this.host.game.clearDestination(id);
+    this.host.voyage = false;
   }
 }

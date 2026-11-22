@@ -276,6 +276,12 @@ p {
   font-size: 0.85rem;
   color: #bdcbd0;
 }
+/* hexval-med-vag: the route summary uses the colour of the drawn route. */
+.travel-route {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #f4d27a;
+}
 .pill {
   display: inline-block;
   justify-self: start;

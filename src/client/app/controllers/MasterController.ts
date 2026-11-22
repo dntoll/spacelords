@@ -468,9 +468,9 @@ export class MasterController {
         this.#starMap.home();
         break;
       case 'select': {
-        const snapshot = this.#model.snapshot;
-        mapOrder = !!snapshot.destinationFleetId;
-        this.#starMap.select(intent.position);
+        const selection = this.#starMap.select(intent.position);
+        mapOrder = selection === 'destination';
+        if (selection === 'travel') return this.#travel();
         break;
       }
       case 'pan':
@@ -572,9 +572,9 @@ export class MasterController {
         this.#gesture.move(intent.id, intent.point);
         const selected = this.#gesture.end(intent.id);
         if (selected) {
-          const snapshot = this.#model.snapshot;
-          mapOrder = !!snapshot.destinationFleetId;
-          this.#starMap.selectPoint(selected);
+          const selection = this.#starMap.selectPoint(selected);
+          mapOrder = selection === 'destination';
+          if (selection === 'travel') return this.#travel();
         }
         break;
       }
@@ -604,6 +604,13 @@ export class MasterController {
       this.#model.save();
     this.#render();
     this.#schedulePlayback();
+  }
+
+  /** hexval-med-vag: the confirmed hex starts the round at once. */
+  #travel(): void {
+    this.#model.save();
+    if (this.#turn.requestEndTurn()) void this.#runTurn();
+    else this.#render();
   }
 
   async #runEditor(action: () => Promise<void>): Promise<void> {
@@ -686,6 +693,11 @@ export class MasterController {
         this.#playbackTimer = setTimeout(() => {
           void this.#runTurn(true);
         }, 0);
+      else if (!this.#runningTurn && this.#turn.continueVoyage())
+        // resa-utan-synliga-pirater: unseen pirates take no time.
+        this.#playbackTimer = setTimeout(() => {
+          if (this.#turn.continueVoyage()) void this.#runTurn();
+        }, 250);
       return;
     }
     if (playback.stage === 'awaiting-choice') return;
@@ -830,6 +842,9 @@ export class MasterController {
       this.#render();
     } finally {
       this.#runningTurn = false;
+      // resa-utan-synliga-pirater: a finished round may start the next one.
+      if (!this.#disposed && !this.#model.snapshot.eventPlayback)
+        this.#schedulePlayback();
     }
   }
 }

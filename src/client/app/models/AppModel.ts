@@ -30,6 +30,9 @@ import {
   type Technology,
   type ResearchSnapshot,
   type MapCell,
+  type TravelRoute,
+  type MapSelection,
+  travelFleet,
 } from '../../space-map/models/index.js';
 import {
   BoardingFacade,
@@ -103,6 +106,10 @@ export interface AppReadModel {
   readonly fleetDestinationPreview: HexCoordinate | null;
   readonly fleetDragging: boolean;
   readonly destinationFleetId: string | null;
+  /** hexval-med-vag: the selected fleet's route to the selected hex. */
+  readonly travelRoute: TravelRoute | null;
+  /** resa-utan-synliga-pirater: a confirmed journey that continues by itself. */
+  readonly travelling: boolean;
   readonly events: readonly GameEvent[];
   readonly notice: PlayerNotice;
   readonly editorAvailable: boolean;
@@ -156,6 +163,7 @@ export class AppModel {
   #fleetDestinationPreview: HexCoordinate | null = null;
   #fleetDragging = false;
   #destinationFleetId: string | null = null;
+  #voyage = false;
   #notice: PlayerNotice = null;
 
   #activeSlot: number | null = null;
@@ -315,6 +323,8 @@ export class AppModel {
       fleetDestinationPreview: this.#fleetDestinationPreview,
       fleetDragging: this.#fleetDragging,
       destinationFleetId: this.#destinationFleetId,
+      travelRoute: this.#travelRoute(),
+      travelling: this.#voyage,
       events: this.#game.events,
       notice: this.#notice,
       editorAvailable: this.editorCase.available,
@@ -322,6 +332,27 @@ export class AppModel {
       editor: this.editorCase.editor,
       pendingEditorDiscard: this.editorCase.pendingDiscard,
     });
+  }
+
+  #travelRoute(): TravelRoute | null {
+    if (
+      !this.#isMapScreen() ||
+      this.#eventCamera ||
+      this.#game.phase !== 'planning'
+    )
+      return null;
+    const fleet = travelFleet(this.#game, this.#mapFleetId);
+    if (!fleet?.position || fleet.position.key === this.#selected.key)
+      return null;
+    const steps = this.#game.routePreview(fleet.id, this.#selected);
+    return steps.length
+      ? Object.freeze({
+          fleetId: fleet.id,
+          from: fleet.position,
+          steps,
+          perRound: fleet.speed,
+        })
+      : null;
   }
 
   /** responsiv-stjarnkarta: only presentation state changes during camera gestures. */
@@ -335,7 +366,7 @@ export class AppModel {
     });
   }
 
-  select(position: HexCoordinate): void {
+  select(position: HexCoordinate): MapSelection {
     return this.starMap.select(position);
   }
   reportError(error: unknown): void {
@@ -395,7 +426,7 @@ export class AppModel {
     return this.starMap.cancelMapPointer();
   }
 
-  selectPoint(point: Point): void {
+  selectPoint(point: Point): MapSelection {
     return this.starMap.selectPoint(point);
   }
 
@@ -857,6 +888,12 @@ export class AppModel {
       get fleetDragging() {
         return model.#fleetDragging;
       },
+      get voyage() {
+        return model.#voyage;
+      },
+      set voyage(value) {
+        model.#voyage = value;
+      },
       get destinationFleetId() {
         return model.#destinationFleetId;
       },
@@ -1121,6 +1158,8 @@ export interface AppHost {
   fleetDestinationPreview: HexCoordinate | null;
   fleetDragging: boolean;
   destinationFleetId: string | null;
+  /** resa-utan-synliga-pirater: a confirmed journey is under way. */
+  voyage: boolean;
   notice: PlayerNotice;
   activeSlot: number | null;
   pendingClearSlot: number | null;
@@ -1136,7 +1175,7 @@ export interface AppHost {
   cancelClearSlot(): void;
   confirmClearSlot(): void;
   navigationSnapshot(previous: AppReadModel): AppReadModel;
-  select(position: HexCoordinate): void;
+  select(position: HexCoordinate): MapSelection;
   reportError(error: unknown): void;
   clearNotice(): void;
   fleetAtPoint(point: Point): string | null;
@@ -1145,7 +1184,7 @@ export interface AppHost {
   previewFleetDestination(point: Point): void;
   commitFleetDestination(): void;
   cancelMapPointer(): void;
-  selectPoint(point: Point): void;
+  selectPoint(point: Point): MapSelection;
   inspectResearch(technology: Technology | null): void;
   openResearch(): void;
   isMapScreen(): boolean;

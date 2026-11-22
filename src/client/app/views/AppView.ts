@@ -485,6 +485,8 @@ export class AppView implements AppPort {
         ),
         destination: model.destinationFleetId,
         fleetNameEdit: model.fleetNameEdit,
+        travelRoute: model.travelRoute,
+        travelling: model.travelling,
       });
       if (key !== this.#selectionKey) {
         this.#selectionKey = key;
@@ -1148,6 +1150,25 @@ export class AppView implements AppPort {
       contents.push(summary);
     } else if (model.screen === 'map' && cell && !cell.explored && !object) {
       contents.push(renderMapLocationHeading('Unexplored'));
+    }
+    const route = model.travelRoute;
+    if (route && model.screen === 'map' && !model.destinationFleetId) {
+      // hexval-med-vag: say how far it is and how to set off.
+      const rounds = Math.ceil(
+        route.steps.length / Math.max(1, route.perRound),
+      );
+      const fleetName =
+        model.fleets.find((fleet) => fleet.id === route.fleetId)?.name ??
+        'The fleet';
+      contents.push(
+        element(
+          'p',
+          'travel-route',
+          model.travelling
+            ? `${fleetName} is on its way · ${route.steps.length} hex left.`
+            : `${route.steps.length} hex · about ${rounds} ${rounds === 1 ? 'round' : 'rounds'} for ${fleetName}. Select the hex again to travel.`,
+        ),
+      );
     }
     if (destinationFleet)
       contents.push(
