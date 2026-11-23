@@ -289,6 +289,7 @@ class PirateFleet {
   count
   transports
   hold
+  active : seen and within 10 hexes
   nextPosition()
 }
 class TacticalBattle {

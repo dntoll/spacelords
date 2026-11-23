@@ -1500,9 +1500,13 @@ export class Game {
         );
       for (const pirate of this.#pirates)
         this.#simulation.remaining.set(pirate.id, 0);
-    } else if (stage === 'enemy')
+    } else if (stage === 'enemy') {
       for (const fleet of this.#fleets)
         this.#simulation.remaining.set(fleet.id, 0);
+      // piratens-aktivering: pirates the player has not met stand still.
+      for (const pirate of this.#pirates)
+        if (!pirate.active) this.#simulation.remaining.set(pirate.id, 0);
+    }
     // strid-i-samma-hex: fleets that already share a hex fight before moving.
     if (
       this.#fleets.some(
@@ -1886,6 +1890,26 @@ export class Game {
       )
         this.#explored.add(key);
     this.#mapCells = null;
+    this.#updatePirateActivation();
+  }
+  /**
+   * piratens-aktivering: a pirate becomes active when it is seen and stays
+   * active until no fleet of the player's is within ten hexes of it.
+   */
+  #updatePirateActivation(): void {
+    for (const pirate of this.#pirates) {
+      if (this.#visible.has(pirate.position.key)) pirate.active = true;
+      else if (
+        pirate.active &&
+        !this.#fleets.some(
+          (fleet) =>
+            fleet.position &&
+            this.#shipCount(fleet.ships) &&
+            fleet.position.distanceTo(pirate.position) <= 10,
+        )
+      )
+        pirate.active = false;
+    }
   }
   #reveal(position: HexCoordinate, radius = true): void {
     let changed = false;

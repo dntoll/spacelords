@@ -21,7 +21,9 @@ kraven med stabila namn och status. Statusen nedan sammanfattar området.
 - **[Single fleet — utforskning](docs/single-fleet.md):** en enda flotta,
   AP på Star map, Fleet, Crew, teknikforskning och en gemensam
   produktionskö, ändliga förbrukningsresurser och personer med flera roller
-  och lika startegenskaper. Samtliga nya beteendekrav är **Ej implementerat**.
+  och lika startegenskaper. `flottstyrning-med-ap-pa-starmap` är
+  **Fullständigt implementerat** (AP, turordning och piraternas aktivering);
+  övriga nya beteendekrav är **Ej implementerat**.
   Planen anger vilka delar som måste diskuteras och låsas med användaren
   före implementation (`single-fleet-beslut-fore-implementation`).
   [Rensningsplanen](docs/single-fleet-cleanup.md) följer borttagningen av den

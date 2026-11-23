@@ -13,6 +13,8 @@ export interface SavedPirateFleet {
   readonly count: number;
   readonly transports?: number;
   readonly hold?: Stock;
+  /** piratens-aktivering: seen by the player and not yet left behind. */
+  readonly active?: boolean;
 }
 export interface PirateSnapshot extends SavedPirateFleet {
   readonly position: HexCoordinate;
@@ -70,6 +72,8 @@ export class PirateFleet {
     public count = 1,
     public transports = 1,
     public hold: Stock = pirateHoldFromSeed(id),
+    /** piratens-aktivering: only active pirates act in the enemies' turn. */
+    public active = false,
   ) {}
 
   static seed(galaxy: Galaxy): PirateFleet[] {
@@ -116,6 +120,7 @@ export class PirateFleet {
       saved.count,
       transports,
       { ...emptyStock(), ...hold },
+      saved.active === true,
     );
   }
 
@@ -156,6 +161,7 @@ export class PirateFleet {
       count: this.count,
       transports: this.transports,
       hold: Object.freeze({ ...this.hold }),
+      ...(this.active ? { active: true } : {}),
     });
   }
 

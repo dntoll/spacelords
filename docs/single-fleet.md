@@ -142,12 +142,23 @@ stödskeppsfunktioner är låsta av denna plan. Den här dokumentationsändringe
 
 `hexval-med-vag`, `resa-utan-synliga-pirater` och `ap-pa-starmap`
 (2026-11-22, **Fullständigt implementerat**, se [Star map](areas/star-map.md))
-gör `flottstyrning-med-ap-pa-starmap` **Delvis implementerat**: flottan har
-AP från sin långsammaste motor, varje hex kostar en AP, oanvända AP ligger
-kvar och fienderna agerar först när AP är förbrukade. Oupptäckta fiender tar
-ingen tid. Det finns ingen End turn och ingen väntan. Kvar att besluta är om
-andra handlingar än förflyttning kostar AP och vad som räknas som inom
-räckhåll.
+och `piratens-aktivering` (2026-11-23) gör `flottstyrning-med-ap-pa-starmap`
+**Fullständigt implementerat**. Flottan har AP från sin långsammaste motor.
+Kartans handlingar är (beslut 2026-11-23):
+
+- Förflyttning kostar 1 AP per hex. Att gå in i eller ut ur ett glest
+  asteroidbälte kostar hela rundans AP.
+- Utforskning sker automatiskt när flottan rör sig: hexar inom sikt avslöjas
+  och en planet utforskas när flottan går in i dess hex med ett Exploration
+  ship.
+- Strid utlöses automatiskt så fort flottan och en pirat delar hex, inte i
+  slutet av rundan (`strid-i-samma-hex`).
+
+Oanvända AP ligger kvar och fienderna agerar först när AP är förbrukade.
+"Motståndare inom räckhåll" betyder aktiverade pirater: en pirat aktiveras när
+den upptäcks och förblir aktiv tills flottan är mer än 10 hex bort. Bara
+aktiva pirater handlar, genom att patrullera runt sin stjärna; inaktiva står
+still och tar ingen tid. Det finns ingen End turn och ingen väntan.
 
 Se även [spelvisionen 2026-11-22](vision-2026-11-22.md), ett arbetsunderlag
 vars idéer stäms av mot kraven här innan de implementeras.

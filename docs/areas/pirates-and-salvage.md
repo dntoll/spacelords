@@ -22,6 +22,15 @@ skeppstyp.
   in i piratens hex blir det strid. En pirat markeras som sin hex, så ett
   andra tryck på den skickar flottan dit (`hexval-med-vag`).
 
+- **Aktivering:** `piratens-aktivering` (2026-11-23) är **Fullständigt
+  implementerat**. En pirat aktiveras när flottan upptäcker den och förblir
+  aktiv tills ingen av spelarens flottor är inom 10 hex. Bara aktiva pirater
+  handlar när spelarens AP är förbrukade, genom att patrullera runt sin
+  stjärna. Inaktiva pirater står still och tar ingen tid. Det ersätter att
+  alla pirater patrullerade varje runda i `rymdpiraters-patrullering`.
+  Modellens äldre läge `round`, där alla rör sig samtidigt, används bara av
+  äldre modelltester och låter fortfarande alla pirater patrullera.
+
 - **Skeppsbilder:** `unik-bild-for-civila-transporter` och
   `egen-raptor-grafik` är **Fullständigt implementerat**. Civilian shuttle och
   Raptor har egna bilder. Se [skeppsgrafik](../ship-artwork.md).

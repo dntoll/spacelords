@@ -25,8 +25,9 @@ flotta till ett mål. Planeter är platser; spelaren äger dem inte
   många AP per runda som dess långsammaste skepp har fart, och varje hex
   kostar en AP. AP som inte används ligger kvar: spelaren har inte gjort klart
   sin tur, och inget annat händer förrän AP är förbrukade. Då, eller när
-  flottan inte har råd med nästa steg, agerar fienderna. Upptäckta fiender
-  syns när de flyttar; oupptäckta flyttar utan animation och tar ingen tid.
+  flottan inte har råd med nästa steg, agerar fienderna. Bara aktiverade
+  pirater handlar (`piratens-aktivering`); övriga står still och tar ingen
+  tid.
   Därefter börjar nästa runda med fulla AP. Det finns ingen väntan: tiden går
   bara när flottan flyttar. End turn är borttaget från alla skärmar, vilket
   ersätter `end-turn-vid-kartval` och End turn i `gemensam-events-panel`.

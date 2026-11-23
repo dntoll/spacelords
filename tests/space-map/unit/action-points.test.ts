@@ -60,7 +60,8 @@ describe('ap-pa-starmap', () => {
     expect(game.enemyTurnPending).toBe(false);
     expect(game.round).toBe(2);
     expect(game.fleetSnapshots()[0]!.actionPoints).toBe(speed);
-    expect(pirates()).not.toEqual(before);
+    // piratens-aktivering: pirates that were never seen stay where they are.
+    expect(pirates()).toEqual(before);
     // The fleet did not move while the enemies acted.
     expect(game.fleet(fleet.id)!.destination?.key).toBe(far.key);
   });
@@ -79,5 +80,76 @@ describe('ap-pa-starmap', () => {
     );
     expect(loaded.enemyTurnPending).toBe(game.enemyTurnPending);
     expect(loaded.exportState()).toEqual(saved);
+  });
+});
+
+describe('piratens-aktivering', () => {
+  function nearPirate(offset: { q: number; r: number }) {
+    const state = new Game(createExampleGalaxy()).exportState();
+    const pirate = state.pirates![0]!;
+    const game = Game.restore({
+      ...state,
+      pirates: [pirate],
+      fleets: [
+        {
+          ...state.fleets[0]!,
+          position: {
+            q: pirate.position.q + offset.q,
+            r: pirate.position.r + offset.r,
+          },
+        },
+      ],
+    });
+    return { game, pirate: () => game.exportState().pirates![0]! };
+  }
+  function spendAp(game: Game, away: { q: number; r: number }) {
+    const fleet = game.fleetSnapshots()[0]!;
+    game.setDestination(
+      fleet.id,
+      new HexCoordinate(
+        fleet.position!.q + away.q * (fleet.speed + 1),
+        fleet.position!.r + away.r * (fleet.speed + 1),
+      ),
+    );
+    stage(game);
+    expect(game.enemyTurnPending).toBe(true);
+  }
+
+  it('a discovered pirate becomes active and patrols when the player’s AP are spent', () => {
+    const { game, pirate } = nearPirate({ q: -1, r: 0 });
+    expect(game.pirateSnapshots()).toHaveLength(1);
+    expect(pirate().active).toBe(true);
+    const before = pirate().position;
+    spendAp(game, { q: -1, r: 0 });
+    stage(game);
+    expect(pirate().position).not.toEqual(before);
+  });
+
+  it('an undiscovered pirate stays inactive and does not move', () => {
+    const { game, pirate } = nearPirate({ q: -12, r: 0 });
+    expect(game.pirateSnapshots()).toHaveLength(0);
+    expect(pirate().active).toBeUndefined();
+    const before = pirate().position;
+    spendAp(game, { q: 0, r: 1 });
+    stage(game);
+    expect(pirate().position).toEqual(before);
+  });
+
+  it('stays active out of sight until the fleet is more than 10 hexes away', () => {
+    const { game, pirate } = nearPirate({ q: -1, r: 0 });
+    expect(pirate().active).toBe(true);
+    for (let round = 0; round < 6 && pirate().active; round++) {
+      spendAp(game, { q: -1, r: 0 });
+      const distance = new HexCoordinate(
+        pirate().position.q,
+        pirate().position.r,
+      ).distanceTo(game.fleetSnapshots()[0]!.position!);
+      expect(pirate().active === true).toBe(distance <= 10);
+      stage(game);
+    }
+    expect(pirate().active).toBeUndefined();
+    expect(Game.restore(game.exportState()).exportState()).toEqual(
+      game.exportState(),
+    );
   });
 });
