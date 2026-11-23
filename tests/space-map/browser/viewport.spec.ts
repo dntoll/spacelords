@@ -123,3 +123,24 @@ test('viewport-game-layout: wider fallback font metrics cannot expand Research',
     .click();
   await expectContentFits(page);
 });
+
+for (const size of [
+  { width: 667, height: 375 },
+  { width: 844, height: 390 },
+]) {
+  test(`liggande-layout: save slots stand side by side at ${size.width}x${size.height}`, async ({
+    page,
+  }) => {
+    await page.setViewportSize(size);
+    await page.goto('./');
+    const cards = page.locator('.save-card');
+    await expect(cards).toHaveCount(3);
+    const boxes = await cards.evaluateAll((nodes) =>
+      nodes.map((node) => node.getBoundingClientRect().toJSON() as DOMRect),
+    );
+    expect(new Set(boxes.map((box) => Math.round(box.top))).size).toBe(1);
+    for (const button of await page.locator('.save-start').all())
+      await expect(button).toBeInViewport({ ratio: 1 });
+    await expectNoScroll(page);
+  });
+}

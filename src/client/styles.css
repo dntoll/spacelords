@@ -3298,3 +3298,61 @@ body:has(.discovery-controls) .selection-panel {
     margin: 0;
   }
 }
+
+/* liggande-layout: on short landscape screens the header is one row, save
+   slots stand side by side and map details form a column beside the map. */
+@media (orientation: landscape) and (max-height: 500px) {
+  .app-header {
+    grid-template-columns: auto auto minmax(0, 1fr);
+    align-items: center;
+  }
+  .app-header > .brand {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .app-header > .main-nav {
+    display: flex;
+    grid-column: 2;
+    grid-row: 1;
+    width: auto;
+  }
+  .app-header .main-nav > .nav-button {
+    padding: 6px 10px;
+    white-space: nowrap;
+  }
+  .app-header > .build-label {
+    grid-column: 3;
+    grid-row: 1;
+  }
+  .save-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-rows: minmax(0, 1fr);
+  }
+  .save-card {
+    display: flex;
+    flex-direction: column;
+    padding: 8px;
+  }
+  .save-map-preview {
+    margin: 4px 0;
+  }
+  .save-card .save-actions {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .save-card .save-actions button {
+    padding: 5px 8px;
+    font-size: 0.8rem;
+  }
+  .map-page .selection-panel,
+  .map-page .selection-panel:has(.map-fleet-management),
+  .map-page:not([data-map-screen='production']) .selection-panel {
+    top: max(8px, env(safe-area-inset-top));
+    left: auto;
+    right: max(8px, env(safe-area-inset-right));
+    bottom: max(8px, env(safe-area-inset-bottom));
+    width: min(340px, 42%);
+    max-height: none;
+    overflow-y: auto;
+  }
+}

@@ -52,6 +52,11 @@ att översättas.
   fält; version 18-sparningar utan dem laddas med fulla AP. Framtida
   inkompatibla ändringar stäms av enligt `avstamning-sparkompatibilitet`.
 
+- **Liggande layout:** `liggande-layout` (2026-11-23) är **Fullständigt
+  implementerat**. På låga liggande skärmar ligger rubrik och meny på en rad,
+  de tre sparplatserna står sida vid sida på `Saved games` och detaljerna på
+  `Star map` visas som en kolumn till höger om kartan i stället för under den.
+
 - **Grundkrav:** `flera-skarmstorlekar` är **Fullständigt implementerat**:
   spelet går att använda på mobil, surfplatta och dator.
 

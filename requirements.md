@@ -31,7 +31,7 @@ kraven med stabila namn och status. Statusen nedan sammanfattar området.
   tidigare spelmekaniken (`single-fleet-rensning`, **Delvis implementerat**:
   rensningen är klar).
 - **[Start, sparade spel och navigering](docs/areas/start-and-saves.md):**
-  `Saved games`, helskärm, huvudmenyn och sparformatet (`sparformat`,
+  `Saved games`, helskärm, huvudmenyn, liggande layout (`liggande-layout`) och sparformatet (`sparformat`,
   version 18). Allt är **Fullständigt implementerat**.
 - **[Stjärnkartan och grafiken](docs/areas/star-map.md):** hexkartan, sikt,
   terräng, kamera, kartobjekt och genererade bilder, samt styrningen med

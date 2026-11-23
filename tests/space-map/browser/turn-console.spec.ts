@@ -53,8 +53,15 @@ for (const size of [
     );
     const selected = (await panel.boundingBox())!;
     const map = (await page.getByTestId('map-container').boundingBox())!;
-    expect(selected.width).toBeGreaterThan(size.width - 30);
-    expect(selected.height).toBeGreaterThan(map.height * 0.3);
+    if (size.width > size.height) {
+      // liggande-layout: details form a column beside the map in landscape.
+      expect(selected.width).toBeLessThanOrEqual(size.width * 0.45);
+      expect(selected.x + selected.width).toBeGreaterThan(size.width - 20);
+      expect(selected.height).toBeGreaterThan(map.height * 0.5);
+    } else {
+      expect(selected.width).toBeGreaterThan(size.width - 30);
+      expect(selected.height).toBeGreaterThan(map.height * 0.3);
+    }
     expect(selected.y).toBeGreaterThan(map.y);
     const footer = (await console.boundingBox())!;
     expect(selected.y + selected.height).toBeLessThanOrEqual(footer.y + 1);
