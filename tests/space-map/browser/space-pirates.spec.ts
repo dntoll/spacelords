@@ -101,7 +101,7 @@ for (const screen of ['Star map', 'Fleets']) {
     expect(fighters).toBeLessThanOrEqual(3);
     // stridsresultat-utan-upprepning: one report, with each part once.
     const combats = saved.state.events.filter((event) =>
-      event.text.startsWith(`Combat at HEX ${lair.q},${lair.r}:`),
+      event.text.startsWith("Combat:"),
     );
     expect(combats).toHaveLength(1);
     expect(combats[0]!.text.match(/Survivors:/g)).toHaveLength(1);

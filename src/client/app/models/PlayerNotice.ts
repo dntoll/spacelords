@@ -2,7 +2,6 @@
 export type DiscoveryFlash = {
   readonly kind: 'planet' | 'planet-explored' | 'star' | 'pirate' | 'wreck';
   readonly name: string;
-  readonly hex: string;
 };
 
 export type PlayerNotice =

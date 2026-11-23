@@ -412,7 +412,6 @@ export class AppModel {
       Object.freeze({
         kind: flash.kind,
         name: flash.name,
-        hex: flash.hex,
       }),
     );
     const first = this.#discoveryQueue[0];

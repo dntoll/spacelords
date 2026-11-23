@@ -17,7 +17,7 @@ export function playerNoticeText(notice: PlayerNotice): string | null {
               : notice.flash.kind === 'wreck'
                 ? 'Wreck discovered'
                 : 'Planet discovered';
-      return `${label}: ${notice.flash.name} at HEX ${notice.flash.hex}.`;
+      return `${label}: ${notice.flash.name}.`;
     }
   }
 }

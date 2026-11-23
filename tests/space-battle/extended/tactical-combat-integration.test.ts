@@ -117,7 +117,7 @@ describe('tactical combat integration', () => {
     expect(game.fleet('fleet-home')!.shipUnits).toContainEqual(fighters[0]);
     expect(game.interruption!.battles![0]!.fleetIds).toEqual(['fleet-home']);
     const combatEvent = game.events.find((event) =>
-      event.text.startsWith('Combat at HEX'),
+      event.text.startsWith('Combat:'),
     )!;
     expect(
       combatEvent.combatLog!.findLast((line) => line.includes('D6 [')),

@@ -15,7 +15,6 @@ export class TurnFacade {
 
   startTurn(): void {
     if (this.host.eventPlayback || this.host.movementPlayback) return;
-    this.host.presentedEventIds.clear();
     this.host.turnContext = {
       screen: this.host.screen,
       selected: this.host.selected,
@@ -67,7 +66,6 @@ export class TurnFacade {
         Object.freeze({
           kind: discovery.kind,
           name: discovery.name,
-          hex: `${discovery.position.q},${discovery.position.r}`,
           ...(discovery.eventId ? { eventId: discovery.eventId } : {}),
         }),
       ),

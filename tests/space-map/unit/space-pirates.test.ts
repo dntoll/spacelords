@@ -119,7 +119,7 @@ describe('flottstrid-per-hex', () => {
       expect(survivors + enemySurvivors).toBeGreaterThan(0);
       expect(game.fleet('fleet-home')!.shipUnits).toHaveLength(survivors);
       expect(
-        game.events.filter((e) => e.text.startsWith('Combat at HEX')),
+        game.events.filter((e) => e.text.startsWith('Combat:')),
       ).toHaveLength(1);
       expect(Game.restore(game.exportState()).exportState()).toEqual(
         game.exportState(),
@@ -292,7 +292,7 @@ describe('rymdpirater-per-stjarna / lokal-sikt', () => {
       1, 1,
     ]);
     expect(
-      game.events.some((event) => event.text.startsWith('Combat at HEX')),
+      game.events.some((event) => event.text.startsWith('Combat:')),
     ).toBe(false);
   });
 });

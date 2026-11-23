@@ -131,7 +131,8 @@ export function fleetAssignmentLabel(
     const target = model.cells.find(
       (cell) => cell.position.key === fleet.destination?.key,
     )?.object?.name;
-    return `Move: ${target ?? `hex ${fleet.destination.q}, ${fleet.destination.r}`}`;
+    // inga-hexkoordinater: an unnamed hex is described, never numbered.
+    return `Move: ${target ?? 'selected location'}`;
   }
   return '';
 }

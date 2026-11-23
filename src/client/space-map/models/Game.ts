@@ -608,7 +608,7 @@ export class Game {
       return Object.freeze([]);
     this.#surveyedPlanets.add(planet.id);
     const eventId = this.#event(
-      `Planet explored: ${planet.name} at HEX ${planet.position.key}.`,
+      `Planet explored: ${planet.name}.`,
       planet.position,
     );
     this.#mapCells = null;
@@ -1069,7 +1069,7 @@ export class Game {
     this.#mapCells = null;
     this.#updateSight();
     this.#event(
-      `Captured charts reveal a pirate presence near HEX ${origin.q},${origin.r}.`,
+      'Captured charts reveal a pirate presence.',
     );
   }
   #createTacticalBattles(): TacticalBattle[] {
@@ -1245,7 +1245,7 @@ export class Game {
       .map((id) => this.#fleetDisplayName(this.#fleetState(id)))
       .join(', ');
     const eventId = this.#event(
-      `Combat at HEX ${position.key}: ${names} versus Space pirate. ${summary}`,
+      `Combat: ${names} versus Space pirate. ${summary}`,
       position,
       state.log,
     );
@@ -1356,7 +1356,7 @@ export class Game {
       if (!event) {
         const description =
           'kind' in item
-            ? `${item.name} at HEX ${item.position.q},${item.position.r}.`
+            ? `${item.name}.`
             : item.summary;
         const id = this.#event(
           String(description),
@@ -1771,7 +1771,7 @@ export class Game {
         )[0];
       (discovery as { fleetId: string | null }).fleetId = observer?.id ?? null;
       const eventId = this.#event(
-        `${discovery.kind === 'pirate' ? 'Pirate ship in sight' : discovery.kind === 'star' ? 'Star explored' : 'Planet discovered'}: ${discovery.name} at HEX ${position.key}.`,
+        `${discovery.kind === 'pirate' ? 'Pirate ship in sight' : discovery.kind === 'star' ? 'Star explored' : 'Planet discovered'}: ${discovery.name}.`,
         position,
       );
       (discovery as { eventId: string }).eventId = eventId;

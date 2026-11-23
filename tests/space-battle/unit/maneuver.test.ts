@@ -134,7 +134,7 @@ describe('space maneuvering', () => {
     expect(battle.snapshot.activation?.remaining).toBe(1);
     battle.command({ type: 'fire', at: { q: 3, r: 4 }, weapon: 'Cannon' });
     expect(battle.snapshot.asteroids).toEqual([]);
-    expect(battle.snapshot.log.at(-1)).toMatch(/Asteroid at 3,4 breaks/);
+    expect(battle.snapshot.log.at(-1)).toMatch(/An asteroid breaks/);
     expect(battle.snapshot.phase).toBe('fighting');
     expect(battle.snapshot.round).toBe(2);
     expect(battle.snapshot.turn).toBe('player');

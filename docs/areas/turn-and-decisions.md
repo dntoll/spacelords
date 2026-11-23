@@ -36,6 +36,13 @@ kan avbryta rundan. Skärmen `Decisions` med beslutslistan finns inte längre
   eller Ignore. En paus med pirat fortsätter utan End turn
   (`fiendeupptackt-utan-end-turn`).
 
+- **Upptäckter som toppnotis:** `upptackt-som-toppnotis` (2026-11-23) är
+  **Fullständigt implementerat**. En upptäckt på Star map visas bara en gång,
+  som en kort notis högst upp. Kameran flyttas inte och ingen ruta visas mitt
+  på skärmen. Upptäckten annonseras inte igen när rundan senare tar slut,
+  även om rundan bestått av flera förflyttningar. Det ersätter
+  `handelseannonsering` för upptäckter.
+
 - **Flottanimation och händelseannonser:** `en-flotta-i-taget`,
   `osynliga-flottor-utan-animation` och `handelseannonsering` är
   **Fullständigt implementerat**. Färder visas en åt gången. Dolda rörelser

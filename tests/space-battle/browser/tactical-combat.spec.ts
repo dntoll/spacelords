@@ -411,10 +411,10 @@ test('skeppsvis-retratt / gemensamt-handelseflode: escapes each ship, regroups t
   await expect(dialog).toHaveCount(0);
   const result = (await saved(page)).state;
   expect(
-    result.events.filter((e) => e.text.startsWith('Combat at HEX')),
+    result.events.filter((e) => e.text.startsWith('Combat:')),
   ).toHaveLength(1);
   expect(
-    result.events.find((e) => e.text.startsWith('Combat at HEX'))!.text,
+    result.events.find((e) => e.text.startsWith('Combat:'))!.text,
   ).toContain('4 ships escaped');
   expect(result.fleets[0]!.position).toEqual(
     initial.fleets.find((f) => f.side === 'player')!.retreat,

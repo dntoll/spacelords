@@ -52,6 +52,9 @@ export class SaveFacade {
     this.host.destinationFleetId = null;
     this.host.voyage = false;
     this.host.resetDiscoveryFlashes();
+    // upptackt-som-toppnotis: a round can span several moves, so what was
+    // shown stays shown until another game is loaded.
+    this.host.presentedEventIds.clear();
     this.host.cancelMapPointer();
     if (game.interruption?.handling) this.host.focusInterruptedFleet();
     else if (game.phase === 'interrupted') this.host.beginEventPlayback();
@@ -61,7 +64,6 @@ export class SaveFacade {
           Object.freeze({
             kind: discovery.kind,
             name: discovery.name,
-            hex: `${discovery.position.q},${discovery.position.r}`,
             ...(discovery.eventId ? { eventId: discovery.eventId } : {}),
           }),
         ),
