@@ -43,7 +43,10 @@ flotta till ett mål. Planeter är platser; spelaren äger dem inte
   första trycket visar piraten och vägen, det andra skickar flottan dit,
   där striden börjar enligt `strid-i-samma-hex`. `glidande-hexsteg` är **Fullständigt
   implementerat**: varje steg är en hex och markören glider mellan
-  hexcentrumen. `fiendeupptackt-utan-end-turn` är **Fullständigt
+  hexcentrumen. `langsam-forflyttning-i-asteroidbalte` (2026-11-23) är
+  **Fullständigt implementerat**: ett steg in i eller ut ur ett glest
+  asteroidbälte, som kostar hela rundans AP, glider tre gånger långsammare än
+  ett vanligt steg. `fiendeupptackt-utan-end-turn` är **Fullständigt
   implementerat**: en paus som innehåller en pirat fortsätter rundan
   efter blänkarna utan End turn.
 

@@ -21,7 +21,7 @@ import { FleetMapLayout } from '../../models/star-map/FleetMapLayout.js';
 import { pirateAsFleet } from '../../models/PirateFleet.js';
 import { MapArtwork } from '../MapArtwork.js';
 import { renderPlanetGlyph } from '../PlanetGlyph.js';
-import { fleetGlidePoint } from './FleetGlide.js';
+import { fleetGlideDuration, fleetGlidePoint } from './FleetGlide.js';
 
 const STAR_MAP_LABEL =
   'Star map. Select a hex to see it and the route there; select it again to travel. Click a fleet to select it. Drag a fleet to set its destination. Escape cancels. Drag empty space to pan; pinch or use the mouse wheel to zoom. Plus and minus keys zoom. Arrow keys pan; Home returns to the start planet; Enter selects the central hex.';
@@ -158,6 +158,11 @@ export class GalaxyMapView implements MapPort {
       onProgress?.(1);
       return Promise.resolve();
     }
+    const glide = fleetGlideDuration(
+      duration,
+      frame.movements,
+      this.#model?.cells ?? [],
+    );
     return new Promise((resolve) => {
       this.#finishMovement = resolve;
       let started: number | null = null;
@@ -168,7 +173,7 @@ export class GalaxyMapView implements MapPort {
         }
         if (this.#ready) {
           started ??= now;
-          const progress = Math.min(1, (now - started) / duration);
+          const progress = Math.min(1, (now - started) / glide);
           this.#movement = { movements: frame.movements, progress };
           onProgress?.(progress);
           this.#requestDraw();
