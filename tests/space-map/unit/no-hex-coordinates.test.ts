@@ -1,3 +1,4 @@
+import { withScoutFleet } from '../../fixtures/scout-fleet.js';
 import { describe, expect, it } from 'vitest';
 import { Game } from '../../../src/client/space-map/models/Game.js';
 import { createExampleGalaxy } from '../../../src/client/space-map/models/exampleGalaxy.js';
@@ -13,15 +14,17 @@ describe('inga-hexkoordinater', () => {
   it('names discoveries, explorations and combat without hex coordinates', () => {
     const state = new Game(createExampleGalaxy()).exportState();
     const pirate = state.pirates![0]!;
+    const scouts = withScoutFleet(state);
     const game = Game.restore({
-      ...state,
-      fleets: [{ ...state.fleets[0]!, position: { q: 5, r: -4 } }],
+      ...scouts,
+      fleets: [{ ...scouts.fleets[0]!, position: { q: 5, r: -4 } }],
     });
     game.setDestination(
       'fleet-home',
       new HexCoordinate(pirate.position.q, pirate.position.r),
     );
     for (let stage = 0; stage < 12; stage++) {
+      if (!game.fleetSnapshot().shipUnits?.length) break;
       game.startTurn();
       for (let step = 0; step < 40; step++) {
         if (game.tacticalBattle) completeTacticalBattles(game);

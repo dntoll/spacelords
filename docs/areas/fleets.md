@@ -20,8 +20,8 @@ skeppsöversikt (`fleet-som-skeppsoversikt`) väntar på beslut.
   **Fullständigt implementerat**: namnet ändras med dubbelklick.
 
 - **Utforskning och avbrott:** `planetutforskning-vid-ankomst` är
-  **Fullständigt implementerat**: ett Exploration ship avslöjar en planets
-  detaljer vid ankomst. Varje ny upptäckt stannar resan
+  **Fullständigt implementerat**: ett Exploration ship eller en Raptor
+  avslöjar en planets detaljer vid ankomst. Varje ny upptäckt stannar resan
   (`upptackt-stannar-resan`). Avbrutna rundor
   återupptas med bevarad förflyttning, även efter omladdning. Se
   [utforskning och upptäckter](../exploration-interruptions.md).

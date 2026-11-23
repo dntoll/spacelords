@@ -63,9 +63,9 @@ describe('upptacktsavbrott / order-under-upptacktsavbrott', () => {
       ),
     ).toBe(true);
     expect(game.fleet('fleet-home')!.ships['Exploration ship']).toBe(1);
-    expect(
-      game.events.some((event) => event.text.startsWith('Combat at')),
-    ).toBe(false);
+    expect(game.events.some((event) => event.text.startsWith('Combat:'))).toBe(
+      false,
+    );
     expect(game.fleet('fleet-home')!.remainingMovement).toBe(3);
     expect(game.discoveryPause()).toBe(true);
     expect(game.enemyDiscoveryResume()).toBe(true);

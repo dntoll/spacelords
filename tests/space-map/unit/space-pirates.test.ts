@@ -291,8 +291,8 @@ describe('rymdpirater-per-stjarna / lokal-sikt', () => {
     expect(game.exportState().pirates!.map((pirate) => pirate.count)).toEqual([
       1, 1,
     ]);
-    expect(
-      game.events.some((event) => event.text.startsWith('Combat:')),
-    ).toBe(false);
+    expect(game.events.some((event) => event.text.startsWith('Combat:'))).toBe(
+      false,
+    );
   });
 });

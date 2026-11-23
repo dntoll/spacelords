@@ -34,7 +34,7 @@ describe('tactical combat integration', () => {
     expect(() => game.continueTurn()).toThrow('tactical combat');
     expect(game.fleet('fleet-home')!.ships.Fighter).toBe(2);
     expect(
-      game.events.filter((e) => e.text.startsWith('Combat at')),
+      game.events.filter((e) => e.text.startsWith('Combat:')),
     ).toHaveLength(0);
     const restored = Game.restore(
       JSON.parse(JSON.stringify(state)) as GameState,

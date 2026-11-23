@@ -114,7 +114,9 @@ export class AppView implements AppPort {
   render(model: AppReadModel): void {
     // ap-pa-starmap: without End turn, this marks when the map awaits the player.
     this.#root.dataset.turnIdle = String(
-      model.phase === 'planning' &&
+      (model.phase === 'planning' ||
+        // upptackt-stannar-resan: after the notices the map awaits a hex.
+        (model.discoveryPause && model.notice?.kind !== 'discovery')) &&
         !model.enemyTurnPending &&
         !model.eventPlayback &&
         !model.turnMovement,

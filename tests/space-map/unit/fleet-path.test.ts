@@ -50,7 +50,7 @@ describe('rakare-hexforflyttning', () => {
     );
     const directions: string[] = [];
     // ap-pa-starmap: player and enemy stages alternate; follow the fleet.
-    for (let stage = 0; stage < 4 && directions.length < 6; stage += 1) {
+    for (let stage = 0; stage < 8 && directions.length < 6; stage += 1) {
       for (const frame of turnFrames(model)) {
         const movement = frame.movements.find(
           (candidate) => candidate.fleetId === fleet.id,
@@ -68,8 +68,9 @@ describe('rakare-hexforflyttning', () => {
       expect(directions[index]).not.toBe(directions[index - 1]);
   });
 
+  // startflotta-med-raptor: the Raptor's speed 2 is one round's reach.
   it.each([
-    [3, 0],
+    [2, 0],
     [1, 1],
     [0, 0],
   ])('keeps straight routes and stops at the destination %i,%i', (q, r) => {

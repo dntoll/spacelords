@@ -163,7 +163,7 @@ describe('gemensamt-handelseflode', () => {
     expect(
       slot
         .saved()
-        .state.events.filter((event) => event.text.startsWith('Combat at'))
+        .state.events.filter((event) => event.text.startsWith('Combat:'))
         .length,
     ).toBeLessThanOrEqual(1);
     current.controller.dispose();

@@ -35,7 +35,7 @@ describe('flottadministration / flottval-pa-kartan', () => {
     const panel = root.querySelector('.map-fleet-management')!;
     expect(
       panel.querySelectorAll('.ship-manifest .ship-portrait'),
-    ).toHaveLength(2);
+    ).toHaveLength(1); // startflotta-med-raptor: the starting Raptor.
     expect(panel.querySelector('.fleet-panel-sizing')).toBeNull();
     expect(panel.querySelector('.fleet-panel-help')).toBeNull();
     expect(panel.textContent).not.toContain('Expand fleet panel');

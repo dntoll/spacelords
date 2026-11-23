@@ -190,7 +190,8 @@ export class Game {
       name: 'Home Fleet',
       position: galaxy.homePlanet.position,
       destination: null,
-      ships: { ...zeroShips(), 'Exploration ship': 1, Fighter: 1 },
+      // startflotta-med-raptor: the game begins with a single Raptor.
+      ships: { ...zeroShips(), Raptor: 1 },
     };
     this.#normalizeShips();
     if (this.#fleet.shipUnits)
@@ -591,10 +592,13 @@ export class Game {
   }
 
   // planetutforskning-vid-ankomst: details are learned only after an
-  // Exploration ship survives arrival and any combat at the planet.
+  // Exploration ship or a Raptor survives arrival and any combat there.
   #completePlanetExplorations(): readonly Discovery[] {
     const fleet = this.#fleet;
-    if (!fleet.position || !fleet.ships['Exploration ship'])
+    if (
+      !fleet.position ||
+      (!fleet.ships['Exploration ship'] && !fleet.ships.Raptor)
+    )
       return Object.freeze([]);
     const planet = this.galaxy.systems
       .flatMap((system) => system.planets)
@@ -1068,9 +1072,7 @@ export class Game {
     this.#chartedPirates.add(other.id);
     this.#mapCells = null;
     this.#updateSight();
-    this.#event(
-      'Captured charts reveal a pirate presence.',
-    );
+    this.#event('Captured charts reveal a pirate presence.');
   }
   #createTacticalBattles(): TacticalBattle[] {
     const fleet = this.#fleet;
@@ -1354,10 +1356,7 @@ export class Game {
               event.position.r === item.position.r)),
       );
       if (!event) {
-        const description =
-          'kind' in item
-            ? `${item.name}.`
-            : item.summary;
+        const description = 'kind' in item ? `${item.name}.` : item.summary;
         const id = this.#event(
           String(description),
           new HexCoordinate(item.position.q, item.position.r),
@@ -1814,9 +1813,14 @@ export class Game {
   #fleetDetectionRange(fleet: Fleet): number {
     return Math.max(
       0,
-      ...(fleet.shipUnits ?? [])
-        .filter((unit) => unit.type === 'Exploration ship')
-        .map((unit) => unit.telescope ?? 1),
+      ...(fleet.shipUnits ?? []).map((unit) =>
+        unit.type === 'Exploration ship'
+          ? (unit.telescope ?? 1)
+          : // startflotta-med-raptor: the Raptor sees like Telescope I.
+            unit.type === 'Raptor'
+            ? 1
+            : 0,
+      ),
     );
   }
   #updateSight(): void {

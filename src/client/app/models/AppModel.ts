@@ -119,6 +119,8 @@ export interface AppReadModel {
   readonly travelling: boolean;
   /** ap-pa-starmap: the player's AP are spent and the enemies act next. */
   readonly enemyTurnPending: boolean;
+  /** upptackt-stannar-resan: a discovery stopped the journey for a new hex. */
+  readonly discoveryPause: boolean;
   readonly events: readonly GameEvent[];
   readonly notice: PlayerNotice;
   readonly editorAvailable: boolean;
@@ -339,6 +341,7 @@ export class AppModel {
       travelRoute: this.#travelRoute(),
       travelling: this.#voyage,
       enemyTurnPending: this.#game.enemyTurnPending,
+      discoveryPause: this.#game.discoveryPause(),
       events: this.#game.events,
       notice: this.#notice,
       editorAvailable: this.editorCase.available,

@@ -9,7 +9,7 @@ Spelet ska fungera på mobil, surfplatta och dator.
 
 Utforskningen bygger vidare på `simple_production`. Den nya riktningen och
 kraven finns i [Single fleet](docs/single-fleet.md). De nya speländringarna
-är **Ej implementerat**. Den tidigare planetekonomin är borttagen;
+är till största delen **Ej implementerat**. Den tidigare planetekonomin är borttagen;
 områdesfilerna beskriver det som finns kvar. [Den tidigare visionen](docs/game-vision.md)
 behålls som bakgrund.
 
@@ -31,7 +31,8 @@ kraven med stabila namn och status. Statusen nedan sammanfattar området.
   produktionskö, ändliga förbrukningsresurser och personer med flera roller
   och lika startegenskaper. `enda-spelarflottan` och
   `flottstyrning-med-ap-pa-starmap` är **Fullständigt implementerat** (en
-  flotta, AP, turordning och piraternas aktivering);
+  flotta, AP, turordning och piraternas aktivering), liksom
+  `startflotta-med-raptor` (en ensam Raptor vid start);
   övriga nya beteendekrav är **Ej implementerat**.
   Planen anger vilka delar som måste diskuteras och låsas med användaren
   före implementation (`single-fleet-beslut-fore-implementation`).

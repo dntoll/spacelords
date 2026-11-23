@@ -217,7 +217,8 @@ describe('handelser / arsrundor-och-order', () => {
   });
   it('ingen-ankomstbesked: reaching the destination adds no arrival or movement noise', () => {
     const game = new Game(createExampleGalaxy());
-    game.setDestination('fleet-home', new HexCoordinate(7, 0));
+    // Two rounds of the Raptor's speed 2 from Tellus.
+    game.setDestination('fleet-home', new HexCoordinate(5, 0));
     for (const frame of turnFrames(game)) game.applyFrame(frame);
     game.finishTurn();
     for (const frame of turnFrames(game)) game.applyFrame(frame);
