@@ -17,7 +17,7 @@ import { Detection } from '../../../src/client/space-map/models/Detection.js';
 afterEach(() => vi.useRealTimers());
 
 it('destinationer-for-aktiva-skepp: retains the current order target beyond the recorded journey and when a route changes direction', () => {
-  const base = new Game(createExampleGalaxy()).fleetSnapshots()[0]!;
+  const base = new Game(createExampleGalaxy()).fleetSnapshot();
   const from = new HexCoordinate(1, 0),
     via = new HexCoordinate(2, 0),
     to = new HexCoordinate(3, 0);
@@ -28,7 +28,7 @@ it('destinationer-for-aktiva-skepp: retains the current order target beyond the 
     destination: to,
   };
   const origin = {
-    fleets: [outbound],
+    fleet: outbound,
     pirates: [],
     cells: [],
   };
@@ -40,7 +40,7 @@ it('destinationer-for-aktiva-skepp: retains the current order target beyond the 
   );
   const returning = {
     ...origin,
-    fleets: [{ ...outbound, position: via, destination: from }],
+    fleet: { ...outbound, position: via, destination: from },
   };
   playback.record(
     { movements: [{ fleetId: base.id, from: via, to: from }] },
@@ -48,68 +48,59 @@ it('destinationer-for-aktiva-skepp: retains the current order target beyond the 
     returning,
   );
   playback.begin(playback.tracks[0]![0]!);
-  expect(playback.fleets[0]!.destination).toEqual(to);
+  expect(playback.fleet.destination).toEqual(to);
   playback.complete();
   playback.begin(playback.tracks[0]![1]!);
-  expect(playback.fleets[0]!.destination).toEqual(from);
+  expect(playback.fleet.destination).toEqual(from);
 });
 
 it('geografisk-arsuppspelning: plays tracks west to east, then south to north', () => {
-  const base = new Game(createExampleGalaxy()).fleetSnapshots()[0]!;
-  const fleets = [
-    { ...base, id: 'east', position: new HexCoordinate(4, 0) },
-    { ...base, id: 'north', position: new HexCoordinate(0, -2) },
-    {
-      ...base,
-      id: 'route-a',
-      exploration: 'explore' as const,
-      position: new HexCoordinate(-8, 0),
-    },
-    { ...base, id: 'south', position: new HexCoordinate(-2, 2) },
-    {
-      ...base,
-      id: 'route-b',
-      exploration: 'explore' as const,
-      position: new HexCoordinate(8, 0),
-    },
-  ];
-  const origin = { fleets, pirates: [], cells: [] };
+  const game = new Game(createExampleGalaxy());
+  const fleet = {
+    ...game.fleetSnapshot(),
+    id: 'route-a',
+    position: new HexCoordinate(-8, 0),
+  };
+  // enda-spelarflottan: the other tracks belong to pirates in sight.
+  const pirate = game.exportState().pirates![0]!;
+  const pirates = (
+    [
+      ['east', 4, 0],
+      ['north', 0, -2],
+      ['south', -2, 2],
+      ['route-b', 8, 0],
+    ] as const
+  ).map(([id, q, r]) => ({
+    ...pirate,
+    id,
+    position: new HexCoordinate(q, r),
+  }));
+  const origin = { fleet, pirates, cells: [] };
   const playback = new TurnMovementPlayback(origin);
-  const moves = fleets.map((fleet) => ({
-    fleetId: fleet.id,
-    from: fleet.position,
-    to: fleet.position.neighbors()[0]!,
+  const moves = [fleet, ...pirates].map((track) => ({
+    fleetId: track.id,
+    from: track.position,
+    to: track.position.neighbors()[0]!,
   }));
   playback.record({ movements: moves }, origin, origin);
   const extra = {
     fleetId: 'route-a',
-    from: moves[2]!.to,
+    from: moves[0]!.to,
     to: new HexCoordinate(-6, 0),
   };
   playback.record({ movements: [extra] }, origin, origin);
   expect(
     playback.batches.map((batch) => batch.map((track) => track[0]!.fleetId)),
   ).toEqual([['route-a'], ['south'], ['north'], ['east'], ['route-b']]);
-  const simultaneous = [moves[2]!, moves[4]!];
-  playback.begin(simultaneous);
-  expect(playback.currents).toEqual(simultaneous);
+  playback.begin(moves[0]!);
+  expect(playback.currents).toEqual([moves[0]]);
   playback.advance(0.25);
-  expect(
-    playback.fleets.find((fleet) => fleet.id === 'route-b')!.position,
-  ).toEqual(moves[4]!.from);
+  expect(playback.fleet.position).toEqual(moves[0]!.from);
   playback.advance(0.75);
-  for (const move of simultaneous)
-    expect(
-      playback.fleets.find((fleet) => fleet.id === move.fleetId)!.position,
-    ).toEqual(move.to);
-  expect(
-    playback.fleets.find((fleet) => fleet.id === 'east')!.destination,
-  ).toBeNull();
+  expect(playback.fleet.position).toEqual(moves[0]!.to);
   playback.complete();
   playback.begin([extra]);
-  expect(
-    playback.fleets.find((fleet) => fleet.id === 'route-b')!.destination,
-  ).toBeNull();
+  expect(playback.fleet.destination).toEqual(extra.to);
   expect(Object.isFrozen(playback.currents)).toBe(true);
 });
 
@@ -121,14 +112,9 @@ describe('en-flotta-i-taget / osynliga-flottor-utan-animation', () => {
       const from = new HexCoordinate(3, 0),
         to = new HexCoordinate(4, 0);
       const first = {
-        ...game.fleetSnapshots()[0]!,
+        ...game.fleetSnapshot(),
         position: from,
         detectionRange: 1,
-      };
-      const second = {
-        ...first,
-        id: 'second',
-        position: new HexCoordinate(0, 3),
       };
       const oldContact = {
         id: 'old',
@@ -144,12 +130,8 @@ describe('en-flotta-i-taget / osynliga-flottor-utan-animation', () => {
       const cells = HexCoordinate.disk(8).map((position) => ({
         position,
         visible:
-          (from.distanceTo(position) <= 1 &&
-            (!cloud || position.key !== to.key)) ||
-          second.position.distanceTo(position) <= 1,
-        explored:
-          from.distanceTo(position) <= 1 ||
-          second.position.distanceTo(position) <= 1,
+          from.distanceTo(position) <= 1 && (!cloud || position.key !== to.key),
+        explored: from.distanceTo(position) <= 1,
         object: null,
         terrain:
           cloud && position.key === to.key
@@ -157,16 +139,13 @@ describe('en-flotta-i-taget / osynliga-flottor-utan-animation', () => {
             : ('space' as const),
       }));
       const before: MovementScene = {
-        fleets: [first, second],
+        fleet: first,
         pirates: [oldContact],
         cells,
       };
       const after: MovementScene = {
         ...before,
-        fleets: [
-          { ...first, position: to },
-          { ...second, position: new HexCoordinate(0, 5) },
-        ],
+        fleet: { ...first, position: to },
         pirates: [newContact],
         cells: cells.map((cell) =>
           cell.position.key === '0,6'
@@ -187,14 +166,7 @@ describe('en-flotta-i-taget / osynliga-flottor-utan-animation', () => {
       const playback = new TurnMovementPlayback(before);
       playback.record(
         {
-          movements: [
-            { fleetId: first.id, from, to },
-            {
-              fleetId: second.id,
-              from: second.position,
-              to: new HexCoordinate(0, 5),
-            },
-          ],
+          movements: [{ fleetId: first.id, from, to }],
         },
         before,
         after,
@@ -206,7 +178,6 @@ describe('en-flotta-i-taget / osynliga-flottor-utan-animation', () => {
       expect(at('2,0')).toMatchObject({ explored: true, visible: false });
       expect(at('4,0').visible).toBe(true);
       expect(at('5,0').visible).toBe(!cloud);
-      expect(at('0,3').visible).toBe(true);
       expect(at('0,6')).toMatchObject({
         explored: false,
         visible: false,
@@ -245,12 +216,13 @@ describe('en-flotta-i-taget / osynliga-flottor-utan-animation', () => {
         const after = model.snapshot;
         const expected = Detection.coverage(
           [
-            ...after.fleets
-              .filter((fleet) => fleet.position)
-              .map((fleet) => ({
-                position: fleet.id === move.fleetId ? move.to : fleet.position!,
-                range: fleet.detectionRange ?? 0,
-              })),
+            {
+              position:
+                after.fleet.id === move.fleetId
+                  ? move.to
+                  : after.fleet.position!,
+              range: after.fleet.detectionRange ?? 0,
+            },
           ],
           (point) =>
             after.cells.find((cell) => cell.position.key === point.key)
@@ -302,7 +274,11 @@ describe('en-flotta-i-taget / osynliga-flottor-utan-animation', () => {
     const from = new HexCoordinate(saved.position.q, saved.position.r),
       to = from.neighbors()[0]!;
     const pirate = { ...saved, position: from };
-    const visible = { fleets: [], pirates: [pirate], cells: [] };
+    const visible = {
+      fleet: game.fleetSnapshot(),
+      pirates: [pirate],
+      cells: [],
+    };
     const hidden = { ...visible, pirates: [] };
     const frame = { movements: [{ fleetId: pirate.id, from, to }] };
     for (const [before, after] of [
@@ -338,7 +314,7 @@ describe('en-flotta-i-taget / osynliga-flottor-utan-animation', () => {
       dispose() {},
     });
     controller.start();
-    const home = model.snapshot.fleets[0]!.position!;
+    const home = model.snapshot.fleet.position!;
     const target = new HexCoordinate(home.q + 8, home.r);
     emit({ type: 'select', position: target });
     emit({ type: 'select', position: target });

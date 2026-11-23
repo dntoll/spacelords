@@ -100,7 +100,8 @@ export interface AppReadModel {
   /** game-over-utan-skepp: the home fleet has no ships left. */
   readonly defeated: boolean;
   readonly interruption: SavedTurnSimulation | null;
-  readonly fleets: readonly FleetSnapshot[];
+  /** enda-spelarflottan: the player's only fleet. */
+  readonly fleet: FleetSnapshot;
   readonly pirates: readonly PirateSnapshot[];
   readonly selectedFleet: FleetSnapshot | null;
   readonly fleetNameEdit: {
@@ -274,7 +275,7 @@ export class AppModel {
         camera: this.#eventCamera!.snapshot,
         selected: null,
         mapFleetId: this.#movementPlayback.current?.fleetId ?? null,
-        fleets: this.#movementPlayback.fleets,
+        fleet: this.#movementPlayback.fleet,
         pirates: this.#movementPlayback.pirates,
         cells: this.#movementPlayback.cells,
         destinationFleetId: null,
@@ -323,7 +324,7 @@ export class AppModel {
       phase: this.#game.phase,
       defeated: this.#game.defeated,
       interruption: this.#game.interruption,
-      fleets: this.#game.fleetSnapshots(),
+      fleet: this.#game.fleetSnapshot(),
       pirates: this.#game.pirateSnapshots(),
       selectedFleet: this.#selectedFleetId
         ? this.#game.fleet(this.#selectedFleetId)
@@ -354,7 +355,7 @@ export class AppModel {
       (this.#game.phase !== 'planning' && !this.#game.discoveryPause())
     )
       return null;
-    const fleet = travelFleet(this.#game, this.#mapFleetId);
+    const fleet = travelFleet(this.#game);
     if (!fleet?.position || fleet.position.key === this.#selected.key)
       return null;
     const steps = this.#game.routePreview(fleet.id, this.#selected);

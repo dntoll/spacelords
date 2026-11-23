@@ -140,6 +140,10 @@ Inga numeriska balansvärden, nya resurslistor, rolluppsättningar eller
 stödskeppsfunktioner är låsta av denna plan. Den här dokumentationsändringen
 ändrar inte spelet eller sparformatet.
 
+`enda-spelarflottan` är **Fullständigt implementerat** (2026-11-23): modellen,
+läsmodellen och vyerna har exakt en spelarflotta, och sparformatets lista
+`fleets` innehåller alltid en.
+
 `hexval-med-vag`, `resa-utan-synliga-pirater` och `ap-pa-starmap`
 (2026-11-22, **Fullständigt implementerat**, se [Star map](areas/star-map.md))
 och `piratens-aktivering` (2026-11-23) gör `flottstyrning-med-ap-pa-starmap`

@@ -40,9 +40,7 @@ describe('fokuserat-kartval', () => {
         (cell) =>
           !cell.object &&
           cell.explored === explored &&
-          !model.snapshot.fleets.some(
-            (fleet) => fleet.position?.key === cell.position.key,
-          ),
+          model.snapshot.fleet.position?.key !== cell.position.key,
       )!;
       expect(cell).toBeDefined();
       model.select(cell.position);

@@ -28,15 +28,15 @@ function start() {
 describe('ap-pa-starmap', () => {
   it('moves only the player’s fleet and keeps unspent AP without ending the round', () => {
     const { game, fleet, pirates } = start();
-    const speed = game.fleetSnapshots()[0]!.speed;
+    const speed = game.fleetSnapshot().speed;
     expect(speed).toBeGreaterThanOrEqual(2);
-    expect(game.fleetSnapshots()[0]!.actionPoints).toBe(speed);
+    expect(game.fleetSnapshot().actionPoints).toBe(speed);
     const before = pirates();
     const target = new HexCoordinate(fleet.position!.q + 1, fleet.position!.r);
     game.setDestination(fleet.id, target);
     stage(game);
     expect(game.fleet(fleet.id)!.position?.key).toBe(target.key);
-    expect(game.fleetSnapshots()[0]!.actionPoints).toBe(speed - 1);
+    expect(game.fleetSnapshot().actionPoints).toBe(speed - 1);
     expect(game.round).toBe(1);
     expect(game.enemyTurnPending).toBe(false);
     expect(pirates()).toEqual(before);
@@ -44,7 +44,7 @@ describe('ap-pa-starmap', () => {
 
   it('lets the enemies act once the AP are spent, then begins the next round with full AP', () => {
     const { game, fleet, pirates } = start();
-    const speed = game.fleetSnapshots()[0]!.speed;
+    const speed = game.fleetSnapshot().speed;
     const before = pirates();
     const far = new HexCoordinate(
       fleet.position!.q + speed + 2,
@@ -52,14 +52,14 @@ describe('ap-pa-starmap', () => {
     );
     game.setDestination(fleet.id, far);
     stage(game);
-    expect(game.fleetSnapshots()[0]!.actionPoints).toBe(0);
+    expect(game.fleetSnapshot().actionPoints).toBe(0);
     expect(game.enemyTurnPending).toBe(true);
     expect(game.round).toBe(1);
     expect(pirates()).toEqual(before);
     stage(game);
     expect(game.enemyTurnPending).toBe(false);
     expect(game.round).toBe(2);
-    expect(game.fleetSnapshots()[0]!.actionPoints).toBe(speed);
+    expect(game.fleetSnapshot().actionPoints).toBe(speed);
     // piratens-aktivering: pirates that were never seen stay where they are.
     expect(pirates()).toEqual(before);
     // The fleet did not move while the enemies acted.
@@ -75,8 +75,8 @@ describe('ap-pa-starmap', () => {
     stage(game);
     const saved = JSON.parse(JSON.stringify(game.exportState())) as GameState;
     const loaded = Game.restore(saved);
-    expect(loaded.fleetSnapshots()[0]!.actionPoints).toBe(
-      game.fleetSnapshots()[0]!.actionPoints,
+    expect(loaded.fleetSnapshot().actionPoints).toBe(
+      game.fleetSnapshot().actionPoints,
     );
     expect(loaded.enemyTurnPending).toBe(game.enemyTurnPending);
     expect(loaded.exportState()).toEqual(saved);
@@ -103,7 +103,7 @@ describe('piratens-aktivering', () => {
     return { game, pirate: () => game.exportState().pirates![0]! };
   }
   function spendAp(game: Game, away: { q: number; r: number }) {
-    const fleet = game.fleetSnapshots()[0]!;
+    const fleet = game.fleetSnapshot();
     game.setDestination(
       fleet.id,
       new HexCoordinate(
@@ -143,7 +143,7 @@ describe('piratens-aktivering', () => {
       const distance = new HexCoordinate(
         pirate().position.q,
         pirate().position.r,
-      ).distanceTo(game.fleetSnapshots()[0]!.position!);
+      ).distanceTo(game.fleetSnapshot().position!);
       expect(pirate().active === true).toBe(distance <= 10);
       stage(game);
     }

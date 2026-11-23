@@ -125,7 +125,7 @@ describe('gemensamt-handelseflode', () => {
     const slot = session();
     let current = slot.open();
     // hexval-med-vag: two taps on the saved destination start the journey.
-    const destination = current.model.snapshot.fleets[0]!.destination!;
+    const destination = current.model.snapshot.fleet.destination!;
     current.emit({ type: 'select', position: destination });
     current.emit({ type: 'select', position: destination });
     await vi.advanceTimersByTimeAsync(0);
@@ -262,10 +262,7 @@ describe('gemensamt-handelseflode', () => {
     ).not.toBe(true);
     expect(model.snapshot.phase).toBe('planning');
     expect(model.snapshot.mapFleetId).toBeNull();
-    expect(
-      model.snapshot.fleets.find((fleet) => fleet.id === 'fleet-home')!
-        .canIssueOrders,
-    ).toBe(false);
+    expect(model.snapshot.fleet.canIssueOrders).toBe(false);
     controller.dispose();
   });
 });

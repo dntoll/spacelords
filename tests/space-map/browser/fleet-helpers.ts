@@ -29,8 +29,7 @@ export async function selectMapFleet(
       JSON.parse(localStorage.getItem('spacelords.save.v2.1')!) as SavedGame,
   );
   const game = Game.restore(record.state);
-  const fleets = game.fleetSnapshots();
-  const marker = FleetMapLayout.markers(fleets).find(
+  const marker = FleetMapLayout.markers([game.fleetSnapshot()]).find(
     (marker) => marker.fleet.name === name || marker.fleet.ownName === name,
   );
   if (!marker) throw new Error(`No positioned fleet: ${name}`);
@@ -60,7 +59,7 @@ export async function fleetMarkerPoint(
     Number(
       (await page.getByLabel('Map zoom').textContent())!.replace('%', ''),
     ) / 100;
-  const marker = FleetMapLayout.markers(game.fleetSnapshots()).find(
+  const marker = FleetMapLayout.markers([game.fleetSnapshot()]).find(
     (item) => item.fleet.name === name || item.fleet.ownName === name,
   );
   if (!marker) throw new Error(`No positioned fleet: ${name}`);

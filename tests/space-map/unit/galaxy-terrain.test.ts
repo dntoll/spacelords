@@ -199,7 +199,7 @@ describe('asteroidbalten / spara-avbrutet-ar', () => {
 
 describe('nebulosornas-sikt', () => {
   const cloud = (point: HexCoordinate) => point.key === '1,0';
-  it('withholds a real pirate contact behind a cloud until another observer sees it', () => {
+  it('withholds a real pirate contact behind a cloud until the fleet sees it from outside', () => {
     const base = terrainGame(
       [{ position: { q: 5, r: -3 }, type: 'nebula' }],
       new HexCoordinate(4, -3),
@@ -229,21 +229,10 @@ describe('nebulosornas-sikt', () => {
       hidden.mapSnapshot().find((cell) => cell.position.key === '6,-3')!
         .visible,
     ).toBe(false);
+    // enda-spelarflottan: the fleet itself moves to a hex outside the cloud.
     const revealed = Game.restore({
       ...hidden.exportState(),
-      fleets: [
-        ...fleets,
-        {
-          ...fleets[0]!,
-          id: 'observer',
-          name: 'Observer',
-          position: { q: 6, r: -4 },
-          shipUnits: fleets[0]!.shipUnits.map((unit) => ({
-            ...unit,
-            id: `observer-${unit.id}`,
-          })),
-        },
-      ],
+      fleets: [{ ...fleets[0]!, position: { q: 6, r: -4 } }],
     });
     expect(revealed.pirateSnapshots().map((pirate) => pirate.id)).toEqual([
       'pirate-nadir',

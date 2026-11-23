@@ -84,7 +84,7 @@ export class TurnFacade {
     if (this.host.game.phase === 'planning' && this.host.game.enemyTurnPending)
       return true;
     if (!this.host.voyage) return false;
-    const fleet = travelFleet(this.host.game, this.host.mapFleetId);
+    const fleet = travelFleet(this.host.game);
     if (
       !fleet?.destination ||
       fleet.position?.key === fleet.destination.key ||

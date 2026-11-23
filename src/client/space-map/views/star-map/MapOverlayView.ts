@@ -14,12 +14,11 @@ export function renderMapOverlays(
   if (model.screen === 'production') return;
   renderMapFleets(
     sketch,
-    [...model.fleets, ...(model.pirates ?? []).map(pirateAsFleet)].map(
-      (fleet) =>
-        (model.turnMovement || model.eventPlayback) &&
-        !model.turnMovements.some((movement) => movement.fleetId === fleet.id)
-          ? { ...fleet, destination: null }
-          : fleet,
+    [model.fleet, ...(model.pirates ?? []).map(pirateAsFleet)].map((fleet) =>
+      (model.turnMovement || model.eventPlayback) &&
+      !model.turnMovements.some((movement) => movement.fleetId === fleet.id)
+        ? { ...fleet, destination: null }
+        : fleet,
     ),
     model.camera.zoom,
     model,

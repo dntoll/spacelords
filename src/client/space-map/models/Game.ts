@@ -161,11 +161,13 @@ export class Game {
   #research = new ResearchPlan();
   #round = 1;
   #stage: TurnStage = 'round';
-  readonly #actionTime = new Map<string, number>();
+  /** ap-pa-starmap: the fleet's unspent movement, in sixtieths of a round. */
+  #actionTime = 60;
   #enemyPending = false;
   #phase: GamePhase = 'planning';
   #sequence = 1;
-  #fleets: Fleet[];
+  /** enda-spelarflottan: the player has exactly one fleet. */
+  #fleet: Fleet;
   #pirates: PirateFleet[];
   #explored = new Set<string>();
   #knownTerrain = new Set<string>();
@@ -183,23 +185,20 @@ export class Game {
     this.#navigation = new HexNavigation(galaxy);
     this.#pirates = PirateFleet.seed(galaxy);
     this.#reveal(galaxy.homePlanet.position);
-    this.#fleets = [
-      {
-        id: 'fleet-home',
-        name: 'Home Fleet',
-        position: galaxy.homePlanet.position,
-        destination: null,
-        ships: { ...zeroShips(), 'Exploration ship': 1, Fighter: 1 },
-      },
-    ];
+    this.#fleet = {
+      id: 'fleet-home',
+      name: 'Home Fleet',
+      position: galaxy.homePlanet.position,
+      destination: null,
+      ships: { ...zeroShips(), 'Exploration ship': 1, Fighter: 1 },
+    };
     this.#normalizeShips();
-    for (const fleet of this.#fleets)
-      if (fleet.shipUnits)
-        fleet.shipUnits = fleet.shipUnits.map((unit) =>
-          unit.type === 'Fighter' && unit.missiles === undefined
-            ? { ...unit, missiles: 0 }
-            : unit,
-        );
+    if (this.#fleet.shipUnits)
+      this.#fleet.shipUnits = this.#fleet.shipUnits.map((unit) =>
+        unit.type === 'Fighter' && unit.missiles === undefined
+          ? { ...unit, missiles: 0 }
+          : unit,
+      );
     this.#updateSight();
     this.#updateSight();
     this.#visiblePirates = new Set(
@@ -245,15 +244,16 @@ export class Game {
       ...(this.#simulation && this.#stage !== 'round'
         ? { turnStage: this.#stage }
         : {}),
-      ...(this.#actionTime.size
-        ? { actionTime: Object.fromEntries(this.#actionTime) }
+      ...(this.#actionTime !== 60
+        ? { actionTime: { [this.#fleet.id]: this.#actionTime } }
         : {}),
       ...(this.#enemyPending ? { enemyTurnPending: true } : {}),
       sequence: this.#sequence,
       researched: [...this.#research.completed],
       researchTarget: this.#research.queue[0] ?? null,
       researchQueue: this.#research.queue,
-      fleets: this.#fleets,
+      // enda-spelarflottan: the save format keeps a list of exactly one.
+      fleets: [this.#fleet],
       explored: [...this.#explored],
       events: this.#events,
     });
@@ -319,9 +319,9 @@ export class Game {
       throw new Error('Duplicate fleet ID.');
     game.#round = copy.round;
     game.#phase = 'planning';
-    for (const [id, time] of Object.entries(copy.actionTime ?? {}))
-      if (Number.isFinite(time) && time >= 0 && time <= 60)
-        game.#actionTime.set(id, time);
+    const time = copy.actionTime?.[copy.fleets[0]?.id ?? ''];
+    if (time !== undefined && Number.isFinite(time) && time >= 0 && time <= 60)
+      game.#actionTime = time;
     game.#enemyPending = copy.enemyTurnPending === true;
     game.#sequence = copy.sequence;
     const isTechnology = (technology: string): technology is Technology =>
@@ -341,30 +341,32 @@ export class Game {
         ),
       ),
     );
-    game.#fleets = copy.fleets.map(
-      ({ position: current, destination, courseOrigin, ships, ...rest }) => {
-        const fleet = { ...rest, ships: { ...zeroShips(), ...ships } };
-        const empty = game.#shipCount(fleet.ships) === 0;
-        if (!empty && !current)
-          throw new Error('A fleet with ships needs a position.');
-        return {
-          ...fleet,
-          ships: { ...fleet.ships },
-          position: empty ? null : position(current!),
-          destination: !empty && destination ? position(destination) : null,
-          ...(!empty && courseOrigin
-            ? { courseOrigin: position(courseOrigin) }
-            : {}),
-        };
-      },
-    );
-    const named = new Set<string>();
-    for (const fleet of game.#fleets) {
-      fleet.name = game.#uniqueFleetName(fleet.name, named);
-      named.add(fleet.name.toLowerCase());
+    if (copy.fleets.length !== 1)
+      throw new Error('A saved game has exactly one fleet.');
+    {
+      const {
+        position: current,
+        destination,
+        courseOrigin,
+        ships,
+        ...rest
+      } = copy.fleets[0]!;
+      const fleet = { ...rest, ships: { ...zeroShips(), ...ships } };
+      const empty = game.#shipCount(fleet.ships) === 0;
+      if (!empty && !current)
+        throw new Error('A fleet with ships needs a position.');
+      game.#fleet = {
+        ...fleet,
+        ships: { ...fleet.ships },
+        position: empty ? null : position(current!),
+        destination: !empty && destination ? position(destination) : null,
+        ...(!empty && courseOrigin
+          ? { courseOrigin: position(courseOrigin) }
+          : {}),
+      };
     }
-    for (const fleet of game.#fleets)
-      fleet.ships = { ...zeroShips(), ...fleet.ships };
+    game.#fleet.name = game.#fleet.name.trim().slice(0, 40) || 'Fleet';
+    game.#fleet.ships = { ...zeroShips(), ...game.#fleet.ships };
     game.#normalizeShips();
     game.#explored = new Set(copy.explored);
     const planetIds = new Set(
@@ -484,7 +486,7 @@ export class Game {
     game.#linkInterruptionEvents();
     // Exercise derived data before accepting a stored record.
     game.mapSnapshot();
-    game.fleetSnapshots();
+    game.fleetSnapshot();
     return game;
   }
 
@@ -591,35 +593,35 @@ export class Game {
   // planetutforskning-vid-ankomst: details are learned only after an
   // Exploration ship survives arrival and any combat at the planet.
   #completePlanetExplorations(): readonly Discovery[] {
-    const discoveries: Discovery[] = [];
-    for (const fleet of this.#fleets) {
-      if (!fleet.position || !fleet.ships['Exploration ship']) continue;
-      const planet = this.galaxy.systems
-        .flatMap((system) => system.planets)
-        .find((candidate) => candidate.position.key === fleet.position!.key);
-      if (
-        !planet ||
-        !this.#knownObjects.has(planet.id) ||
-        this.#surveyedPlanets.has(planet.id) ||
-        this.#hostileAt(planet.position)
-      )
-        continue;
-      this.#surveyedPlanets.add(planet.id);
-      const eventId = this.#event(
-        `Planet explored: ${planet.name} at HEX ${planet.position.key}.`,
-        planet.position,
-      );
-      discoveries.push({
+    const fleet = this.#fleet;
+    if (!fleet.position || !fleet.ships['Exploration ship'])
+      return Object.freeze([]);
+    const planet = this.galaxy.systems
+      .flatMap((system) => system.planets)
+      .find((candidate) => candidate.position.key === fleet.position!.key);
+    if (
+      !planet ||
+      !this.#knownObjects.has(planet.id) ||
+      this.#surveyedPlanets.has(planet.id) ||
+      this.#hostileAt(planet.position)
+    )
+      return Object.freeze([]);
+    this.#surveyedPlanets.add(planet.id);
+    const eventId = this.#event(
+      `Planet explored: ${planet.name} at HEX ${planet.position.key}.`,
+      planet.position,
+    );
+    this.#mapCells = null;
+    return Object.freeze([
+      {
         eventId,
         id: planet.id,
-        kind: 'planet-explored',
+        kind: 'planet-explored' as const,
         name: planet.name,
         position: planet.position,
         fleetId: fleet.id,
-      });
-    }
-    this.#mapCells = null;
-    return Object.freeze(discoveries);
+      },
+    ]);
   }
   pirateSnapshots(): readonly PirateSnapshot[] {
     return Object.freeze(
@@ -633,49 +635,47 @@ export class Game {
     );
   }
 
-  fleetSnapshots(): readonly FleetSnapshot[] {
-    return Object.freeze(
-      this.#fleets.map((fleet) =>
-        Object.freeze({
-          id: fleet.id,
-          name: this.#fleetDisplayName(fleet),
-          ownName: fleet.name,
-          detectionRange: this.#fleetDetectionRange(fleet),
-          navigationIssue: fleet.navigationIssue,
-          remainingMovement: this.#simulation
-            ? this.#simulation.movement(
-                fleet.id,
-                fleet.position
-                  ? this.#navigation.stepSpeed(
-                      fleet.position,
-                      fleet.position,
-                      this.#speed(fleet),
-                    )
-                  : this.#speed(fleet),
-              )
-            : undefined,
-          actionPoints: this.#actionPoints(fleet),
-          canIssueOrders: this.canIssueFleetOrders(fleet.id),
-          position: fleet.position,
-          destination: fleet.destination,
-          ships: Object.freeze({ ...fleet.ships }),
-          shipUnits: Object.freeze(
-            fleet.shipUnits!.map((unit) =>
-              Object.freeze({
-                ...unit,
-                engines: Object.freeze({ ...unit.engines }),
-              }),
-            ),
-          ),
-          speed: this.#speed(fleet),
-          crew: this.#crew(fleet.ships),
-          cargo: Object.freeze(this.#cargo(fleet.id)),
-        }),
+  /** enda-spelarflottan: the player's only fleet. */
+  fleetSnapshot(): FleetSnapshot {
+    const fleet = this.#fleet;
+    return Object.freeze({
+      id: fleet.id,
+      name: this.#fleetDisplayName(fleet),
+      ownName: fleet.name,
+      detectionRange: this.#fleetDetectionRange(fleet),
+      navigationIssue: fleet.navigationIssue,
+      remainingMovement: this.#simulation
+        ? this.#simulation.movement(
+            fleet.id,
+            fleet.position
+              ? this.#navigation.stepSpeed(
+                  fleet.position,
+                  fleet.position,
+                  this.#speed(fleet),
+                )
+              : this.#speed(fleet),
+          )
+        : undefined,
+      actionPoints: this.#actionPoints(fleet),
+      canIssueOrders: this.canIssueFleetOrders(fleet.id),
+      position: fleet.position,
+      destination: fleet.destination,
+      ships: Object.freeze({ ...fleet.ships }),
+      shipUnits: Object.freeze(
+        fleet.shipUnits!.map((unit) =>
+          Object.freeze({
+            ...unit,
+            engines: Object.freeze({ ...unit.engines }),
+          }),
+        ),
       ),
-    );
+      speed: this.#speed(fleet),
+      crew: this.#crew(fleet.ships),
+      cargo: Object.freeze(this.#cargo(fleet.id)),
+    });
   }
   fleet(id: string): FleetSnapshot | null {
-    return this.fleetSnapshots().find((fleet) => fleet.id === id) ?? null;
+    return id === this.#fleet.id ? this.fleetSnapshot() : null;
   }
 
   #hostileAt(position: HexCoordinate): boolean {
@@ -690,13 +690,6 @@ export class Game {
     const clean = name.trim();
     if (!clean || clean.length > 40)
       throw new Error('Fleet names must be 1–40 characters.');
-    if (
-      this.#fleets.some(
-        (other) =>
-          other.id !== id && other.name.toLowerCase() === clean.toLowerCase(),
-      )
-    )
-      throw new Error('Fleet names must be unique.');
     fleet.name = clean;
   }
   setDestination(id: string, destination: HexCoordinate): void {
@@ -791,7 +784,7 @@ export class Game {
         const pieces = state.pieces.filter((p) => p.fleetId === participant.id);
         const fleet =
           participant.side === 'player'
-            ? this.#fleets.find((f) => f.id === participant.id)
+            ? this.#fleetById(participant.id)
             : this.#pirates.find((f) => f.id === participant.id);
         if (!fleet || fleet.position?.key !== position.key)
           throw new Error('Battle fleet is not at the encounter.');
@@ -993,16 +986,7 @@ export class Game {
       return;
     }
     if (winner === 'player') {
-      const fleet =
-        this.#fleets.find(
-          (candidate) =>
-            candidate.position?.key ===
-            new HexCoordinate(
-              battle.snapshot.position.q,
-              battle.snapshot.position.r,
-            ).key,
-        ) ?? this.#fleets.find((candidate) => candidate.shipUnits?.length);
-      if (!fleet) return;
+      const fleet = this.#fleet;
       const pirate = this.#pirates.find((entry) => entry.id === piece.fleetId);
       if (pirate) {
         if (piece.type === 'Space pirate')
@@ -1021,7 +1005,10 @@ export class Game {
           engines: { 'Rocket engine': 1, 'Ion pulse engine': 0 },
         });
       }
-      if (!fleet.position) fleet.position = this.#fleets[0]?.position ?? null;
+      fleet.position ??= new HexCoordinate(
+        battle.snapshot.position.q,
+        battle.snapshot.position.r,
+      );
       battle.transferPiece(piece.id, fleet.id, 'player');
       return;
     }
@@ -1033,9 +1020,7 @@ export class Game {
         ),
       ) ?? this.#pirates[0];
     if (!pirate) return;
-    const playerFleet = this.#fleets.find(
-      (fleet) => fleet.id === piece.fleetId,
-    );
+    const playerFleet = this.#fleetById(piece.fleetId);
     if (playerFleet) {
       playerFleet.shipUnits = playerFleet.shipUnits!.filter(
         (unit) => unit.id !== piece.id,
@@ -1088,33 +1073,29 @@ export class Game {
     );
   }
   #createTacticalBattles(): TacticalBattle[] {
-    const positions = [
-      ...new Map(
-        this.#fleets
-          .filter((f) => f.position && this.#hostileAt(f.position))
-          .map((f) => [f.position!.key, f.position!]),
-      ).values(),
-    ].sort((a, b) => a.q - b.q || a.r - b.r);
+    const fleet = this.#fleet;
+    const positions =
+      fleet.position &&
+      this.#shipCount(fleet.ships) &&
+      this.#hostileAt(fleet.position)
+        ? [fleet.position]
+        : [];
     return positions.map((position) => {
-      const fleets: BattleFleet[] = this.#fleets
-        .filter(
-          (f) => f.position?.key === position.key && this.#shipCount(f.ships),
-        )
-        .map((f) => {
-          return {
-            id: f.id,
-            side: 'player',
-            retreat: this.#retreatHex(f.id, position, false),
-            ships: f.shipUnits!.map((unit) => ({
-              id: unit.id,
-              type: unit.type,
-              ion: unit.engines['Ion pulse engine'] > 0,
-              towing: false,
-              missiles: unit.type === 'Fighter' ? (unit.missiles ?? 2) : 0,
-              armored: unit.armored === true,
-            })),
-          };
-        });
+      const fleets: BattleFleet[] = [fleet].map((f) => {
+        return {
+          id: f.id,
+          side: 'player',
+          retreat: this.#retreatHex(f.id, position, false),
+          ships: f.shipUnits!.map((unit) => ({
+            id: unit.id,
+            type: unit.type,
+            ion: unit.engines['Ion pulse engine'] > 0,
+            towing: false,
+            missiles: unit.type === 'Fighter' ? (unit.missiles ?? 2) : 0,
+            armored: unit.armored === true,
+          })),
+        };
+      });
       fleets.push(
         ...this.#pirates
           .filter((p) => p.position.key === position.key)
@@ -1162,7 +1143,7 @@ export class Game {
         (p) =>
           this.galaxy.isPassable(p) &&
           (enemy
-            ? !this.#fleets.some((f) => f.position?.key === p.key) &&
+            ? this.#fleet.position?.key !== p.key &&
               !!ring?.some((r) => r.key === p.key)
             : !this.#hostileAt(p)),
       ) ?? null
@@ -1290,12 +1271,8 @@ export class Game {
     this.#simulation!.battles = this.#simulation!.battles.map((report) => ({
       ...report,
       fleetId:
-        report.fleetIds?.find((id) =>
-          this.#fleets.some((fleet) => fleet.id === id),
-        ) ??
-        (this.#fleets.some((fleet) => fleet.id === report.fleetId)
-          ? report.fleetId
-          : null),
+        report.fleetIds?.find((id) => id === this.#fleet.id) ??
+        (report.fleetId === this.#fleet.id ? report.fleetId : null),
     }));
     this.#updateSight();
     const exploredPlanets = this.#completePlanetExplorations();
@@ -1311,7 +1288,7 @@ export class Game {
     );
   }
   canIssueFleetOrders(id: string): boolean {
-    const fleet = this.#fleets.find((candidate) => candidate.id === id);
+    const fleet = this.#fleetById(id);
     return (
       !!fleet?.position &&
       (this.#phase === 'planning' ||
@@ -1462,10 +1439,7 @@ export class Game {
   }
   /** game-over-utan-skepp: the home fleet is lost when none of its ships remain. */
   get defeated(): boolean {
-    const home =
-      this.#fleets.find((fleet) => fleet.id === 'fleet-home') ??
-      this.#fleets[0];
-    return !home || this.#shipCount(home.ships) === 0;
+    return this.#shipCount(this.#fleet.ships) === 0;
   }
   /** ap-pa-starmap: whether the enemies act next, after the player's AP. */
   get enemyTurnPending(): boolean {
@@ -1475,9 +1449,7 @@ export class Game {
     const speed = this.#speed(fleet);
     if (this.#simulation && this.#stage === 'player')
       return this.#simulation.movement(fleet.id, speed);
-    return Math.floor(
-      ((this.#actionTime.get(fleet.id) ?? 60) * speed) / 60 + 1e-9,
-    );
+    return Math.floor((this.#actionTime * speed) / 60 + 1e-9);
   }
   /**
    * ap-pa-starmap: `player` moves only the player's fleets with their unspent
@@ -1489,32 +1461,24 @@ export class Game {
     this.#requirePlanning();
     this.#stage = stage;
     this.#simulation = new TurnSimulation([
-      ...this.#fleets.map((fleet) => [fleet.id, this.#speed(fleet)] as const),
+      [this.#fleet.id, this.#speed(this.#fleet)] as const,
       ...this.#pirates.map((pirate) => [pirate.id, 1] as const),
     ]);
     if (stage === 'player') {
-      for (const fleet of this.#fleets)
-        this.#simulation.remaining.set(
-          fleet.id,
-          this.#actionTime.get(fleet.id) ?? 60,
-        );
+      this.#simulation.remaining.set(this.#fleet.id, this.#actionTime);
       for (const pirate of this.#pirates)
         this.#simulation.remaining.set(pirate.id, 0);
     } else if (stage === 'enemy') {
-      for (const fleet of this.#fleets)
-        this.#simulation.remaining.set(fleet.id, 0);
+      this.#simulation.remaining.set(this.#fleet.id, 0);
       // piratens-aktivering: pirates the player has not met stand still.
       for (const pirate of this.#pirates)
         if (!pirate.active) this.#simulation.remaining.set(pirate.id, 0);
     }
     // strid-i-samma-hex: fleets that already share a hex fight before moving.
     if (
-      this.#fleets.some(
-        (fleet) =>
-          fleet.position &&
-          this.#shipCount(fleet.ships) &&
-          this.#hostileAt(fleet.position),
-      )
+      this.#fleet.position &&
+      this.#shipCount(this.#fleet.ships) &&
+      this.#hostileAt(this.#fleet.position)
     )
       this.#simulation.awaitingCombat = true;
     this.#phase = 'simulating';
@@ -1563,7 +1527,7 @@ export class Game {
   }
   #movingFleets(): PursuingFleet[] {
     return [
-      ...this.#fleets,
+      this.#fleet,
       ...this.#pirates.map((pirate) => pirate.movingFleet()),
     ];
   }
@@ -1591,9 +1555,7 @@ export class Game {
     }
     for (const movement of frame.movements) {
       this.#simulation!.previousPositions.set(movement.fleetId, movement.from);
-      const moving = this.#fleets.find(
-        (fleet) => fleet.id === movement.fleetId,
-      );
+      const moving = this.#fleetById(movement.fleetId);
       this.#simulation!.spend(
         movement.fleetId,
         this.#navigation.stepSpeed(
@@ -1644,25 +1606,13 @@ export class Game {
     if (this.#simulation?.awaitingCombat || this.nextTurnFrame())
       throw new Error('Complete the remaining turn steps first.');
     if (this.#stage === 'player') {
-      for (const fleet of this.#fleets) this.#recordArrival(fleet);
-      for (const fleet of this.#fleets)
-        this.#actionTime.set(
-          fleet.id,
-          this.#simulation!.remaining.get(fleet.id) ?? 0,
-        );
-      this.#enemyPending = this.#fleets.some((fleet) => {
-        if (!fleet.position || !this.#shipCount(fleet.ships)) return false;
-        if (this.#actionPoints(fleet) < 1) return true;
-        if (!fleet.destination || fleet.destination.key === fleet.position.key)
-          return false;
-        // A fleet that cannot afford its next step has spent its AP.
-        if (this.routePreview(fleet.id, fleet.destination).length) return true;
-        fleet.destination = null;
-        return false;
-      });
+      const fleet = this.#fleet;
+      this.#recordArrival(fleet);
+      this.#actionTime = this.#simulation!.remaining.get(fleet.id) ?? 0;
+      this.#enemyPending = this.#apSpent(fleet);
     } else {
       this.#round += 1;
-      this.#actionTime.clear();
+      this.#actionTime = 60;
       this.#enemyPending = false;
     }
     this.#stage = 'round';
@@ -1670,7 +1620,7 @@ export class Game {
     this.#simulation = null;
   }
   #settleYear(): void {
-    for (const fleet of this.#fleets) this.#recordArrival(fleet);
+    this.#recordArrival(this.#fleet);
     const exploredPlanets = this.#completePlanetExplorations();
     if (exploredPlanets.length)
       this.#simulation!.discoveries = Object.freeze([
@@ -1691,7 +1641,7 @@ export class Game {
   }
   #cargo(fleetId: string): Stock {
     const stock = emptyStock();
-    const hold = this.#fleets.find((fleet) => fleet.id === fleetId)?.hold;
+    const hold = this.#fleetById(fleetId)?.hold;
     if (hold)
       for (const material of MATERIALS) stock[material] += hold[material];
     return stock;
@@ -1803,7 +1753,7 @@ export class Game {
         discovery.position.q,
         discovery.position.r,
       );
-      const observer = this.#fleets
+      const observer = [this.#fleet]
         .filter(
           (fleet) =>
             fleet.position &&
@@ -1863,14 +1813,16 @@ export class Game {
     );
   }
   #updateSight(): void {
-    const sources = [
-      ...this.#fleets
-        .filter((fleet) => fleet.position && this.#shipCount(fleet.ships))
-        .map((fleet) => ({
-          position: fleet.position!,
-          range: this.#fleetDetectionRange(fleet),
-        })),
-    ];
+    const fleet = this.#fleet;
+    const sources =
+      fleet.position && this.#shipCount(fleet.ships)
+        ? [
+            {
+              position: fleet.position,
+              range: this.#fleetDetectionRange(fleet),
+            },
+          ]
+        : [];
     const nebula = (point: HexCoordinate) =>
       this.galaxy.terrainAt(point) === 'nebula';
     this.#visible = Detection.coverage(sources, nebula);
@@ -1901,11 +1853,10 @@ export class Game {
       if (this.#visible.has(pirate.position.key)) pirate.active = true;
       else if (
         pirate.active &&
-        !this.#fleets.some(
-          (fleet) =>
-            fleet.position &&
-            this.#shipCount(fleet.ships) &&
-            fleet.position.distanceTo(pirate.position) <= 10,
+        !(
+          this.#fleet.position &&
+          this.#shipCount(this.#fleet.ships) &&
+          this.#fleet.position.distanceTo(pirate.position) <= 10
         )
       )
         pirate.active = false;
@@ -1929,7 +1880,8 @@ export class Game {
   }
 
   #normalizeShips(): void {
-    for (const fleet of this.#fleets) {
+    {
+      const fleet = this.#fleet;
       const remaining = { ...fleet.ships };
       const units = (fleet.shipUnits ?? []).filter(
         (unit) => remaining[unit.type]-- > 0,
@@ -1999,9 +1951,25 @@ export class Game {
     return Object.values(ships).reduce((a, b) => a + b, 0);
   }
   #fleetState(id: string): Fleet {
-    const fleet = this.#fleets.find((item) => item.id === id);
+    const fleet = this.#fleetById(id);
     if (!fleet) throw new Error('Fleet was not found.');
     return fleet;
+  }
+  #fleetById(id: string): Fleet | undefined {
+    return id === this.#fleet.id ? this.#fleet : undefined;
+  }
+  /**
+   * ap-pa-starmap: the fleet has spent its AP when none are left or it cannot
+   * pay for the next step towards its destination.
+   */
+  #apSpent(fleet: Fleet): boolean {
+    if (!fleet.position || !this.#shipCount(fleet.ships)) return false;
+    if (this.#actionPoints(fleet) < 1) return true;
+    if (!fleet.destination || fleet.destination.key === fleet.position.key)
+      return false;
+    if (this.routePreview(fleet.id, fleet.destination).length) return true;
+    fleet.destination = null;
+    return false;
   }
 
   // ingen-ankomstbesked: arriving clears the order and does not announce it.
@@ -2060,18 +2028,6 @@ export class Game {
   }
   #id(prefix: string): string {
     return `${prefix}-${this.#sequence++}`;
-  }
-  #uniqueFleetName(
-    base: string,
-    names = new Set(this.#fleets.map((fleet) => fleet.name.toLowerCase())),
-  ): string {
-    const clean = base.trim().slice(0, 40) || 'Fleet';
-    let name = clean;
-    for (let number = 2; names.has(name.toLowerCase()); number++) {
-      const suffix = ` (${number})`;
-      name = clean.slice(0, 40 - suffix.length) + suffix;
-    }
-    return name;
   }
   #requirePlanning(): void {
     if (this.#phase !== 'planning')

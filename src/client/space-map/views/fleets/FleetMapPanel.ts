@@ -21,9 +21,7 @@ export function renderMapFleetPanel(
     includeLocation ? (cell?.object?.name ?? 'Fleets') : 'Fleets',
   );
   place.classList.add('fleet-place');
-  const local = model.fleets.filter(
-    (fleet) => fleet.position?.key === position.key,
-  );
+  const local = model.fleet.position?.key === position.key ? [model.fleet] : [];
   const pirates = (model.pirates ?? []).filter(
     (pirate) => pirate.position.key === position.key,
   );

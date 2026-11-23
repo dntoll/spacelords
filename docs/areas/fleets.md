@@ -1,10 +1,12 @@
 # Flottor och order
 
 `Fleets` visar spelarens flotta på kartan. Flottan styrs med hexval, kan
-byta namn och utforskar planeter som ett Exploration ship står på. Kod och
-sparformat hanterar fortfarande en lista med flottor; att göra om dem till en
-enda flotta hör till `enda-spelarflottan` och `fleet-som-skeppsoversikt` i
-[Single fleet](../single-fleet.md), som väntar på beslut.
+byta namn och utforskar planeter som ett Exploration ship står på.
+`enda-spelarflottan` är **Fullständigt implementerat** (2026-11-23): spelet
+har exakt en spelarflotta i modell, läsmodell och vyer. Sparformatet behåller
+listan `fleets` med exakt en flotta, så befintliga sparningar fungerar; en
+sparning med fler eller färre flottor avvisas. Att ersätta `Fleets` med en
+skeppsöversikt (`fleet-som-skeppsoversikt`) väntar på beslut.
 
 ## Krav
 

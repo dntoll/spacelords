@@ -76,7 +76,6 @@ describe('rymdpirater-per-stjarna / rymdpiraters-patrullering', () => {
     expect(
       pirates[0]!.hold!.Iron + pirates[0]!.hold!.Water + pirates[0]!.hold!.Oil,
     ).toBeGreaterThan(0);
-    expect(game.fleetSnapshots()).toHaveLength(1);
     expect(game.pirateSnapshots()).toHaveLength(0);
   });
   it('patrols one adjacent ring hex each year, wraps, and reveals no terrain', () => {
@@ -169,27 +168,6 @@ describe('flottstrid-per-hex', () => {
       destination: null,
     });
     expect(moving.fleet('fleet-home')!.ships['Exploration ship']).toBe(0);
-  });
-  it('gemensamt-stridsdeltagande: pools escorts while retaining both fleet identities', () => {
-    const state = battle(1, 3, 1).exportState();
-    const first = state.fleets[0]!;
-    const game = Game.restore({
-      ...state,
-      fleets: [
-        { ...first, id: 'b', name: 'B' },
-        { ...first, id: 'a', name: 'A', shipUnits: [] },
-      ],
-    });
-    turn(game);
-    expect(game.fleet('a')).not.toBeNull();
-    expect(game.fleet('b')).not.toBeNull();
-    expect(game.exportState().pirates).toEqual([]);
-    const reports = game.events.filter((e) =>
-      e.text.startsWith('Combat at HEX'),
-    );
-    expect(reports).toHaveLength(1);
-    expect(reports[0]!.text).toContain('A');
-    expect(reports[0]!.text).toContain('B');
   });
   it('strid-i-samma-hex: entering the pirate’s hex holds it there, so they fight instead of swapping', () => {
     const state = battle(0, 1, 1).exportState();

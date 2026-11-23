@@ -382,7 +382,7 @@ describe('handelser-pa-kartan', () => {
  * paused round. Without a distance the fleet's current destination is used.
  */
 function travel(emit: IntentHandler, model: AppModel, distance?: number) {
-  const fleet = model.snapshot.fleets[0]!;
+  const fleet = model.snapshot.fleet;
   const target =
     distance === undefined
       ? fleet.destination!

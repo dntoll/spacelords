@@ -21,7 +21,7 @@ function setup() {
     dispose() {},
   }).start();
   const point = (): Point => {
-    const marker = FleetMapLayout.markers(model.snapshot.fleets)[0]!;
+    const marker = FleetMapLayout.markers([model.snapshot.fleet])[0]!;
     const { center, zoom } = model.snapshot.camera;
     return {
       x: (marker.point.x - center.x) * zoom,
@@ -41,7 +41,7 @@ describe('kartflottor', () => {
     'keeps %i fleet markers on a circle inside their own hex',
     (count) => {
       const model = new AppModel();
-      const original = model.snapshot.fleets[0]!;
+      const original = model.snapshot.fleet;
       const fleets: FleetSnapshot[] = Array.from(
         { length: count },
         (_, index) => ({ ...original, id: `fleet-${index}` }),
@@ -107,10 +107,10 @@ describe('dra-flottdestination', () => {
     emit({ type: 'pointer-start', id: 1, point: point() });
     emit({ type: 'pointer-move', id: 1, point: at(target) });
     expect(model.snapshot.fleetDestinationPreview?.key).toBe(target.key);
-    expect(model.snapshot.fleets[0]!.destination).toBeNull();
+    expect(model.snapshot.fleet.destination).toBeNull();
     expect(model.snapshot.camera).toEqual(camera);
     emit({ type: 'pointer-end', id: 1, point: at(target) });
-    expect(model.snapshot.fleets[0]!.destination?.key).toBe(target.key);
+    expect(model.snapshot.fleet.destination?.key).toBe(target.key);
     expect(model.snapshot.fleetDestinationPreview).toBeNull();
   });
   it.each(['pointer-cancel', 'open-research'] as const)(
@@ -121,7 +121,7 @@ describe('dra-flottdestination', () => {
       emit({ type: 'pointer-start', id: 1, point: point() });
       emit({ type: 'pointer-move', id: 1, point: at(new HexCoordinate(2, 0)) });
       emit({ type: action });
-      expect(model.snapshot.fleets[0]!.destination?.key).toBe('3,0');
+      expect(model.snapshot.fleet.destination?.key).toBe('3,0');
       expect(model.snapshot.fleetDestinationPreview).toBeNull();
     },
   );
@@ -133,11 +133,11 @@ describe('dra-flottdestination', () => {
       id: 1,
       point: { x: point().x + 3, y: point().y },
     });
-    expect(model.snapshot.fleets[0]!.destination).toBeNull();
+    expect(model.snapshot.fleet.destination).toBeNull();
     emit({ type: 'pointer-start', id: 1, point: point() });
     emit({ type: 'pointer-move', id: 1, point: { x: 10000, y: 10000 } });
     emit({ type: 'pointer-end', id: 1, point: { x: 10000, y: 10000 } });
-    expect(model.snapshot.fleets[0]!.destination).toBeNull();
+    expect(model.snapshot.fleet.destination).toBeNull();
   });
   it('cancels fleet dragging when a second pointer starts a pinch', () => {
     const { model, emit, point, at } = setup();
@@ -148,6 +148,6 @@ describe('dra-flottdestination', () => {
     emit({ type: 'pointer-end', id: 1, point: point() });
     emit({ type: 'pointer-end', id: 2, point: { x: 110, y: 0 } });
     expect(model.snapshot.fleetDestinationPreview).toBeNull();
-    expect(model.snapshot.fleets[0]!.destination).toBeNull();
+    expect(model.snapshot.fleet.destination).toBeNull();
   });
 });

@@ -14,7 +14,7 @@ describe('skeppsbilder', () => {
   it('keeps large fleet previews bounded and preserves all ship types', () => {
     const model = new AppModel();
     const fleet = {
-      ...model.snapshot.fleets[0]!,
+      ...model.snapshot.fleet,
       ships: {
         Fighter: 1000000,
         'Colony ship': 1,
@@ -37,7 +37,7 @@ describe('skeppsbilder', () => {
 
 it('genererade-skeppssprites / bargat-piratskepp-behaller-typ: renders dedicated cargo, salvage and pirate portraits', () => {
   const model = new AppModel();
-  const position = model.snapshot.fleets[0]!.position!;
+  const position = model.snapshot.fleet.position!;
   const panel = renderMapFleetPanel(
     {
       ...model.snapshot,
@@ -54,7 +54,7 @@ it('genererade-skeppssprites / bargat-piratskepp-behaller-typ: renders dedicated
   expect(SHIP_SPRITES['Space pirate']).not.toBe(SHIP_IMAGES.Fighter);
   expect(Object.keys(SHIP_IMAGES)).toHaveLength(8);
   const view = renderFleetShips({
-    ...model.snapshot.fleets[0]!,
+    ...model.snapshot.fleet,
     ships: {
       Fighter: 0,
       'Colony ship': 0,

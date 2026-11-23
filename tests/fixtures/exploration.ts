@@ -24,13 +24,6 @@ export function discoveryState(fighters = 1) {
         shipUnits: [],
         ships: { ...empty, Fighter: fighters, 'Exploration ship': 1 },
       },
-      {
-        ...state.fleets[0]!,
-        id: 'other',
-        name: 'Other',
-        shipUnits: [],
-        ships: { ...empty, Fighter: 1 },
-      },
     ],
   };
 }

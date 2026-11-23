@@ -485,12 +485,11 @@ export class AppView implements AppPort {
         phase: model.phase,
         selected: model.selected,
         selectedPlanetInfo: model.selectedPlanetInfo,
-        mapFleet: model.fleets.find((fleet) => fleet.id === model.mapFleetId),
+        mapFleet: model.fleet.id === model.mapFleetId ? model.fleet : null,
         preview: model.fleetDestinationPreview,
         dragging: model.fleetDragging,
-        fleets: model.fleets.filter(
-          (fleet) => fleet.position?.key === model.selected?.position.key,
-        ),
+        fleetHere: model.fleet.position?.key === model.selected?.position.key,
+        fleet: model.fleet,
         destination: model.destinationFleetId,
         fleetNameEdit: model.fleetNameEdit,
         travelRoute: model.travelRoute,
@@ -884,12 +883,9 @@ export class AppView implements AppPort {
     dialog.setAttribute('aria-labelledby', 'game-over-title');
     const title = element('h2', '', 'Game over');
     title.id = 'game-over-title';
-    const fleet =
-      model.fleets.find((candidate) => candidate.id === 'fleet-home') ??
-      model.fleets[0];
     dialog.append(
       title,
-      element('p', '', `${fleet?.name ?? 'Home Fleet'} has no ships left.`),
+      element('p', '', `${model.fleet.name} has no ships left.`),
       button('Saved games', () => this.#emit({ type: 'open-saves' }), 'button'),
     );
     dialog.addEventListener('cancel', (event) => event.preventDefault());
@@ -1106,7 +1102,7 @@ export class AppView implements AppPort {
     this.#cancelSelectionGesture?.();
     this.#panel.hidden = false;
     const selectedFleet = [
-      ...model.fleets,
+      model.fleet,
       ...(model.pirates ?? []).map(pirateAsFleet),
     ].find(
       (fleet) =>
@@ -1168,9 +1164,8 @@ export class AppView implements AppPort {
             ),
           ]
         : [];
-    const destinationFleet = model.destinationFleetId
-      ? model.fleets.find((fleet) => fleet.id === model.destinationFleetId)
-      : null;
+    const destinationFleet =
+      model.destinationFleetId === model.fleet.id ? model.fleet : null;
     if (model.screen === 'map' && model.selectedPlanetInfo) {
       const summary = element('div', 'planet-selection-summary');
       if (model.selectedPlanetInfo.surveyed) {
@@ -1227,9 +1222,7 @@ export class AppView implements AppPort {
         false,
       );
       if (
-        model.fleets.some(
-          (fleet) => fleet.position?.key === cell.position.key,
-        ) ||
+        model.fleet.position?.key === cell.position.key ||
         model.pirates.some(
           (pirate) => pirate.position.key === cell.position.key,
         )
@@ -1305,9 +1298,7 @@ export class AppView implements AppPort {
 function travelNote(model: AppReadModel): HTMLElement | null {
   const route = model.travelRoute;
   if (!route) return null;
-  const fleetName =
-    model.fleets.find((fleet) => fleet.id === route.fleetId)?.name ??
-    'The fleet';
+  const fleetName = model.fleet.name;
   if (model.travelling)
     return element(
       'p',

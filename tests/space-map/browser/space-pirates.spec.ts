@@ -43,7 +43,7 @@ for (const screen of ['Star map', 'Fleets']) {
       await page.getByRole('button', { name: 'Fleets', exact: true }).click();
     const game = Game.restore(prepared);
     const marker = FleetMapLayout.markers([
-      ...game.fleetSnapshots(),
+      game.fleetSnapshot(),
       ...game.pirateSnapshots().map(pirateAsFleet),
     ]).find((marker) => marker.fleet.id === 'pirate-nadir')!;
     await selectMapPoint(page, marker.point);
@@ -121,7 +121,7 @@ test('piratflotta-med-lastfartyg: the pirate panel lists a transport and its car
   await startFirstSlot(page);
   const game = Game.restore(prepared);
   const marker = FleetMapLayout.markers([
-    ...game.fleetSnapshots(),
+    game.fleetSnapshot(),
     ...game.pirateSnapshots().map(pirateAsFleet),
   ]).find((marker) => marker.fleet.id === 'pirate-nadir')!;
   await selectMapPoint(page, marker.point);

@@ -84,10 +84,9 @@ spelbar, men bevara fristående strids- och bordningstester.
         avbrott. Move och Stop är senare borttagna
         (`inga-move-stop-knappar`). Ett Exploration ship utforskar
         fortfarande planeter det står på.
-  - [ ] `Game` och vyerna hanterar fortfarande en lista med flottor
-        (`fleets`). Att göra om till en enda flotta och att ersätta `Fleets`
-        med en skeppsöversikt hör till `enda-spelarflottan` och
-        `fleet-som-skeppsoversikt`, som väntar på beslut.
+  - [x] `Game` och vyerna hanterar en enda flotta (`enda-spelarflottan`,
+        2026-11-23). Att ersätta `Fleets` med en skeppsöversikt
+        (`fleet-som-skeppsoversikt`) väntar på beslut.
   - [x] Ta bort bärgning, vrak, orbitala varv, reparationer och
         uppgraderingsordern vid varv, som alla krävde spelarens planeter.
         `Salvage ship` finns kvar som skeppstyp.
@@ -218,9 +217,8 @@ Kända begränsningar:
 - När en runda bara har en händelse är Events-listan tom en kort stund mellan
   att händelsen arkiveras och att rundan avslutas. Testet väntar nu på att
   rundan avslutas i stället för att kontrollera mellanläget.
-- Kod och sparformat hanterar fortfarande en lista med flottor
-  (`enda-spelarflottan`), och Fleets är en karta utan panel tills en flotta
-  väljs (`fleet-som-skeppsoversikt`). Båda väntar på beslut.
+- Fleets är en karta utan panel tills flottan väljs
+  (`fleet-som-skeppsoversikt`), i väntan på beslut.
 - Uppgraderingar (Missiles, Armor) kan inte monteras eftersom Upgrade vid
   varv är borttagen (`utforskade-stridsuppgraderingar`, **Delvis
   implementerat**).

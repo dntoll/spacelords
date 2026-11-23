@@ -34,7 +34,7 @@ export class StarMapFacade {
       this.host.destinationFleetId = null;
       return 'destination';
     }
-    const fleet = travelFleet(this.host.game, this.host.mapFleetId);
+    const fleet = travelFleet(this.host.game);
     const paused = this.host.game.discoveryPause();
     if (
       position.key === this.host.selected.key &&
@@ -58,7 +58,7 @@ export class StarMapFacade {
     if (!this.host.isMapScreen() || this.host.destinationFleetId) return null;
     return FleetMapLayout.hit(
       [
-        ...this.host.game.fleetSnapshots(),
+        this.host.game.fleetSnapshot(),
         ...this.host.game.pirateSnapshots().map(pirateAsFleet),
       ],
       this.#shownCamera().screenToWorld(point),

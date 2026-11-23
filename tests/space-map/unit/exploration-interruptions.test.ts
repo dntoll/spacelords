@@ -35,13 +35,6 @@ function contact(fighters = 1) {
         shipUnits: [],
         ships: { ...empty, Fighter: fighters, 'Exploration ship': 1 },
       },
-      {
-        ...state.fleets[0]!,
-        id: 'other',
-        name: 'Other',
-        shipUnits: [],
-        ships: { ...empty, Fighter: 1 },
-      },
     ],
   });
 }
@@ -78,9 +71,6 @@ describe('upptacktsavbrott / order-under-upptacktsavbrott', () => {
     expect(game.enemyDiscoveryResume()).toBe(true);
     game.setDestination('fleet-home', new HexCoordinate(7, -4));
     expect(game.fleet('fleet-home')!.destination?.key).toBe('7,-4');
-    expect(() =>
-      game.setDestination('other', new HexCoordinate(2, 0)),
-    ).toThrow();
     completeTacticalBattles(game);
     game.continueTurn();
     const combat = game.nextTurnFrame()!;

@@ -236,7 +236,7 @@ describe('handelser / arsrundor-och-order', () => {
     const root = document.createElement('div');
     document.body.replaceChildren(root);
     const model = new AppModel();
-    const home = model.snapshot.fleets[0]!.position!;
+    const home = model.snapshot.fleet.position!;
     // hexval-med-vag: a far hex spends the AP, so the enemies act as well.
     const target = new HexCoordinate(home.q + 8, home.r);
     let resume!: () => void;

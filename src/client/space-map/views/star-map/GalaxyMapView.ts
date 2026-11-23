@@ -206,7 +206,7 @@ export class GalaxyMapView implements MapPort {
     if (this.#movement) {
       const { movements, progress } = this.#movement;
       const markers = FleetMapLayout.markers([
-        ...original.fleets,
+        original.fleet,
         ...original.pirates.map(pirateAsFleet),
       ]);
       for (const movement of movements) {

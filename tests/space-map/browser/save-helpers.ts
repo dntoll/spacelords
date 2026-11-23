@@ -98,13 +98,7 @@ export async function finishRound(page: Page): Promise<void> {
     ).state;
   const state = await saved();
   const game = Game.restore(state);
-  const fleet = game
-    .fleetSnapshots()
-    .find(
-      (candidate) =>
-        candidate.position &&
-        Object.values(candidate.ships).some((count) => count > 0),
-    );
+  const fleet = game.fleetSnapshot();
   if (!fleet?.position) throw new Error('No fleet can travel.');
   const reach = (fleet.actionPoints ?? fleet.speed) + 1;
   const target = HexCoordinate.disk(reach + 3)

@@ -19,7 +19,7 @@ describe('rakare-hexforflyttning', () => {
     const model = new AppModel(
       new Galaxy(example.player, [example.systems[0]!], example.homePlanet.id),
     );
-    const fleet = model.snapshot.fleets[0]!;
+    const fleet = model.snapshot.fleet;
     const start = fleet.position!;
     const distance = Math.max(Math.abs(q), Math.abs(r), Math.abs(q + r));
     model.setDestination(fleet.id, start.q + q, start.r + r);
@@ -42,7 +42,7 @@ describe('rakare-hexforflyttning', () => {
 
   it('keeps alternating across turn boundaries', () => {
     const model = new AppModel();
-    const fleet = model.snapshot.fleets[0]!;
+    const fleet = model.snapshot.fleet;
     model.setDestination(
       fleet.id,
       fleet.position!.q + 3,
@@ -74,7 +74,7 @@ describe('rakare-hexforflyttning', () => {
     [0, 0],
   ])('keeps straight routes and stops at the destination %i,%i', (q, r) => {
     const model = new AppModel();
-    const fleet = model.snapshot.fleets[0]!;
+    const fleet = model.snapshot.fleet;
     model.setDestination(
       fleet.id,
       fleet.position!.q + q,
@@ -87,9 +87,9 @@ describe('rakare-hexforflyttning', () => {
       ),
     ).toHaveLength(Math.max(Math.abs(q), Math.abs(r), Math.abs(q + r)));
     model.finishTurn();
-    expect(model.snapshot.fleets[0]!.position!.key).toBe(
+    expect(model.snapshot.fleet.position!.key).toBe(
       `${fleet.position!.q + q},${fleet.position!.r + r}`,
     );
-    expect(model.snapshot.fleets[0]!.destination).toBeNull();
+    expect(model.snapshot.fleet.destination).toBeNull();
   });
 });

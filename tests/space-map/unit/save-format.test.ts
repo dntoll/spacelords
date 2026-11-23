@@ -52,8 +52,7 @@ describe('sparformat / single-fleet-rensning', () => {
     model.confirmClearSlot();
     model.startSlot(1);
     expect(model.snapshot).toMatchObject({ screen: 'map', round: 1 });
-    expect(model.snapshot.fleets).toHaveLength(1);
     const home = state.fleets[0]!.position!;
-    expect(model.snapshot.fleets[0]?.position?.key).toBe(`${home.q},${home.r}`);
+    expect(model.snapshot.fleet?.position?.key).toBe(`${home.q},${home.r}`);
   });
 });

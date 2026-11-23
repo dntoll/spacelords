@@ -30,9 +30,9 @@ test('flottval-pa-kartan / dra-flottdestination: selects a fleet, previews a sna
     () =>
       JSON.parse(localStorage.getItem('spacelords.save.v2.1')!) as SavedGame,
   );
-  const marker = FleetMapLayout.markers(
-    Game.restore(saved.state).fleetSnapshots(),
-  ).find((item) => item.fleet.name === 'Home Fleet')!;
+  const marker = FleetMapLayout.markers([
+    Game.restore(saved.state).fleetSnapshot(),
+  ]).find((item) => item.fleet.name === 'Home Fleet')!;
   const bounds = (await canvas.boundingBox())!;
   const camera = await page.getByTestId('camera-position').textContent();
   const [cameraX, cameraY] = camera!.match(/-?\d+(?:\.\d+)?/g)!.map(Number);
@@ -110,9 +110,9 @@ test('kartflottor / flottval-pa-kartan: colocated fleets occupy separate positio
     () =>
       JSON.parse(localStorage.getItem('spacelords.save.v2.1')!) as SavedGame,
   );
-  const markers = FleetMapLayout.markers(
-    Game.restore(saved.state).fleetSnapshots(),
-  );
+  const markers = FleetMapLayout.markers([
+    Game.restore(saved.state).fleetSnapshot(),
+  ]);
   const bounds = (await canvas.boundingBox())!;
   const [cameraX, cameraY] = (await page
     .getByTestId('camera-position')

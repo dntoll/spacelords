@@ -6,7 +6,7 @@ import { renderFleetCard } from '../../../src/client/space-map/views/FleetCard.j
 describe('inga-move-stop-knappar', () => {
   it('does not offer Move or Stop on the home fleet', () => {
     const model = new AppModel().snapshot;
-    const card = renderFleetCard(model.fleets[0]!, model, vi.fn());
+    const card = renderFleetCard(model.fleet, model, vi.fn());
     expect(card.textContent).not.toContain('Move');
     expect(card.textContent).not.toContain('Stop');
     expect(card.querySelector('.fleet-order-button')).toBeNull();

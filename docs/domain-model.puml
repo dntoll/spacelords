@@ -98,8 +98,7 @@ note right of Fleet
   resa-utan-synliga-pirater: utan synlig pirat
   fortsätter resan nästa runda tills flottan är framme.
   Tom flotta saknar position.
-  enda-spelarflottan (Ej implementerat):
-  koden hanterar fortfarande en lista med flottor.
+  enda-spelarflottan: spelaren har exakt en flotta.
 end note
 class Ship {
   id

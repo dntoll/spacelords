@@ -8,7 +8,8 @@ import { comparePlaybackPositions } from './PlaybackOrder.js';
 export type TurnMovement = TurnFrame['movements'][number];
 
 export interface MovementScene {
-  readonly fleets: readonly FleetSnapshot[];
+  /** enda-spelarflottan: the player's only fleet. */
+  readonly fleet: FleetSnapshot;
   readonly pirates: readonly PirateSnapshot[];
   readonly cells: readonly MapCell[];
 }
@@ -23,7 +24,7 @@ interface MovementTrack {
 export class TurnMovementPlayback {
   readonly #tracks = new Map<string, MovementTrack>();
   readonly #positions = new Map<string, HexCoordinate>();
-  readonly #fleets: Map<string, FleetSnapshot>;
+  #fleet: FleetSnapshot;
   readonly #pirates: Map<string, PirateSnapshot>;
   readonly #catalog: Map<string, MapCell>;
   readonly #observations = new Map<TurnMovement, readonly PirateSnapshot[]>();
@@ -32,7 +33,7 @@ export class TurnMovementPlayback {
   #current: readonly TurnMovement[] = Object.freeze([]);
 
   constructor(origin: MovementScene) {
-    this.#fleets = new Map(origin.fleets.map((fleet) => [fleet.id, fleet]));
+    this.#fleet = origin.fleet;
     this.#pirates = new Map(origin.pirates.map((fleet) => [fleet.id, fleet]));
     this.#catalog = new Map(
       origin.cells.map((cell) => [cell.position.key, cell]),
@@ -43,7 +44,8 @@ export class TurnMovementPlayback {
   record(frame: TurnFrame, before: MovementScene, after: MovementScene): void {
     for (const cell of after.cells) this.#catalog.set(cell.position.key, cell);
     for (const movement of frame.movements) {
-      const own = before.fleets.find((fleet) => fleet.id === movement.fleetId);
+      const own =
+        before.fleet.id === movement.fleetId ? before.fleet : undefined;
       const pirate = before.pirates.find(
         (fleet) => fleet.id === movement.fleetId,
       );
@@ -100,7 +102,7 @@ export class TurnMovementPlayback {
       const track = this.#tracks.get(movement.fleetId)!;
       if (track.hostile)
         this.#pirates.set(movement.fleetId, track.fleet as PirateSnapshot);
-      else this.#fleets.set(movement.fleetId, track.fleet as FleetSnapshot);
+      else this.#fleet = track.fleet as FleetSnapshot;
       this.#positions.set(movement.fleetId, movement.from);
     }
   }
@@ -123,18 +125,11 @@ export class TurnMovementPlayback {
       for (const pirate of this.#observations.get(movement) ?? [])
         if (!this.#pirates.has(pirate.id)) this.#pirates.set(pirate.id, pirate);
     }
-    const sources: DetectionSource[] = [
-      ...this.fleets
-        .filter(
-          (fleet) =>
-            fleet.position &&
-            Object.values(fleet.ships).some((count) => count > 0),
-        )
-        .map((fleet) => ({
-          position: fleet.position!,
-          range: fleet.detectionRange ?? 0,
-        })),
-    ];
+    const fleet = this.fleet;
+    const sources: DetectionSource[] =
+      fleet.position && Object.values(fleet.ships).some((count) => count > 0)
+        ? [{ position: fleet.position, range: fleet.detectionRange ?? 0 }]
+        : [];
     const nebula = (point: HexCoordinate) =>
       this.#catalog.get(point.key)?.terrain === 'nebula';
     const visible = Detection.coverage(sources, nebula);
@@ -161,23 +156,16 @@ export class TurnMovementPlayback {
     return this.#cells;
   }
 
-  get fleets(): readonly FleetSnapshot[] {
-    return Object.freeze(
-      [...this.#fleets.values()].map((fleet) => {
-        const movement = this.#current.find(
-          (step) => step.fleetId === fleet.id,
-        );
-        return Object.freeze({
-          ...fleet,
-          position: this.#positions.get(fleet.id) ?? fleet.position,
-          destination: movement
-            ? (this.#destinations.get(movement) ??
-              fleet.destination ??
-              movement.to)
-            : null,
-        });
-      }),
-    );
+  get fleet(): FleetSnapshot {
+    const fleet = this.#fleet;
+    const movement = this.#current.find((step) => step.fleetId === fleet.id);
+    return Object.freeze({
+      ...fleet,
+      position: this.#positions.get(fleet.id) ?? fleet.position,
+      destination: movement
+        ? (this.#destinations.get(movement) ?? fleet.destination ?? movement.to)
+        : null,
+    });
   }
 
   get pirates(): readonly PirateSnapshot[] {

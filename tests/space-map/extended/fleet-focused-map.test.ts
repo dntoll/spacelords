@@ -49,7 +49,7 @@ function setup() {
     return { x: (world.x - center.x) * zoom, y: (world.y - center.y) * zoom };
   };
   const fleetPoint = (id = 'fleet-home') => {
-    const marker = FleetMapLayout.markers(model.snapshot.fleets).find(
+    const marker = FleetMapLayout.markers([model.snapshot.fleet]).find(
       (m) => m.fleet.id === id,
     )!;
     const { center, zoom } = model.snapshot.camera;
@@ -99,6 +99,6 @@ describe('flottfokuserad-kartvy', () => {
     emit({ type: 'pointer-cancel' });
     expect(model.snapshot.destinationFleetId).toBeNull();
     expect(model.snapshot.screen).toBe('fleets');
-    expect(model.snapshot.fleets[0]!.destination).toBeNull();
+    expect(model.snapshot.fleet.destination).toBeNull();
   });
 });

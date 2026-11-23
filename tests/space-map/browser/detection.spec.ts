@@ -45,7 +45,7 @@ test('aktuell-detektionssikt / kartans-sikttillstand: losing sight removes pirat
   };
   const game = Game.restore(prepared);
   const marker = FleetMapLayout.markers([
-    ...game.fleetSnapshots(),
+    game.fleetSnapshot(),
     ...game.pirateSnapshots().map(pirateAsFleet),
   ]).find((marker) => marker.fleet.id === 'pirate-nadir')!;
   await load(page, prepared);

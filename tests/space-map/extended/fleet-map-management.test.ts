@@ -64,7 +64,7 @@ describe('flottnamn-direktredigering', () => {
     input.dispatchEvent(
       new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }),
     );
-    expect(model.snapshot.fleets[0]!.name).toBe('Northern Fleet');
+    expect(model.snapshot.fleet.name).toBe('Northern Fleet');
     expect(root.querySelector('[aria-label="Fleet name"]')).toBeNull();
   });
 
@@ -90,7 +90,7 @@ describe('flottnamn-direktredigering', () => {
       .dispatchEvent(
         new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }),
       );
-    expect(model.snapshot.fleets[0]!.name).toBe('Home Fleet');
+    expect(model.snapshot.fleet.name).toBe('Home Fleet');
     root
       .querySelector('.fleet-name-button')!
       .dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
@@ -112,7 +112,7 @@ describe('flottknappar-pa-kartan / flottadministration', () => {
     model.select(new HexCoordinate(0, 1));
     model.select(new HexCoordinate(0, 1));
     view.render(model.snapshot);
-    expect(model.snapshot.fleets[0]!.destination?.key).toBe('0,1');
+    expect(model.snapshot.fleet.destination?.key).toBe('0,1');
   });
 
   it('delad-kartkamera: explicitly opens a fleet without resetting zoom', () => {
@@ -130,7 +130,7 @@ describe('flottknappar-pa-kartan / flottadministration', () => {
     expect(model.snapshot.screen).toBe('fleets');
     expect(model.snapshot.mapFleetId).toBe('fleet-home');
     expect(model.snapshot.camera.center).toEqual(
-      HexGeometry.toPoint(model.snapshot.fleets[0]!.position!),
+      HexGeometry.toPoint(model.snapshot.fleet.position!),
     );
     expect(model.snapshot.camera.zoom).toBe(1.5);
   });

@@ -12,7 +12,6 @@ import {
   arrangeBattle,
   encounterGame,
 } from '../../fixtures/battle-checkpoint.js';
-import { createExampleGalaxy } from '../../../src/client/space-map/models/exampleGalaxy.js';
 
 describe('tactical combat integration', () => {
   it('sparad-taktisk-strid: rejects a checkpoint that replaces an actual participating ship', () => {
@@ -25,47 +24,6 @@ describe('tactical combat integration', () => {
         ),
       })),
     ).toThrow();
-  });
-
-  it('gemensamt-stridsdeltagande / sparad-taktisk-strid: queues separate encounters and preserves the first report during the second battle', () => {
-    const state = new Game(createExampleGalaxy()).exportState();
-    const fleet = state.fleets[0]!;
-    const game = Game.restore({
-      ...state,
-      fleets: state.pirates!.map((pirate, i) => {
-        const star = gameStar(pirate.systemId);
-        return {
-          ...fleet,
-          id: `fleet-${i}`,
-          name: `Fleet ${i}`,
-          shipUnits: [],
-          position: star.neighbors()[1]!,
-          ships: { ...fleet.ships, Fighter: 2 },
-        };
-      }),
-    });
-    function gameStar(id: string) {
-      return createExampleGalaxy().systems.find((s) => s.star.id === id)!.star
-        .position;
-    }
-    game.startTurn();
-    for (let step = 0; !game.tacticalBattle && step < 20; step++) {
-      if (game.phase === 'interrupted') game.continueTurn();
-      game.applyFrame(game.nextTurnFrame()!);
-    }
-    expect(game.exportState().simulation!.tacticalBattles).toHaveLength(2);
-    for (
-      let step = 0;
-      !game.interruption!.battles!.length && step < 100;
-      step++
-    )
-      game.playBattleActivation();
-    expect(game.exportState().simulation!.tacticalBattles).toHaveLength(1);
-    expect(game.interruption!.battles).toHaveLength(1);
-    const restored = Game.restore(game.exportState());
-    expect(restored.exportState()).toEqual(game.exportState());
-    completeTacticalBattles(restored);
-    expect(restored.interruption!.battles).toHaveLength(2);
   });
 
   it('gemensamt-stridsdeltagande / sparad-taktisk-strid: pauses with all ships, locks orders, and cannot skip a battle', () => {

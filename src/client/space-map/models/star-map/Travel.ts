@@ -13,21 +13,10 @@ export interface TravelRoute {
   readonly available: number;
 }
 
-/**
- * enda-spelarflottan: the player's fleet that travels on the map, the
- * selected one when it can move, otherwise the first fleet with ships.
- */
-export function travelFleet(
-  game: Game,
-  preferredId: string | null,
-): FleetSnapshot | null {
-  const movable = game
-    .fleetSnapshots()
-    .filter(
-      (fleet) =>
-        fleet.position && Object.values(fleet.ships).some((count) => count > 0),
-    );
-  return (
-    movable.find((fleet) => fleet.id === preferredId) ?? movable[0] ?? null
-  );
+/** enda-spelarflottan: the player's fleet when it can travel. */
+export function travelFleet(game: Game): FleetSnapshot | null {
+  const fleet = game.fleetSnapshot();
+  return fleet.position && Object.values(fleet.ships).some((count) => count > 0)
+    ? fleet
+    : null;
 }

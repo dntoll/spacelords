@@ -9,7 +9,7 @@ export function discoveryControls(
   const bar = element('section', 'discovery-controls');
   bar.setAttribute('aria-label', 'Interrupted round');
   bar.append(element('strong', '', `Round ${model.round} paused`));
-  const selected = model.fleets.find((fleet) => fleet.id === model.mapFleetId);
+  const selected = model.fleet.id === model.mapFleetId ? model.fleet : null;
   if (selected)
     bar.append(
       element(

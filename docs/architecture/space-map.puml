@@ -72,7 +72,7 @@ space_map__fleets --> space_map___delat_ : 3
 space_map__research --> space_map___delat_ : 8
 space_map__research --> space_map__star_map : 1
 space_map__saves --> space_map___delat_ : 8
-space_map__star_map --> space_map___delat_ : 21
+space_map__star_map --> space_map___delat_ : 22
 space_map__turn --> space_map___delat_ : 15
 space_map__turn --> space_map__star_map : 1
 space_map___delat_ --> ext__boarding : models

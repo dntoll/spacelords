@@ -39,7 +39,7 @@ describe('sparat-spel / frontend-backend-mock', () => {
     const restored = Game.restore(state);
     expect(restored.exportState()).toEqual(game.exportState());
     expect(restored.mapSnapshot()).toEqual(game.mapSnapshot());
-    expect(restored.fleetSnapshots()).toEqual(game.fleetSnapshots());
+    expect(restored.fleetSnapshot()).toEqual(game.fleetSnapshot());
     restored.setDestination('fleet-home', new HexCoordinate(4, 0));
     game.setDestination('fleet-home', new HexCoordinate(4, 0));
     expect(restored.exportState()).toEqual(game.exportState());
@@ -54,10 +54,10 @@ describe('sparat-spel / frontend-backend-mock', () => {
     model.save();
     model.openSaves();
     model.startSlot(2);
-    expect(model.snapshot.fleets[0]?.name).toBe('Home Fleet');
+    expect(model.snapshot.fleet?.name).toBe('Home Fleet');
     const reloaded = new AppModel(undefined, saves);
     reloaded.startSlot(1);
-    expect(reloaded.snapshot.fleets[0]?.name).toBe('First expedition');
+    expect(reloaded.snapshot.fleet?.name).toBe('First expedition');
     reloaded.openSaves();
     expect(reloaded.snapshot.saveSlots[0]?.lastPlayed).not.toBeNull();
   });
@@ -196,12 +196,12 @@ describe('frontend-backend-mock', () => {
     emit({ type: 'start-slot', id: 1 });
     model.renameFleet('fleet-home', 'Saved expedition');
     model.save();
-    expect(Game.restore(repo.load(1)!.state).fleetSnapshots()[0]?.name).toBe(
+    expect(Game.restore(repo.load(1)!.state).fleetSnapshot()?.name).toBe(
       'Saved expedition',
     );
     // hexval-med-vag / ap-pa-starmap: a far hex spends the AP, so the
     // enemies act and the round ends.
-    const home = model.snapshot.fleets[0]!.position!;
+    const home = model.snapshot.fleet.position!;
     const target = new HexCoordinate(home.q + 8, home.r);
     emit({ type: 'select', position: target });
     emit({ type: 'select', position: target });

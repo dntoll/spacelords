@@ -13,7 +13,7 @@ describe('hexval-med-vag', () => {
   it('previews the route the fleet would take without changing its orders', () => {
     const game = new Game(createExampleGalaxy());
     const before = game.exportState();
-    const fleet = game.fleetSnapshots()[0]!;
+    const fleet = game.fleetSnapshot();
     const target = new HexCoordinate(4, 0);
     const route = game.routePreview(fleet.id, target);
     expect(route.at(-1)?.key).toBe(target.key);
@@ -29,7 +29,7 @@ describe('hexval-med-vag', () => {
   it('gives no route to the fleet’s own hex, a star or outside the map', () => {
     const galaxy = createExampleGalaxy();
     const game = new Game(galaxy);
-    const fleet = game.fleetSnapshots()[0]!;
+    const fleet = game.fleetSnapshot();
     expect(game.routePreview(fleet.id, fleet.position!)).toEqual([]);
     expect(
       game.routePreview(fleet.id, galaxy.systems[0]!.star.position),
@@ -72,13 +72,13 @@ describe('hexval-med-vag / resa-utan-synliga-pirater', () => {
     const initial = new Game(createExampleGalaxy()).exportState();
     const app = model({ ...initial, pirates: [] });
     const { emit, master } = controller(app);
-    const fleet = app.snapshot.fleets[0]!;
+    const fleet = app.snapshot.fleet;
     const target = new HexCoordinate(fleet.position!.q + 7, fleet.position!.r);
     emit({ type: 'select', position: target });
     const route = app.snapshot.travelRoute!;
     expect(route.steps.at(-1)?.key).toBe(target.key);
     expect(route.perRound).toBe(fleet.speed);
-    expect(app.snapshot.fleets[0]!.destination).toBeNull();
+    expect(app.snapshot.fleet.destination).toBeNull();
     expect(app.snapshot.round).toBe(1);
     emit({ type: 'select', position: target });
     expect(app.snapshot.travelling).toBe(true);
@@ -90,7 +90,7 @@ describe('hexval-med-vag / resa-utan-synliga-pirater', () => {
         emit({ type: 'ignore-discoveries' });
       }
     }
-    expect(app.snapshot.fleets[0]!.position?.key).toBe(target.key);
+    expect(app.snapshot.fleet.position?.key).toBe(target.key);
     // ap-pa-starmap: a round ends only when the AP are spent, so the round
     // the fleet arrives in stays open when AP are left over.
     expect(app.snapshot.round).toBe(
@@ -104,13 +104,13 @@ describe('hexval-med-vag / resa-utan-synliga-pirater', () => {
   it('selecting another hex instead only moves the selection', () => {
     const app = model(new Game(createExampleGalaxy()).exportState());
     const { emit, master } = controller(app);
-    const fleet = app.snapshot.fleets[0]!;
+    const fleet = app.snapshot.fleet;
     const first = new HexCoordinate(fleet.position!.q + 2, fleet.position!.r);
     const second = new HexCoordinate(fleet.position!.q, fleet.position!.r + 2);
     emit({ type: 'select', position: first });
     emit({ type: 'select', position: second });
     expect(app.snapshot.selected?.position.key).toBe(second.key);
-    expect(app.snapshot.fleets[0]!.destination).toBeNull();
+    expect(app.snapshot.fleet.destination).toBeNull();
     expect(app.snapshot.travelling).toBe(false);
     expect(app.snapshot.round).toBe(1);
     master.dispose();
@@ -133,7 +133,7 @@ describe('hexval-med-vag / resa-utan-synliga-pirater', () => {
     expect(app.turn.continueVoyage()).toBe(false);
     expect(app.snapshot.travelling).toBe(false);
     // The order stays, so End turn moves the fleet on while pirates act.
-    expect(app.snapshot.fleets[0]!.destination?.key).toBe(target.key);
+    expect(app.snapshot.fleet.destination?.key).toBe(target.key);
   });
 });
 
@@ -158,7 +158,7 @@ describe('hexval-med-vag / strid-i-samma-hex', () => {
       `${pirate.position.q},${pirate.position.r}`,
     );
     expect(app.starMap.selectMapFleet(pirate.id)).toBe('travel');
-    expect(app.snapshot.fleets[0]!.destination?.key).toBe(
+    expect(app.snapshot.fleet.destination?.key).toBe(
       `${pirate.position.q},${pirate.position.r}`,
     );
   });

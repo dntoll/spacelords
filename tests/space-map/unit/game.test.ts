@@ -5,7 +5,7 @@ import { AppModel } from '../../../src/client/app/models/AppModel.js';
 describe('rundsimulering', () => {
   it('ap-pa-starmap: advances the round once the fleet has spent its AP and the enemies have acted', () => {
     const model = new AppModel();
-    const fleet = model.snapshot.fleets[0]!;
+    const fleet = model.snapshot.fleet;
     model.setDestination(fleet.id, fleet.position!.q + 6, fleet.position!.r);
     for (const expected of [1, 2]) {
       model.startTurn();
@@ -20,7 +20,7 @@ describe('rundsimulering', () => {
 describe('skeppsutforskning', () => {
   it('reveals every visited hex and explorers reveal neighboring hexes permanently', () => {
     const model = new AppModel();
-    const fleet = model.snapshot.fleets[0]!;
+    const fleet = model.snapshot.fleet;
     model.setDestination(fleet.id, 3, 0);
     model.startTurn();
     const frames = turnFrames(model, false);

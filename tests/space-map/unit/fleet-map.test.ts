@@ -65,8 +65,7 @@ function drawing() {
 }
 
 it('destinationer-for-aktiva-skepp: hides idle fleet arrows during movement and all arrows during event playback', () => {
-  const first = fleet('moving'),
-    second = fleet('idle');
+  const first = fleet('moving');
   const model = new AppModel().snapshot;
   const move = {
     fleetId: first.id,
@@ -78,7 +77,7 @@ it('destinationer-for-aktiva-skepp: hides idle fleet arrows during movement and 
     renderMapOverlays(sketch as unknown as p5, {
       ...model,
       screen: 'fleets',
-      fleets: [first, second],
+      fleet: first,
       pirates: [],
       turnMovement: moving ? move : null,
       turnMovements: moving ? [move] : [],
@@ -99,7 +98,7 @@ describe('destinationspilar-endast-i-flottvyn', () => {
       renderMapOverlays(sketch as unknown as p5, {
         ...new AppModel().snapshot,
         screen,
-        fleets: [ship],
+        fleet: ship,
         pirates: [],
         mapFleetId: null,
       });
@@ -116,20 +115,19 @@ describe('vald-flotta-visar-destinationspil', () => {
     'shows the selected fleet destination, including drag preview (%s)',
     (screen) => {
       const selected = fleet('selected');
-      const idle = fleet('idle');
       const model = new AppModel().snapshot;
       for (const dragging of [false, true]) {
         const { sketch } = drawing();
         renderMapOverlays(sketch as unknown as p5, {
           ...model,
           screen,
-          fleets: [selected, idle],
+          fleet: selected,
           pirates: [],
           mapFleetId: selected.id,
           fleetDragging: dragging,
           fleetDestinationPreview: new HexCoordinate(-2, 0),
         });
-        expect(sketch.line).toHaveBeenCalledTimes(screen === 'fleets' ? 2 : 1);
+        expect(sketch.line).toHaveBeenCalledTimes(1);
         const target = HexGeometry.toPoint(
           dragging ? new HexCoordinate(-2, 0) : selected.destination!,
         );
@@ -137,7 +135,7 @@ describe('vald-flotta-visar-destinationspil', () => {
           sketch.line.mock.calls.filter(
             (call) => call[2] === target.x && call[3] === target.y,
           ),
-        ).toHaveLength(dragging || screen === 'map' ? 1 : 2);
+        ).toHaveLength(1);
         expect(selected.destination!.key).toBe('2,0');
       }
     },

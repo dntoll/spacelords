@@ -6,7 +6,7 @@ import { renderFleetCard } from '../../../src/client/space-map/views/FleetCard.j
 describe('kompakt-flottkort-med-order', () => {
   it('puts accessible statistics beside ships and hides only the asteroid explanation', () => {
     const model = new AppModel().snapshot;
-    const fleet = model.fleets[0]!;
+    const fleet = model.fleet;
     const card = renderFleetCard(
       {
         ...fleet,
