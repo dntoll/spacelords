@@ -12,12 +12,23 @@ import { selectMapHex } from './map-helpers.js';
 import type { SavedGame } from '../../../src/client/space-map/models/saves/SaveRepository.js';
 import { researchStationState } from '../../fixtures/research-station.js';
 
-async function seed(page: Page) {
+async function seed(page: Page, recentEvent?: string) {
   const game = Game.restore(researchStationState());
   collectTurnFrames(game);
   game.finishTurn();
   game.selectResearch('Missiles');
   game.setDestination('fleet-home', new HexCoordinate(3, 0));
+  const exported = game.exportState();
+  // ap-pa-starmap: an event of the current round is announced when it ends.
+  const state = recentEvent
+    ? {
+        ...exported,
+        events: [
+          ...exported.events,
+          { id: 'recent-event', round: exported.round, text: recentEvent },
+        ],
+      }
+    : exported;
   await page.addInitScript((state) => {
     if (localStorage.getItem('event-playback-seeded')) return;
     localStorage.setItem('event-playback-seeded', 'yes');
@@ -26,24 +37,28 @@ async function seed(page: Page) {
       'spacelords.save.v2.1',
       JSON.stringify({ lastPlayed: '2026-10-27', state }),
     );
-  }, game.exportState());
+  }, state);
   await page.goto('./');
   await startFirstSlot(page);
   await expect(page.locator('canvas[data-rendered="true"]')).toBeVisible();
   return { homeHex: game.galaxy.homePlanet.position.key };
 }
 
-/** hexval-med-vag: two taps on the saved destination start the journey. */
-async function requestTurn(page: Page) {
+/**
+ * hexval-med-vag: two taps on the saved destination start the journey. With
+ * `endRound`, the fleet heads beyond its AP so the round ends.
+ */
+async function requestTurn(page: Page, endRound = false) {
   if (!(await page.locator('.map-page').count()))
     await page.getByRole('button', { name: 'Star map', exact: true }).click();
   const state = await page.evaluate(
     () =>
       JSON.parse(localStorage.getItem('spacelords.save.v2.1')!) as SavedGame,
   );
-  const destination = state.state.fleets[0]!.destination ?? {
-    q: state.state.fleets[0]!.position!.q + 3,
-    r: state.state.fleets[0]!.position!.r,
+  const fleet = state.state.fleets[0]!;
+  const destination = (!endRound && fleet.destination) || {
+    q: fleet.position!.q + 4,
+    r: fleet.position!.r,
   };
   const hex = new HexCoordinate(destination.q, destination.r);
   await selectMapHex(page, hex);
@@ -143,7 +158,6 @@ test('handelseannonsering / handelser-pa-kartan / handelser-vid-ankomst: a finis
   await page.setViewportSize({ width: 393, height: 851 });
   await page.clock.install({ time: new Date('2026-10-27T00:00:00Z') });
   await seed(page);
-  await page.getByRole('button', { name: 'Research', exact: true }).click();
   await page.clock.pauseAt(new Date('2026-10-27T01:00:00Z'));
   await requestTurn(page);
   const log = page.getByRole('log', { name: 'Game events' });
@@ -159,13 +173,9 @@ test('handelseannonsering / handelser-pa-kartan / handelser-vid-ankomst: a finis
     return (await end.count()) > 0 && !(await notice.isVisible());
   });
   await expect(page.locator('.event-announcement')).toHaveCount(0);
-  await expect(log).not.toContainText('arrived at');
   await noMenu(page);
-  await expect(
-    page.getByRole('heading', { name: 'Research', exact: true }),
-  ).toBeVisible();
   await console.locator('summary').click();
-  await expect(log).toContainText('Round 2');
+  await expect(log).not.toContainText('arrived at');
   await noOverflow(page);
   await page.reload();
   await page.clock.resume();
@@ -236,20 +246,16 @@ test('senaste-aret-i-events / handelseannonsering: long yearly lists scroll inte
   await page.addInitScript(
     (state) => {
       localStorage.setItem('spacelords.expanded-galaxy-v12-reset', 'done');
-      localStorage.setItem(
-        'spacelords.save.v2.1',
-        JSON.stringify({ lastPlayed: '2026-10-27', state }),
-      );
+      if (!localStorage.getItem('spacelords.save.v2.1'))
+        localStorage.setItem(
+          'spacelords.save.v2.1',
+          JSON.stringify({ lastPlayed: '2026-10-27', state }),
+        );
     },
     {
       ...initial,
       round: 10,
       events,
-      // An arrival gives the round one event to announce.
-      fleets: initial.fleets.map((fleet) => ({
-        ...fleet,
-        destination: { q: fleet.position!.q + 1, r: fleet.position!.r },
-      })),
     },
   );
   await page.setViewportSize({ width: 320, height: 568 });
@@ -272,11 +278,27 @@ test('senaste-aret-i-events / handelseannonsering: long yearly lists scroll inte
     ).toBeInViewport();
     await noOverflow(page);
   }
-  await requestTurn(page);
+  // ap-pa-starmap: give the current round one event, announced when it ends.
+  await page.evaluate(() => {
+    const slot = JSON.parse(localStorage.getItem('spacelords.save.v2.1')!) as {
+      state: { events: { id: string; round: number; text: string }[] };
+    };
+    slot.state.events.push({
+      id: 'recent-event',
+      round: 10,
+      text: 'A recent event at Tellus.',
+    });
+    localStorage.setItem('spacelords.save.v2.1', JSON.stringify(slot));
+  });
+  await page.setViewportSize({ width: 320, height: 568 });
+  await page.reload();
+  await startFirstSlot(page);
+  await requestTurn(page, true);
   await expect(page.locator('.event-announcement')).toBeVisible();
   await expect(log.locator('[data-event-id]')).toHaveCount(0);
   await noMenu(page);
   await expect(idle(page)).toHaveCount(1, { timeout: 5000 });
+  if (!(await log.isVisible())) await console.locator('summary').click();
   await expect(log.locator('[data-event-id]')).toHaveCount(1);
   await expect(log).toContainText('Round 10');
   await expect
@@ -289,8 +311,8 @@ test('handelseannonsering / en-flotta-i-taget: reduced motion retains announceme
   page,
 }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  await seed(page);
-  await requestTurn(page);
+  await seed(page, 'A recent event at Tellus.');
+  await requestTurn(page, true);
   await expect(page.locator('.event-announcement')).toBeVisible();
   await expect(page.locator('.event-announcement')).toHaveCSS(
     'transition-duration',

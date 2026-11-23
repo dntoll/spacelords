@@ -1,4 +1,7 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+import { AppModel } from '../../../src/client/app/models/AppModel.js';
+import { MasterController } from '../../../src/client/app/controllers/MasterController.js';
+import type { IntentHandler } from '../../../src/client/app/views/ViewContracts.js';
 import {
   Game,
   type GameState,
@@ -151,5 +154,49 @@ describe('piratens-aktivering', () => {
     expect(Game.restore(game.exportState()).exportState()).toEqual(
       game.exportState(),
     );
+  });
+});
+
+describe('ap-pa-starmap / handelseannonsering', () => {
+  it('does not replay the previous round’s events after a move that leaves AP', async () => {
+    vi.useFakeTimers();
+    try {
+      const initial = new Game(createExampleGalaxy()).exportState();
+      const state = {
+        ...initial,
+        round: 10,
+        events: [{ id: 'history-1', round: 9, text: 'An old event.' }],
+      };
+      const model = new AppModel(undefined, {
+        load: () => ({ lastPlayed: '2026-11-23T00:00:00Z', state }),
+        save() {},
+        clear() {},
+      });
+      model.startSlot(1);
+      let emit!: IntentHandler;
+      let announced = false;
+      const controller = new MasterController(model, {
+        bind(handler) {
+          emit = handler;
+        },
+        render(snapshot) {
+          if (snapshot.eventPlayback) announced = true;
+        },
+        animateTurnStep: () => Promise.resolve(),
+        dispose() {},
+      });
+      controller.start();
+      const home = model.snapshot.fleet.position!;
+      const target = new HexCoordinate(home.q + 1, home.r);
+      emit({ type: 'select', position: target });
+      emit({ type: 'select', position: target });
+      await vi.advanceTimersByTimeAsync(5000);
+      expect(model.snapshot.fleet.position?.key).toBe(target.key);
+      expect(model.snapshot.round).toBe(10);
+      expect(announced).toBe(false);
+      controller.dispose();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

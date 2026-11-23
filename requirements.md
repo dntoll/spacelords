@@ -28,8 +28,8 @@ kraven med stabila namn och status. Statusen nedan sammanfattar området.
   Planen anger vilka delar som måste diskuteras och låsas med användaren
   före implementation (`single-fleet-beslut-fore-implementation`).
   [Rensningsplanen](docs/single-fleet-cleanup.md) följer borttagningen av den
-  tidigare spelmekaniken (`single-fleet-rensning`, **Delvis implementerat**:
-  rensningen är klar).
+  tidigare spelmekaniken (`single-fleet-rensning`, **Fullständigt
+  implementerat**: rensningen är klar och testerna är anpassade).
 - **[Start, sparade spel och navigering](docs/areas/start-and-saves.md):**
   `Saved games`, helskärm, huvudmenyn, liggande layout (`liggande-layout`) och sparformatet (`sparformat`,
   version 18). Allt är **Fullständigt implementerat**.

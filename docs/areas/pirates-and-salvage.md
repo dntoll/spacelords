@@ -20,7 +20,10 @@ skeppstyp.
   så att den inte smiter. Det ersätter regeln i `flottstrid-per-hex` att
   flottor som byter hex med varandra i samma steg inte strider: går spelaren
   in i piratens hex blir det strid. En pirat markeras som sin hex, så ett
-  andra tryck på den skickar flottan dit (`hexval-med-vag`).
+  andra tryck på den skickar flottan dit (`hexval-med-vag`). Gör flottan en
+  upptäckt när den kommer fram, till exempel piraten själv, visas upptäckten
+  och sedan börjar striden direkt. Spelaren behöver inte välja en ny hex,
+  eftersom resan redan är slut.
 
 - **Aktivering:** `piratens-aktivering` (2026-11-23) är **Fullständigt
   implementerat**. En pirat aktiveras när flottan upptäcker den och förblir

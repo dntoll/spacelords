@@ -1798,8 +1798,8 @@ export class Game {
   }
   /**
    * fiendeupptackt-utan-end-turn: a pirate sighting continues without End turn.
-   * strid-i-samma-hex: so does a discovery on arrival, or one before a combat,
-   * since there is no journey left for the player to resume.
+   * strid-i-samma-hex: so does a discovery on arrival, for example in a
+   * pirate's hex, since there is no journey left for the player to resume.
    */
   enemyDiscoveryResume(): boolean {
     const discoveries = this.#simulation?.discoveries ?? [];
@@ -1807,7 +1807,6 @@ export class Game {
     return (
       this.discoveryPause() &&
       (discoveries.some((discovery) => discovery.kind === 'pirate') ||
-        !!this.#simulation?.awaitingCombat ||
         !fleet.destination ||
         fleet.position?.key === fleet.destination.key)
     );

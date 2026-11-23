@@ -130,7 +130,8 @@ describe('upptacktsavbrott / order-under-upptacktsavbrott', () => {
         {
           ...state.fleets[0]!,
           position: { q: 5, r: -4 },
-          destination: { q: 7, r: -4 },
+          // The star is seen before the journey ends.
+          destination: { q: 9, r: -4 },
         },
       ],
     });
@@ -145,6 +146,7 @@ describe('upptacktsavbrott / order-under-upptacktsavbrott', () => {
     }
     expect(paused).toBe(true);
     expect(game.discoveryPause()).toBe(true);
+    expect(game.fleet('fleet-home')!.position!.key).not.toBe('9,-4');
     expect(game.enemyDiscoveryResume()).toBe(false);
     expect(
       game.events.some((event) =>

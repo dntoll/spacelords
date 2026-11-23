@@ -826,6 +826,7 @@ export class MasterController {
     )
       return;
     this.#runningTurn = true;
+    const startRound = this.#model.snapshot.round;
     try {
       if (resume) this.#turn.continueTurn();
       else this.#turn.startTurn();
@@ -892,7 +893,13 @@ export class MasterController {
         }
         this.#turn.endMovementPlayback(true);
       }
-      this.#turn.beginEventPlayback();
+      // ap-pa-starmap: a move that leaves AP ends no round, so the previous
+      // round's events are not announced again.
+      if (
+        this.#model.snapshot.round > startRound ||
+        this.#model.snapshot.phase === 'interrupted'
+      )
+        this.#turn.beginEventPlayback();
       this.#render();
       this.#schedulePlayback();
     } catch (error) {

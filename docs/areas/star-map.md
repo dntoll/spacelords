@@ -28,7 +28,8 @@ flotta till ett mål. Planeter är platser; spelaren äger dem inte
   flottan inte har råd med nästa steg, agerar fienderna. Bara aktiverade
   pirater handlar (`piratens-aktivering`); övriga står still och tar ingen
   tid.
-  Därefter börjar nästa runda med fulla AP. Det finns ingen väntan: tiden går
+  Därefter börjar nästa runda med fulla AP. Rundans händelser annonseras
+  när rundan tar slut, inte efter en förflyttning som lämnar AP kvar. Det finns ingen väntan: tiden går
   bara när flottan flyttar. End turn är borttaget från alla skärmar, vilket
   ersätter `end-turn-vid-kartval` och End turn i `gemensam-events-panel`.
 
