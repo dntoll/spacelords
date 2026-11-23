@@ -3,7 +3,7 @@ import { selectMapHex } from './map-helpers.js';
 import { expect, test } from '@playwright/test';
 import { startFirstSlot } from './save-helpers.js';
 
-test('flottnamn-direktredigering / flottknappar-pa-kartan: rename the fleet and set a destination on the map, then restore them', async ({
+test('flottnamn-direktredigering / flottknappar-pa-kartan: rename the fleet and preview a route on the map, then restore the name', async ({
   page,
 }, testInfo) => {
   const errors: string[] = [];
@@ -61,9 +61,10 @@ test('flottnamn-direktredigering / flottknappar-pa-kartan: rename the fleet and 
   await expect(
     panel.getByRole('heading', { name: 'Vanguard', exact: true }),
   ).toBeVisible();
-  await expect(panel.locator('.fleet-card')).toHaveAttribute(
+  // hexval-med-vag: a previewed route is not an order and is not restored.
+  await expect(panel.locator('.fleet-card')).not.toHaveAttribute(
     'aria-description',
-    /Destination: selected location on map/,
+    /Destination:/,
   );
   expect(errors).toEqual([]);
 });

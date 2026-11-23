@@ -2,8 +2,7 @@ import { Game } from '../../../src/client/space-map/models/Game.js';
 import { FleetMapLayout } from '../../../src/client/space-map/models/star-map/FleetMapLayout.js';
 import type { SavedGame } from '../../../src/client/space-map/models/saves/SaveRepository.js';
 import { selectMapObject } from './map-helpers.js';
-import { seedGame, startFirstSlot } from './save-helpers.js';
-import { createExampleGalaxy } from '../../../src/client/space-map/models/exampleGalaxy.js';
+import { startFirstSlot } from './save-helpers.js';
 import { expect, test, type Page } from '@playwright/test';
 
 async function mapCenter(page: Page) {
@@ -83,76 +82,4 @@ test('flottval-pa-kartan / dra-flottdestination: selects a fleet, previews a sna
     /Destination: selected location on map/,
   );
   expect(errors).toEqual([]);
-});
-
-test('kartflottor / flottval-pa-kartan: colocated fleets occupy separate positions within the hex', async ({
-  page,
-}, testInfo) => {
-  const state = new Game(createExampleGalaxy()).exportState();
-  const origin = state.fleets[0]!;
-  await seedGame(page, {
-    ...state,
-    fleets: [
-      origin,
-      {
-        ...origin,
-        id: 'fleet-second',
-        name: 'Fleet 1',
-        shipUnits: origin.shipUnits!.map((unit) => ({
-          ...unit,
-          id: `${unit.id}-second`,
-        })),
-      },
-    ],
-  });
-  const { canvas } = await mapCenter(page);
-  const saved = await page.evaluate(
-    () =>
-      JSON.parse(localStorage.getItem('spacelords.save.v2.1')!) as SavedGame,
-  );
-  const markers = FleetMapLayout.markers([
-    Game.restore(saved.state).fleetSnapshot(),
-  ]);
-  const bounds = (await canvas.boundingBox())!;
-  const [cameraX, cameraY] = (await page
-    .getByTestId('camera-position')
-    .textContent())!
-    .match(/-?\d+(?:\.\d+)?/g)!
-    .map(Number);
-  const zoom =
-    Number(
-      (await page.getByLabel('Map zoom').textContent())!.replace('%', ''),
-    ) / 100;
-  const point = (name: string) => {
-    const marker = markers.find((item) => item.fleet.name === name)!;
-    return {
-      x: bounds.x + bounds.width / 2 + (marker.point.x - cameraX!) * zoom,
-      y: bounds.y + bounds.height / 2 + (marker.point.y - cameraY!) * zoom,
-    };
-  };
-  const first = point('Fleet 1');
-  const home = point('Home Fleet');
-  expect(Math.hypot(first.x - home.x, first.y - home.y)).toBeGreaterThan(0);
-  for (const position of [first, home]) {
-    expect(
-      await canvas.evaluate(
-        (element, p) => document.elementFromPoint(p.x, p.y) === element,
-        position,
-      ),
-    ).toBe(true);
-  }
-  await page.mouse.click(first.x, first.y);
-  const panel = page.getByRole('complementary', { name: 'Selected fleet' });
-  await expect(
-    panel.getByRole('heading', { name: 'Fleet 1', exact: true }),
-  ).toBeVisible();
-  await page.mouse.click(home.x, home.y);
-  await expect(
-    panel.getByRole('heading', { name: 'Home Fleet', exact: true }),
-  ).toBeVisible();
-  await page.screenshot({ path: testInfo.outputPath('colocated-fleets.png') });
-  await page.mouse.click((first.x + home.x) / 2, (first.y + home.y) / 2);
-  await expect(
-    page.getByRole('complementary', { name: 'Selected hex' }),
-  ).toContainText('Tellus');
 });

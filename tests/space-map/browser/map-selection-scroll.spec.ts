@@ -1,21 +1,10 @@
-import { selectMapFleet } from './fleet-helpers.js';
 import { expect, test, type Page } from '@playwright/test';
 import { tradeNetworkState } from '../../fixtures/trade-network.js';
 import { startFirstSlot } from './save-helpers.js';
 
 async function startScrollablePanel(page: Page): Promise<void> {
   const initialState = tradeNetworkState();
-  const state = {
-    ...initialState,
-    fleets: [
-      ...initialState.fleets,
-      ...Array.from({ length: 16 }, (_, index) => ({
-        ...initialState.fleets[0]!,
-        id: `patrol-${index}`,
-        name: `Patrol ${index}`,
-      })),
-    ],
-  };
+  const state = initialState;
   await page.addInitScript((state) => {
     localStorage.setItem('spacelords.economy-v2-reset', 'done');
     localStorage.setItem('spacelords.expanded-galaxy-v12-reset', 'done');
@@ -27,21 +16,21 @@ async function startScrollablePanel(page: Page): Promise<void> {
       }),
     );
   }, state);
+  // enda-spelarflottan: one fleet only overflows the panel on a small screen.
+  await page.setViewportSize({ width: 393, height: 440 });
   await page.goto('./');
   await startFirstSlot(page);
 }
 
-for (const selection of ['hex', 'fleet'] as const) {
+// enda-spelarflottan: the single fleet card never overflows, so only hex
+// details, which also show the fleet, exercise the scrolling panel.
+for (const selection of ['hex'] as const) {
   test(`rullningsbar-kartpanel: ${selection} details grow upward and return map space at the top`, async ({
     page,
     browserName,
     isMobile,
   }) => {
     await startScrollablePanel(page);
-    if (selection === 'fleet') {
-      await page.getByRole('button', { name: 'Fleets', exact: true }).click();
-      await selectMapFleet(page);
-    }
     const panel = page.locator('.selection-panel');
     await panel.evaluate((node) => {
       node.scrollTop = 0;
@@ -60,7 +49,7 @@ for (const selection of ['hex', 'fleet'] as const) {
         await page.mouse.wheel(0, deltaY);
       }
     };
-    await scroll(120);
+    await scroll(30);
     const responsive = await page.evaluate(
       () => matchMedia('(max-width: 900px), (max-height: 500px)').matches,
     );

@@ -3,31 +3,14 @@ import { expect, test } from '@playwright/test';
 import { tradeNetworkState } from '../../fixtures/trade-network.js';
 import { startFirstSlot } from './save-helpers.js';
 
-test('flottadministration / skeppsbilder / viewport-game-layout: long fleet lists stay bounded and the selected fleet is reachable', async ({
+test('skeppsbilder / viewport-game-layout / enda-spelarflottan: a large fleet stays bounded and can be renamed', async ({
   page,
 }) => {
   const initial = tradeNetworkState();
   const original = initial.fleets[0]!;
   const state = {
     ...initial,
-    fleets: [
-      { ...original, ships: { ...original.ships, Fighter: 500 } },
-      ...Array.from({ length: 24 }, (_, index) => ({
-        ...original,
-        id: `patrol-${index + 1}`,
-        name: `Patrol ${index + 1}`,
-        ships: {
-          Fighter: 1,
-          'Colony ship': 0,
-          'Exploration ship': 0,
-          'Transport ship': 0,
-          'Civilian shuttle': 0,
-          'Space pirate': 0,
-          'Salvage ship': 0,
-          Raptor: 0,
-        },
-      })),
-    ],
+    fleets: [{ ...original, ships: { ...original.ships, Fighter: 500 } }],
   };
   await page.addInitScript((saved) => {
     localStorage.setItem('spacelords.economy-v2-reset', 'done');
@@ -40,7 +23,7 @@ test('flottadministration / skeppsbilder / viewport-game-layout: long fleet list
   await page.goto('./');
   await startFirstSlot(page);
   const panel = page.locator('.selection-panel');
-  await expect(panel.locator('.fleet-card')).toHaveCount(25);
+  await expect(panel.locator('.fleet-card')).toHaveCount(1);
   const home = panel.getByRole('article', {
     name: 'Fleet Home Fleet',
     exact: true,
@@ -48,19 +31,12 @@ test('flottadministration / skeppsbilder / viewport-game-layout: long fleet list
   expect(await home.locator('.ship-token').count()).toBeLessThan(16);
   await expect(home).toContainText('+488 Fighter');
   await panel
-    .getByRole('button', { name: 'Patrol 24', exact: true })
+    .getByRole('button', { name: 'Home Fleet', exact: true })
     .dblclick();
   const name = page.getByRole('textbox', { name: 'Fleet name', exact: true });
   await name.fill('Sentinel');
   await name.press('Enter');
   await page.getByRole('button', { name: 'Fleets', exact: true }).click();
-  await selectMapFleet(page, 'Home Fleet');
-  expect(
-    await page
-      .getByRole('article', { name: 'Fleet Home Fleet', exact: true })
-      .locator('.ship-token')
-      .count(),
-  ).toBeLessThan(16);
   await selectMapFleet(page, 'Sentinel');
   await expect(panel.locator('.selected-fleet-card')).toContainText('Sentinel');
   await expect(
@@ -73,9 +49,6 @@ test('flottadministration / skeppsbilder / viewport-game-layout: long fleet list
         document.documentElement.scrollHeight > innerHeight,
     ),
   ).toBe(false);
-  expect(
-    await panel.evaluate((node) => node.scrollHeight > node.clientHeight),
-  ).toBe(true);
 });
 
 test('kompakt-flottkort-med-order: fleet stats share the hangar and compact controls remain accessible', async ({
@@ -85,7 +58,7 @@ test('kompakt-flottkort-med-order: fleet stats share the hangar and compact cont
   const original = initial.fleets[0]!;
   const state = {
     ...initial,
-    fleets: Array.from({ length: 3 }, (_, index) => ({
+    fleets: Array.from({ length: 1 }, (_, index) => ({
       ...original,
       id: `compact-${index}`,
       name: `Compact ${index}`,
