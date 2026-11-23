@@ -14,5 +14,13 @@ export default defineConfig({
     testTimeout: 15_000,
     hookTimeout: 15_000,
     clearMocks: true,
+    // testtackning: only active with --coverage (npm run test:coverage).
+    coverage: {
+      provider: 'v8',
+      include: ['src/**/*.{ts,js}'],
+      exclude: ['src/**/*.d.ts'],
+      reporter: ['text-summary', 'html', 'json-summary'],
+      reportsDirectory: 'coverage',
+    },
   },
 });
