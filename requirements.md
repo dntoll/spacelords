@@ -13,11 +13,19 @@ kraven finns i [Single fleet](docs/single-fleet.md). De nya speländringarna
 områdesfilerna beskriver det som finns kvar. [Den tidigare visionen](docs/game-vision.md)
 behålls som bakgrund.
 
+Den visuella riktningen för utforskningen finns i
+[Grafisk profil för Single fleet](docs/single-fleet-visual-profile.md).
+
 ## Kravkategorier
 
 Varje område har en egen fil med en beskrivning av hur spelet fungerar nu och
 kraven med stabila namn och status. Statusen nedan sammanfattar området.
 
+- **[Grafisk profil — utforskning](docs/single-fleet-visual-profile.md):**
+  `single-fleet-grafisk-profil` är **Delvis implementerat**; den nya stilen
+  återstår för merparten av spelgrafiken. `raptor-single-fleet-grafik` är
+  **Fullständigt implementerat** för Star map och bordning; den separata
+  UI-bakgrunden är förberedd men inte inkopplad i någon vy.
 - **[Single fleet — utforskning](docs/single-fleet.md):** en enda flotta,
   AP på Star map, Fleet, Crew, teknikforskning och en gemensam
   produktionskö, ändliga förbrukningsresurser och personer med flera roller

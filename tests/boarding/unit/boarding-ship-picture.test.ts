@@ -43,6 +43,28 @@ describe('hogupplost-skeppsbild-i-bordning', () => {
   );
 });
 
+describe('raptor-single-fleet-grafik', () => {
+  it('uses transparent, matching-framed Raptor artwork for map and boarding', () => {
+    const mapUrl = SHIP_SPRITES.Raptor;
+    const boardingUrl = SHIP_BOARDING_IMAGES.Raptor;
+    expect(mapUrl).not.toBe(boardingUrl);
+    const mapSize = webpSize(mapUrl);
+    const boardingSize = webpSize(boardingUrl);
+    expect(boardingSize[0]).toBeGreaterThan(mapSize[0] * 2);
+    expect(boardingSize[0] / boardingSize[1]).toBeCloseTo(
+      mapSize[0] / mapSize[1],
+      3,
+    );
+    for (const url of [mapUrl, boardingUrl]) {
+      const bytes = readFileSync(
+        `${ROOT}${url.replace(/^\/+/, '').split('?')[0]}`,
+      );
+      expect(bytes.toString('ascii', 12, 16)).toBe('VP8X');
+      expect(bytes[20]! & 0x10).toBe(0x10);
+    }
+  });
+});
+
 // Fixture maps, so aligning a ship in the editor breaks no test.
 const ALIGNED =
   '[meta]\nwidth=2\nheight=1\nrules=campaign\nspriteX=-1.5\nspriteY=-0.25\nspriteScale=4\n' +
