@@ -56,8 +56,9 @@ async function requestTurn(page: Page, endRound = false) {
       JSON.parse(localStorage.getItem('spacelords.save.v2.1')!) as SavedGame,
   );
   const fleet = state.state.fleets[0]!;
+  // Exactly the fleet's AP, so the round ends on arrival and no new one starts.
   const destination = (!endRound && fleet.destination) || {
-    q: fleet.position!.q + 4,
+    q: fleet.position!.q + Game.restore(state.state).fleetSnapshot().speed,
     r: fleet.position!.r,
   };
   const hex = new HexCoordinate(destination.q, destination.r);
@@ -298,6 +299,18 @@ test('senaste-aret-i-events / handelseannonsering: long yearly lists scroll inte
   await expect(log.locator('[data-event-id]')).toHaveCount(0);
   await noMenu(page);
   await expect(idle(page)).toHaveCount(1, { timeout: 5000 });
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          (
+            JSON.parse(localStorage.getItem('spacelords.save.v2.1')!) as {
+              state: { round: number };
+            }
+          ).state.round,
+      ),
+    )
+    .toBe(11);
   if (!(await log.isVisible())) await console.locator('summary').click();
   await expect(log.locator('[data-event-id]')).toHaveCount(1);
   await expect(log).toContainText('Round 10');

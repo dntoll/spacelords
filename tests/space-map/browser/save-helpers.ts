@@ -114,9 +114,13 @@ export async function finishRound(page: Page): Promise<void> {
         fleet.position!.distanceTo(hex) >= reach &&
         game.routePreview(fleet.id, hex).length >= reach,
     )
-    // The nearest such hex stays in view on small screens.
+    // The nearest such hex stays in view on small screens. Among those,
+    // heading inward keeps repeated rounds away from the galaxy's edge.
     .sort(
-      (a, b) => fleet.position!.distanceTo(a) - fleet.position!.distanceTo(b),
+      (a, b) =>
+        fleet.position!.distanceTo(a) - fleet.position!.distanceTo(b) ||
+        a.distanceTo(new HexCoordinate(0, 0)) -
+          b.distanceTo(new HexCoordinate(0, 0)),
     )[0];
   if (!target) throw new Error('No hex beyond the fleet’s AP.');
   await selectMapHex(page, target);

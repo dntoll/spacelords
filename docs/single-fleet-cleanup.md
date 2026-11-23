@@ -241,3 +241,21 @@ Research-footer, `exploration-interruptions` checkpoint,
 händelseuppspelningen, och skrivs om med nya Star map enligt beslut med
 användaren. Rymdstrid, bordning, sparade spel och mobilens smoke-test
 passerar.
+
+Läge 2026-11-23: spelaren har exakt en flotta (`enda-spelarflottan`),
+byggnadsbilderna är borttagna och Saved games och Star map har liggande
+layout (`liggande-layout`). Två fel rättades med regressionstest först:
+
+- En upptäckt vid ankomsten, till exempel i piratens hex, väntade på en ny
+  destination som spelaren inte hade skäl att ge, så striden startade aldrig.
+  Nu fortsätter rundan av sig själv när resan redan är slut.
+- En förflyttning som lämnade AP kvar spelade upp föregående rundas händelser
+  igen efter en omladdning. Nu annonseras händelser bara när rundan tar slut.
+
+Webbläsartesterna är anpassade till hexval, AP och en enda flotta. Pirattesten
+använder bara Fighters, eftersom en pirat bordar obeväpnade skepp och
+bordningen är ett eget minispel som kartans testhjälpare inte spelar.
+Kontroller: typkontroll, ESLint och Prettier passerar; Vitest utan
+HTTP-integrationen 904 tester passerar; Playwright `desktop-chromium` och
+`phone-chromium`: 157 passerar och 11 hoppas över. WebKit går inte att starta
+i sandlådan.
