@@ -1796,12 +1796,20 @@ export class Game {
       this.#pausingDiscoveries(this.#simulation?.discoveries ?? []).length > 0
     );
   }
-  /** fiendeupptackt-utan-end-turn: a pirate sighting continues without End turn. */
+  /**
+   * fiendeupptackt-utan-end-turn: a pirate sighting continues without End turn.
+   * strid-i-samma-hex: so does a discovery on arrival, or one before a combat,
+   * since there is no journey left for the player to resume.
+   */
   enemyDiscoveryResume(): boolean {
     const discoveries = this.#simulation?.discoveries ?? [];
+    const fleet = this.#fleet;
     return (
       this.discoveryPause() &&
-      discoveries.some((discovery) => discovery.kind === 'pirate')
+      (discoveries.some((discovery) => discovery.kind === 'pirate') ||
+        !!this.#simulation?.awaitingCombat ||
+        !fleet.destination ||
+        fleet.position?.key === fleet.destination.key)
     );
   }
   #fleetDetectionRange(fleet: Fleet): number {

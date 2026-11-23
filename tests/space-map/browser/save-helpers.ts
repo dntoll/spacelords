@@ -171,16 +171,23 @@ export async function ignoreEventsUntil(
       const text = (await page.locator('.game-notice').allTextContents()).join(
         ' ',
       );
-      if (text.includes('Pirate ship in sight')) {
-        await expect(page.locator('.game-notice')).toBeHidden({
-          timeout: 8000,
-        });
+      const destination = text.includes('Pirate ship in sight')
+        ? null
+        : await pausedDestination(page);
+      if (!destination) {
+        // Queued notices follow each other and an interrupted round without
+        // a destination resumes by itself, so wait for this one to go.
+        await expect
+          .poll(
+            async () =>
+              (await page.locator('.game-notice').allTextContents()).join(' '),
+            { timeout: 8000 },
+          )
+          .not.toBe(text);
         continue;
       }
       // upptackt-stannar-resan: the destination is still selected, so one
       // tap on it continues the round.
-      const destination = await pausedDestination(page);
-      if (!destination) return;
       await selectMapHex(page, destination);
       continue;
     }

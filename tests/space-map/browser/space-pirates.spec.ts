@@ -5,7 +5,12 @@ import { createExampleGalaxy } from '../../../src/client/space-map/models/exampl
 import { pirateAsFleet } from '../../../src/client/space-map/models/PirateFleet.js';
 import { FleetMapLayout } from '../../../src/client/space-map/models/star-map/FleetMapLayout.js';
 import { selectMapPoint } from './map-helpers.js';
-import { finishRound, startFirstSlot } from './save-helpers.js';
+import {
+  finishRound,
+  ignoreEventsUntil,
+  startFirstSlot,
+} from './save-helpers.js';
+import { HexCoordinate } from '../../../src/client/common/HexCoordinate.js';
 import type { SavedGame } from '../../../src/client/space-map/models/saves/SaveRepository.js';
 
 for (const screen of ['Star map', 'Fleets']) {
@@ -16,16 +21,38 @@ for (const screen of ['Star map', 'Fleets']) {
     const state = new Game(createExampleGalaxy()).exportState();
     const fleet = state.fleets[0]!;
     const system = createExampleGalaxy().systems[1]!;
+    const pirates = state
+      .pirates!.filter((pirate) => pirate.systemId === 'nadir')
+      .map((pirate) => ({ ...pirate, transports: 0 }));
+    const lair = new HexCoordinate(
+      pirates[0]!.position.q,
+      pirates[0]!.position.r,
+    );
+    // strid-i-samma-hex: the fleet starts next to the pirate and enters its hex.
+    const start = lair
+      .neighbors()
+      .find((hex) => Game.restore(state).galaxy.isPassable(hex))!;
     const prepared = {
       ...state,
-      pirates: state
-        .pirates!.filter((pirate) => pirate.systemId === 'nadir')
-        .map((pirate) => ({ ...pirate, transports: 0 })),
+      pirates,
+      // Fighters have no telescope, so the pirate is already charted.
+      chartedPirates: ['pirate-nadir'],
       explored: [
         ...state.explored,
         ...system.star.position.neighbors().map((position) => position.key),
       ],
-      fleets: [{ ...fleet, position: { q: 8, r: -4 } }],
+      fleets: [
+        {
+          ...fleet,
+          position: { q: start.q, r: start.r },
+          // Armed ships only, so the pirate has nothing unarmed to board.
+          ships: { ...fleet.ships, Fighter: 3, 'Exploration ship': 0 },
+          shipUnits: [1, 2, 3].map((copy) => ({
+            ...fleet.shipUnits!.find((unit) => unit.type === 'Fighter')!,
+            id: `escort-${copy}`,
+          })),
+        },
+      ],
     };
     const errors: string[] = [];
     page.on('pageerror', (error) => errors.push(error.message));
@@ -60,7 +87,9 @@ for (const screen of ['Star map', 'Fleets']) {
       pirate.locator('button, input, select, [draggable="true"]'),
     ).toHaveCount(0);
     await page.screenshot({ path: testInfo.outputPath('space-pirate.png') });
-    await finishRound(page);
+    // A second tap on the selected pirate travels into its hex.
+    await selectMapPoint(page, marker.point);
+    await ignoreEventsUntil(page);
     const saved = await page.evaluate(
       () =>
         JSON.parse(localStorage.getItem('spacelords.save.v2.1')!) as SavedGame,
@@ -69,18 +98,19 @@ for (const screen of ['Star map', 'Fleets']) {
     // rymdpiraters-sparning: the combat outcome depends on the tactical
     // battle, so check that whatever survived is what the save keeps.
     const fighters = saved.state.fleets[0]?.ships.Fighter ?? 0;
-    expect(fighters).toBeLessThanOrEqual(1);
-    expect(
-      saved.state.events.some((event) =>
-        event.text.startsWith('Combat at HEX 8,-4:'),
-      ),
-    ).toBe(true);
-    await page.getByRole('button', { name: /^Decisions/ }).click();
+    expect(fighters).toBeLessThanOrEqual(3);
+    // stridsresultat-utan-upprepning: one report, with each part once.
+    const combats = saved.state.events.filter((event) =>
+      event.text.startsWith(`Combat at HEX ${lair.q},${lair.r}:`),
+    );
+    expect(combats).toHaveLength(1);
+    expect(combats[0]!.text.match(/Survivors:/g)).toHaveLength(1);
     await page.locator('.turn-console > summary').click();
     await expect(page.locator('[role="log"]')).toContainText(
       'versus Space pirate',
     );
     await expect(page.locator('[role="log"] .combat-event-log')).toHaveCount(1);
+    await finishRound(page);
     await page.reload();
     await startFirstSlot(page);
     const reloaded = await page.evaluate(
