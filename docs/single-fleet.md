@@ -8,6 +8,8 @@ asteroidbälten och andra platser leder till fynd, rymdstrider och bordningar.
 Forskning och utveckling ska främst handla om skeppen och bordningsspelet.
 Rensningen inför riktningen följs upp i [rensningsplanen](single-fleet-cleanup.md).
 
+Den visuella riktningen beskrivs i [grafisk profil](single-fleet-visual-profile.md).
+
 ## Krav — utforskning
 
 Alla krav nedan är **Ej implementerat**. Befintliga skärmar och mekaniker är

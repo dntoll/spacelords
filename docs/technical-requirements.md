@@ -1,5 +1,15 @@
 # Tekniska krav och arbetsregler
 
+## Raptor-grafik i Single fleet
+
+`raptor-single-fleet-grafik`: Star map och bordning använder separata
+transparenta WebP-filer i 512 × 512 respektive 1 254 × 1 254 pixlar.
+Båda framställs proportionellt från samma original och behåller det tidigare
+utsnittet som bordningskartans placering bygger på. Testet med kravnamnet
+kontrollerar bildkoppling, transparens, proportioner och högre upplösning.
+Den separata UI-bakgrunden är en bildresurs och är ännu inte kopplad till
+en vy.
+
 ## Beslut före implementation av Single fleet
 
 `single-fleet-beslut-fore-implementation` är **Fullständigt implementerat**

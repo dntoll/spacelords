@@ -61,4 +61,15 @@ och att spelarens Fighter inte får piratens bild.
 
 ## Raptor
 
-`egen-raptor-grafik`: Raptor har en egen skeppssprite. Originalet finns i `assets/original/ships/raptor.png`. Det är genererat med inbyggd bildgenerering: ett litet trupptransportskepp ovanifrån med nosen åt höger, ljusgrått pansar, blågröna detaljer och en lätt kanon. Symbolen för den borttagna Raptor factory finns kvar i git-historiken.
+`egen-raptor-grafik` och `raptor-single-fleet-grafik` är **Fullständigt
+implementerat**. Raptor har i utforskningen en sliten och lagad bild i den
+nya [grafiska profilen](single-fleet-visual-profile.md). Det ersätter den
+äldre ljusgrå och blågröna ytbehandlingen; skeppets utsnitt och riktning
+behålls för att bordningskartan ska fortsätta passa.
+
+Ett transparent original `assets/original/ships/raptor.png` används till
+`raptor.webp` för Star map och `raptor-boarding-hd.webp` för bordning.
+En separat bakgrund för framtida UI finns i
+`src/client/space-map/assets/backgrounds/raptor-ui-background.webp` men är
+inte kopplad till en vy. Se profilen för format och detaljer. Symbolen för
+den borttagna Raptor factory finns kvar i git-historiken.
