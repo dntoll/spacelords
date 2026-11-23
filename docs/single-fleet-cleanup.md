@@ -123,8 +123,9 @@ spelbar, men bevara fristående strids- och bordningstester.
         fabriksuppgraderingar, civiltrafik, planetköer, kolonisationsorder,
         automatiska order, flottuppgradering, bärgning, Orders och det gamla
         rensningsförslaget är borttagna.
-  - [ ] Originalbilderna för byggnader och byggnadssymboler under
-        `assets/original/` och bildpromptpaketet finns kvar som källmaterial.
+  - [x] Originalbilderna för byggnader, byggnadssymbolerna, varvets kartbild
+        och deras prompter och referenser är borttagna (2026-11-23); de finns
+        kvar i git-historiken.
 - [x] Hantera godkänd inkompatibilitet för sparningar och verifiera ny start
       när det går utan att föregripa öppna speldesignbeslut.
   - [x] Sparformatet är version 18 utan kolonier, nätverk, bärgning och
@@ -227,8 +228,6 @@ Kända begränsningar:
   införd 2026-11-22. På låga liggande skärmar, som 667 × 320, lämnar
   panelen med vägen och en utfälld Events-lista bara en smal kartremsa.
   Liggande layout ska göras om enligt visionen.
-- Originalbilder för byggnader och byggnadssymboler finns kvar under
-  `assets/original/` som källmaterial.
 
 Lokalt i sandlådan krävde Playwright en tillfällig konfiguration med
 `launchOptions.executablePath: '/opt/pw-browsers/chromium'` och

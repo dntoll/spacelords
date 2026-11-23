@@ -231,13 +231,12 @@ statusfärg. Enhetstest skyddar skillnaden mellan färdig forskning, köstatus
 och okänd teknik. Riktade mobiltester kontrollerar verkliga renderade färger
 före och efter val i Chromium och WebKit. Inga modell- eller sparändringar.
 
-## Genererade symboler och kartbilder
+## Genererade planetbilder
 
-`genererade-symboler-och-kartbilder`: 31 separata transparenta PNG-original
-sparas under `assets/original/` med bildpromptpaketets filnamn. Använda
-prompter bevaras och manifestet uppdateras per fil. Kontrollera antal, filformat,
-alpha, fria kanter och unika filnamn automatiskt; granska motiv, ljusriktning
-och symbolernas läsbarhet visuellt. Se [bildleveransen](generated-map-artwork.md).
+`genererade-symboler-och-kartbilder`: de sex planeternas PNG-original sparas
+under `assets/original/planets/` med bildpromptpaketets filnamn. Byggnadernas
+symboler och varvets kartbild är borttagna (`single-fleet-rensning`) och finns
+kvar i git-historiken. Se [bildleveransen](generated-map-artwork.md).
 
 `spelgrafik-symboler`: CatalogControls ger varje identifierad teknik en
 dekorativ SVG-symbol i trädet, kön och detaljerna. Byggnadssymbolerna och
@@ -249,8 +248,7 @@ HTML-illustrationer, alla fyra kartvyer och sparförhandsvisning. MapArtwork
 laddar bilder en gång per kartinstans och ignorerar svar efter dispose.
 
 `python scripts/prepare-game-artwork.py` (Pillow) skapar WebP i klientens
-symbol-, planet- och kartkataloger. Alla bilder är högst 512 px, kvalitet 90,
-så även detaljvyer för symbolerna förblir skarpa på mobil. Alpha bevaras och PNG-originalen
+planetkatalog. Alla bilder är högst 512 px, kvalitet 90. Alpha bevaras och PNG-originalen
 ändras inte. Vite importerar resurserna med rätt basadress och innehållshash.
 Sparformat, MVC-gränser och domänens spelregler ändras inte.
 

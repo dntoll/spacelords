@@ -1,4 +1,4 @@
-"""Review assets for genererade-symboler-och-kartbilder without changing them."""
+"""Review the planet artwork for spelgrafik-planeter without changing it."""
 
 import json
 import hashlib
@@ -18,8 +18,8 @@ outputs = [asset['output'] for asset in assets]
 if len(outputs) != len(set(outputs)):
     issues.append('Duplicate output filenames')
 counts = {category: sum(asset['category'] == category for asset in assets)
-          for category in ('symbols', 'planets', 'map')}
-if counts != {'symbols': 24, 'planets': 6, 'map': 1}:
+          for category in ('planets',)}
+if counts != {'planets': 6}:
     issues.append(f'Unexpected category counts: {counts}')
 font = ImageFont.truetype('C:/Windows/Fonts/arial.ttf', 15)
 small_font = ImageFont.truetype('C:/Windows/Fonts/arial.ttf', 12)
@@ -51,7 +51,7 @@ for asset in assets:
                    bytes=path.stat().st_size, sha256=hashlib.sha256(path.read_bytes()).hexdigest())
         rows.append(row)
 
-for category in ('symbols', 'planets', 'map'):
+for category in ('planets',):
     selected = [row for row in rows if row['category'] == category]
     columns = 4 if category == 'symbols' else 3 if category == 'planets' else 1
     cell_width, cell_height = 280, 260

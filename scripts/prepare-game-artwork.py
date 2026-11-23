@@ -1,4 +1,4 @@
-"""Create web derivatives for spelgrafik-symboler, spelgrafik-planeter and spelgrafik-kartstation."""
+"""Create web derivatives for spelgrafik-planeter."""
 
 import json
 from pathlib import Path
@@ -10,7 +10,7 @@ manifest = json.loads((root / 'docs/image-prompts/manifest.json').read_text(enco
 count = 0
 for asset in manifest['assets']:
     category = asset['category']
-    if category not in ('symbols', 'planets', 'map'):
+    if category != 'planets':
         continue
     destination = root / 'src/client/space-map/assets' / category / Path(asset['output']).with_suffix('.webp')
     destination.parent.mkdir(parents=True, exist_ok=True)

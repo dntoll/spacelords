@@ -61,4 +61,4 @@ och att spelarens Fighter inte får piratens bild.
 
 ## Raptor
 
-`egen-raptor-grafik`: Raptor har en egen skeppssprite. Symbolen för den borttagna Raptor factory används inte längre. Originalen finns i `assets/original/ships/raptor.png` och `assets/original/symbols/raptor-factory-symbol.png`. Genererade med inbyggd bildgenerering: ett litet trupptransportskepp ovanifrån med nosen åt höger, ljusgrått pansar, blågröna detaljer och en lätt kanon; samt en förenklad trupptransport med kugghjul i samma färger på transparent bakgrund.
+`egen-raptor-grafik`: Raptor har en egen skeppssprite. Originalet finns i `assets/original/ships/raptor.png`. Det är genererat med inbyggd bildgenerering: ett litet trupptransportskepp ovanifrån med nosen åt höger, ljusgrått pansar, blågröna detaljer och en lätt kanon. Symbolen för den borttagna Raptor factory finns kvar i git-historiken.
