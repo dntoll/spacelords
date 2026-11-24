@@ -85,3 +85,25 @@ describe('rumsligt-kartindex', () => {
     );
   });
 });
+
+it('obruten-resa: reuses the spatial geometry when only map knowledge changes', () => {
+  const first = new MapViewport(cells);
+  const updated = cells.map((cell) =>
+    cell.position.key === '1,1' ? { ...cell, explored: true } : cell,
+  );
+  const project = vi.spyOn(HexGeometry, 'toPoint');
+  try {
+    const second = new MapViewport(updated);
+    expect(project).not.toHaveBeenCalled();
+    const camera = { center: { x: 0, y: 0 }, zoom: 0.03 };
+    expect(
+      first.query(camera, 390, 660).find((cell) => cell.position.key === '1,1'),
+    ).toBeUndefined();
+    expect(
+      second.query(camera, 390, 660).find((cell) => cell.position.key === '1,1')
+        ?.explored,
+    ).toBe(true);
+  } finally {
+    project.mockRestore();
+  }
+});

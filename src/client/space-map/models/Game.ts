@@ -182,6 +182,8 @@ export class Game {
   #simulation: TurnSimulation | null = null;
   #pendingFrame: TurnFrame | null = null;
   #mapCells: readonly MapCell[] | null = null;
+  /** obruten-resa: immutable map snapshots reuse unchanged cells. */
+  readonly #changedMapCells = new Set<string>();
 
   constructor(readonly galaxy: Galaxy) {
     this.#navigation = new HexNavigation(galaxy);
@@ -507,18 +509,25 @@ export class Game {
   }
 
   mapSnapshot(): readonly MapCell[] {
-    this.#mapCells ??= this.galaxy.mapSnapshot(
-      this.#explored,
-      this.#visible,
-      this.#knownTerrain,
-      new Map(
-        this.galaxy.systems
-          .flatMap((system) => system.planets)
-          .map((planet) => [planet.id, planet.environmentType]),
-      ),
-      this.#surveyedPlanets,
-    );
+    if (!this.#mapCells || this.#changedMapCells.size)
+      this.#mapCells = this.galaxy.mapSnapshot(
+        this.#explored,
+        this.#visible,
+        this.#knownTerrain,
+        new Map(
+          this.galaxy.systems
+            .flatMap((system) => system.planets)
+            .map((planet) => [planet.id, planet.environmentType]),
+        ),
+        this.#surveyedPlanets,
+        this.#mapCells ?? undefined,
+        this.#changedMapCells,
+      );
+    this.#changedMapCells.clear();
     return this.#mapCells;
+  }
+  mapCellAt(position: HexCoordinate): MapCell | null {
+    return this.galaxy.snapshotCell(position, this.mapSnapshot());
   }
   // planetinformation-pa-kartan: unknown planets never cross the read-model boundary.
   planetIntel(position: HexCoordinate):
@@ -620,7 +629,7 @@ export class Game {
       `Planet explored: ${planet.name}.`,
       planet.position,
     );
-    this.#mapCells = null;
+    this.#changedMapCells.add(planet.position.key);
     return Object.freeze([
       {
         eventId,
@@ -1098,11 +1107,13 @@ export class Game {
     if (!origin) return;
     for (const offset of HexCoordinate.disk(4)) {
       const hex = new HexCoordinate(origin.q + offset.q, origin.r + offset.r);
-      if (this.galaxy.cellAt(hex)) this.#explored.add(hex.key);
+      if (this.galaxy.cellAt(hex) && !this.#explored.has(hex.key)) {
+        this.#explored.add(hex.key);
+        this.#changedMapCells.add(hex.key);
+      }
     }
     this.#chartedPirates.add(other.id);
     other.observe();
-    this.#mapCells = null;
     this.#updateSight();
     this.#event('Captured charts reveal a pirate presence.');
   }
@@ -1710,7 +1721,7 @@ export class Game {
     let path = this.#route(fleet).path;
     while (path[0] && !this.galaxy.isPassable(path[0])) {
       this.#knownTerrain.add(path[0].key);
-      this.#mapCells = null;
+      this.#changedMapCells.add(path[0].key);
       path = this.#route(fleet).path;
     }
     const next = path[0];
@@ -1731,7 +1742,7 @@ export class Game {
       !this.#knownTerrain.has(next.key)
     ) {
       this.#knownTerrain.add(next.key);
-      this.#mapCells = null;
+      this.#changedMapCells.add(next.key);
       path = this.#route(fleet).path;
       if (path[0]?.key !== next.key) return this.#availableRoute(fleet);
     }
@@ -1878,14 +1889,22 @@ export class Game {
         : [];
     const nebula = (point: HexCoordinate) =>
       this.galaxy.terrainAt(point) === 'nebula';
-    this.#visible = Detection.coverage(sources, nebula);
+    const visible = Detection.coverage(sources, nebula);
+    for (const key of this.#visible)
+      if (!visible.has(key)) this.#changedMapCells.add(key);
+    for (const key of visible)
+      if (!this.#visible.has(key)) this.#changedMapCells.add(key);
+    this.#visible = visible;
     for (const pirate of this.#pirates)
       if (this.#visible.has(pirate.position.key)) pirate.observe();
     for (const key of Detection.coverage(sources, nebula, true)) {
       const point = new HexCoordinate(
         ...(key.split(',').map(Number) as [number, number]),
       );
-      if (this.galaxy.contains(point)) this.#knownTerrain.add(key);
+      if (this.galaxy.contains(point) && !this.#knownTerrain.has(key)) {
+        this.#knownTerrain.add(key);
+        this.#changedMapCells.add(key);
+      }
     }
     for (const key of this.#visible)
       if (
@@ -1895,8 +1914,10 @@ export class Game {
           ),
         )
       )
-        this.#explored.add(key);
-    this.#mapCells = null;
+        if (!this.#explored.has(key)) {
+          this.#explored.add(key);
+          this.#changedMapCells.add(key);
+        }
     this.#updatePirateActivation();
   }
   /**
@@ -1918,13 +1939,11 @@ export class Game {
     }
   }
   #reveal(position: HexCoordinate, radius = true): void {
-    let changed = false;
     for (const cell of [position, ...(radius ? position.neighbors() : [])])
       if (this.galaxy.cellAt(cell) && !this.#explored.has(cell.key)) {
         this.#explored.add(cell.key);
-        changed = true;
+        this.#changedMapCells.add(cell.key);
       }
-    if (changed) this.#mapCells = null;
   }
   // tomma-flottor-utan-position: the last ship releases both location and course.
   #releaseEmptyFleet(fleet: Fleet): void {

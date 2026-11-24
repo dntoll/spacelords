@@ -3,7 +3,7 @@ import type { MapCell } from '../Galaxy.js';
 import { HexGeometry } from '../../../common/HexCoordinate.js';
 
 interface Entry {
-  readonly cell: MapCell;
+  readonly index: number;
   readonly x: number;
 }
 interface Row {
@@ -28,31 +28,40 @@ function lowerBound<T>(
 
 /** rumsligt-kartindex: sorted hex rows bound work to the viewport, not world size. */
 export class MapViewport {
+  static readonly #geometry = new WeakMap<
+    MapCell['position'],
+    { positions: readonly MapCell['position'][]; rows: readonly Row[] }
+  >();
   readonly #rows: readonly Row[];
-  readonly #overview: readonly Row[];
+  #overview: readonly Row[] | null = null;
 
   constructor(readonly cells: readonly MapCell[]) {
-    const rows = new Map<number, Row>();
-    for (const cell of cells) {
-      const point = HexGeometry.toPoint(cell.position);
-      const row = rows.get(cell.position.r) ?? { y: point.y, entries: [] };
-      row.entries.push({ cell, x: point.x });
-      rows.set(cell.position.r, row);
+    const first = cells[0]?.position;
+    const cached = first ? MapViewport.#geometry.get(first) : undefined;
+    if (
+      cached &&
+      cached.positions.length === cells.length &&
+      cached.positions.every(
+        (position, index) => position === cells[index]!.position,
+      )
+    ) {
+      this.#rows = cached.rows;
+    } else {
+      const rows = new Map<number, Row>();
+      for (const [index, cell] of cells.entries()) {
+        const point = HexGeometry.toPoint(cell.position);
+        const row = rows.get(cell.position.r) ?? { y: point.y, entries: [] };
+        row.entries.push({ index, x: point.x });
+        rows.set(cell.position.r, row);
+      }
+      this.#rows = [...rows.values()].sort((a, b) => a.y - b.y);
+      for (const row of this.#rows) row.entries.sort((a, b) => a.x - b.x);
+      if (first)
+        MapViewport.#geometry.set(first, {
+          positions: cells.map((cell) => cell.position),
+          rows: this.#rows,
+        });
     }
-    this.#rows = [...rows.values()].sort((a, b) => a.y - b.y);
-    for (const row of this.#rows) row.entries.sort((a, b) => a.x - b.x);
-    this.#overview = this.#rows
-      .map((row) => ({
-        y: row.y,
-        entries: row.entries.filter(
-          ({ cell }) =>
-            cell.explored ||
-            cell.visible ||
-            cell.object ||
-            (cell.terrain && cell.terrain !== 'space'),
-        ),
-      }))
-      .filter((row) => row.entries.length > 0);
   }
 
   query(
@@ -67,7 +76,22 @@ export class MapViewport {
     const right = camera.center.x + halfWidth;
     const top = camera.center.y - halfHeight;
     const bottom = camera.center.y + halfHeight;
-    const rows = camera.zoom < 0.5 ? this.#overview : this.#rows;
+    if (camera.zoom < 0.5 && !this.#overview)
+      this.#overview = this.#rows
+        .map((row) => ({
+          y: row.y,
+          entries: row.entries.filter(({ index }) => {
+            const cell = this.cells[index]!;
+            return (
+              cell.explored ||
+              cell.visible ||
+              cell.object ||
+              (cell.terrain && cell.terrain !== 'space')
+            );
+          }),
+        }))
+        .filter((row) => row.entries.length > 0);
+    const rows = camera.zoom < 0.5 ? this.#overview! : this.#rows;
     const result: MapCell[] = [];
     for (
       let r = lowerBound(rows, top, (row) => row.y);
@@ -80,7 +104,7 @@ export class MapViewport {
         x < entries.length && entries[x]!.x <= right;
         x++
       ) {
-        result.push(entries[x]!.cell);
+        result.push(this.cells[entries[x]!.index]!);
       }
     }
     return result;

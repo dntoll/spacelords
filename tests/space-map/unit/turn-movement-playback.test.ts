@@ -378,3 +378,89 @@ it('animerade-piratsteg: replays an enemy turn when both ends of a pirate step a
   expect(movements.some((step) => step.fleetId === pirate.id)).toBe(true);
   controller.dispose();
 });
+
+it('obruten-resa: sight changes preserve unchanged map cells during playback', () => {
+  const game = new Game(createExampleGalaxy());
+  const origin = {
+    fleet: game.fleetSnapshot(),
+    pirates: game.pirateSnapshots(),
+    cells: game.mapSnapshot(),
+  };
+  const from = origin.fleet.position!,
+    to = from.neighbors()[0]!;
+  const move = { fleetId: origin.fleet.id, from, to };
+  const playback = new TurnMovementPlayback(origin);
+  playback.record({ movements: [move] }, origin, origin);
+  playback.begin(move);
+  const distant = origin.cells.find(
+    (cell) => cell.position.distanceTo(to) > 5,
+  )!;
+  playback.advance(1);
+  expect(
+    playback.cells.find((cell) => cell.position.key === distant.position.key),
+  ).toBe(distant);
+  expect(
+    origin.cells.find((cell) => cell.position.key === to.key)?.visible,
+  ).toBe(true);
+});
+
+it('obruten-resa: updating game sight reuses unchanged cells without changing the old snapshot', () => {
+  const game = new Game(createExampleGalaxy());
+  const before = game.mapSnapshot();
+  const fleet = game.fleetSnapshot();
+  const to = fleet.position!.neighbors()[0]!;
+  game.setDestination(fleet.id, to);
+  game.startTurn('player');
+  const frame = game.nextTurnFrame()!;
+  game.applyFrame(frame);
+  const after = game.mapSnapshot();
+  const distant = before.find((cell) => cell.position.distanceTo(to) > 5)!;
+  expect(after.find((cell) => cell.position.key === distant.position.key)).toBe(
+    distant,
+  );
+  expect(Object.isFrozen(before)).toBe(true);
+  expect(
+    before.find((cell) => cell.position.key === to.neighbors()[0]!.key)
+      ?.visible,
+  ).toBe(false);
+});
+
+it('obruten-resa: incremental map snapshots match a full rebuild after movement', () => {
+  const example = createExampleGalaxy();
+  const game = new Game(example);
+  const initial = game.mapSnapshot();
+  const fleet = game.fleetSnapshot();
+  game.setDestination(
+    fleet.id,
+    new HexCoordinate(fleet.position!.q + 2, fleet.position!.r),
+  );
+  game.startTurn('player');
+  for (let i = 0; i < 20; i++) {
+    const frame = game.nextTurnFrame();
+    if (!frame) break;
+    game.applyFrame(frame);
+    if (game.phase === 'interrupted') break;
+  }
+  if (game.phase === 'simulating') game.finishTurn();
+  const state = game.exportState();
+  const current = game.fleetSnapshot();
+  const visible = Detection.coverage(
+    [{ position: current.position!, range: current.detectionRange ?? 0 }],
+    (point) => example.terrainAt(point) === 'nebula',
+  );
+  const environments = new Map(
+    example.systems
+      .flatMap((system) => system.planets)
+      .map((planet) => [planet.id, planet.environmentType]),
+  );
+  expect(game.mapSnapshot()).toEqual(
+    example.mapSnapshot(
+      new Set(state.explored),
+      visible,
+      new Set(state.knownTerrain),
+      environments,
+      new Set(state.surveyedPlanets),
+    ),
+  );
+  expect(initial).not.toBe(game.mapSnapshot());
+});

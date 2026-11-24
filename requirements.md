@@ -49,7 +49,8 @@ kraven med stabila namn och status. Statusen nedan sammanfattar området.
   (`glidande-hexsteg`, `flytande-forflyttning`) och rakare vägval
   (`rakare-vag`, `rak-och-jamn-resa`, `stabil-fardvag`), kamera med död zon och fri panorering
   (`kamera-med-dod-zon`), sömlös förflyttning utan synliga rundor
-  (`somlos-forflyttning`), händelser som toppnotiser
+  (`somlos-forflyttning`, `obruten-resa`), spelarstyrt val av hex
+  (`val-andras-bara-av-spelaren`), händelser som toppnotiser
   (`handelser-som-toppnotis`), upptäckter som stannar resan
   (`upptackt-stannar-resan`) och resor som fortsätter när ingen pirat syns
   (`resa-utan-synliga-pirater`). **Fullständigt implementerat** utom

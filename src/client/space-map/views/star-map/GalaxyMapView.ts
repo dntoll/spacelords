@@ -62,6 +62,7 @@ export class GalaxyMapView implements MapPort {
     target: HexCoordinate;
     position: string;
     point: Point;
+    nextStart?: number;
   } | null = null;
   #movementFrame = 0;
   #finishMovement: (() => void) | null = null;
@@ -230,7 +231,12 @@ export class GalaxyMapView implements MapPort {
     }
     return new Promise((resolve) => {
       this.#finishMovement = resolve;
-      let started: number | null = this.#ready ? performance.now() : null;
+      const now = performance.now();
+      let started: number | null = this.#ready
+        ? !ends?.start && this.#journey?.nextStart !== undefined
+          ? Math.max(this.#journey.nextStart, now - 32)
+          : now
+        : null;
       const draw = (now: number) => {
         if (this.#disposed) {
           resolve();
@@ -258,6 +264,7 @@ export class GalaxyMapView implements MapPort {
                   ...this.#journey,
                   position: own.to.key,
                   point: points.get(own.fleetId)!.to,
+                  nextStart: started + glide,
                 };
             }
             this.#finishMovement = null;

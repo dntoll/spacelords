@@ -748,26 +748,29 @@ export class MasterController {
     )
       return;
     this.#runningTurn = true;
+    let completed = false;
     try {
       if (resume) this.#turn.continueTurn();
       else this.#turn.startTurn();
       this.#render();
       const origin = this.#model.snapshot;
-      const movementPlayback = new TurnMovementPlayback(origin);
+      let movementPlayback: TurnMovementPlayback | null = null;
       let frame;
       while (!this.#disposed && (frame = this.#turn.nextTurnFrame())) {
         const before = this.#model.snapshot;
         this.#turn.applyTurnFrame(frame);
         const after = this.#model.snapshot;
-        movementPlayback.record(frame, before, after);
+        if (frame.movements.length && !movementPlayback)
+          movementPlayback = new TurnMovementPlayback(origin);
+        movementPlayback?.record(frame, before, after);
         if (after.phase === 'interrupted') break;
       }
       if (this.#disposed) return;
       if (this.#model.snapshot.phase !== 'interrupted') this.#turn.finishTurn();
       this.#model.save();
       const result = this.#model.snapshot;
-      const batches = movementPlayback.batches;
-      if (batches.length) {
+      const batches = movementPlayback?.batches ?? [];
+      if (movementPlayback && batches.length) {
         this.#turn.beginMovementPlayback(movementPlayback, origin);
         for (const batch of batches) {
           this.#turn.focusTurnMovement(batch.map((track) => track[0]!));
@@ -837,7 +840,7 @@ export class MasterController {
       if (this.#model.snapshot.phase === 'planning')
         this.#turn.restoreTurnContext();
       this.#render();
-      this.#schedulePlayback();
+      completed = true;
     } catch (error) {
       console.warn(error);
       this.#turn.endMovementPlayback();
@@ -845,8 +848,23 @@ export class MasterController {
       this.#render();
     } finally {
       this.#runningTurn = false;
-      // resa-utan-synliga-pirater: a finished round may start the next one.
-      if (!this.#disposed) this.#schedulePlayback();
+      if (!this.#disposed) {
+        const snapshot = this.#model.snapshot;
+        // obruten-resa: continue straight into the next stage without a timer gap.
+        if (
+          completed &&
+          !this.#battleAnimating &&
+          snapshot.screen !== 'saves' &&
+          !snapshot.boardingBattle &&
+          !snapshot.battleFeedback &&
+          !snapshot.tacticalBattle &&
+          snapshot.phase === 'planning' &&
+          !this.#turn.discoveryPause() &&
+          this.#turn.continueVoyage()
+        )
+          void this.#runTurn();
+        else this.#schedulePlayback();
+      }
     }
   }
 }

@@ -144,7 +144,9 @@ imperiets ekonomi. AppView uppdaterar kamera och byggvalens position;
 GalaxyMapView samlar omritningar per bildruta och använder MapViewport
 med binärsökning i sorterade hexrader. Indexet följer kartögonblicksbildens
 identitet och innehåller bara redan tillåten kartkunskap. Domänmodellen
-är oberoende av p5. Sparformat och galaxstorlek ändras inte.
+är oberoende av p5. `obruten-resa` återanvänder kartgeometrin och uppdaterar
+endast ändrade siktceller; tidigare ögonblicksbilder förblir oföränderliga.
+Sparformat och galaxstorlek ändras inte.
 Se [orsak, mätning och tester](map-performance.md).
 
 ## Direkta stridsorder
