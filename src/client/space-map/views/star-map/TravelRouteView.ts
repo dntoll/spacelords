@@ -1,46 +1,63 @@
 import type p5 from 'p5';
-import { HexGeometry } from '../../../common/HexCoordinate.js';
+import { HexGeometry, type Point } from '../../../common/HexCoordinate.js';
 import type { TravelRoute } from '../../models/star-map/Travel.js';
 
+/** fardvag-som-orderpil: the route uses the colour and weight of the order arrow. */
+const ROUTE_COLOR = '#72d8ca';
+const LATER_COLOR = 'rgba(114, 216, 202, 0.45)';
+
 /**
- * hexval-med-vag: the previewed route as a line through the hex centres. The
- * part the fleet's remaining AP cover is bright, the rest is dimmer, and a dot
- * marks where each round ends (ap-pa-starmap).
+ * hexval-med-vag / fardvag-som-orderpil: the route is the fleet's only arrow.
+ * It runs from the fleet's drawn position through the hex centres and ends in
+ * an arrowhead. While a pirate is in sight, the part beyond the remaining AP
+ * is dimmer and small dots mark where each round ends (ap-pa-starmap).
  */
 export function renderTravelRoute(
   sketch: p5,
   route: TravelRoute | null,
   zoom: number,
+  start?: Point,
 ): void {
   if (!route?.steps.length) return;
-  const points = [route.from, ...route.steps].map((hex) =>
-    HexGeometry.toPoint(hex),
-  );
+  const points = [
+    start ?? HexGeometry.toPoint(route.from),
+    ...route.steps.map((hex) => HexGeometry.toPoint(hex)),
+  ];
   const perRound = Math.max(1, route.perRound);
-  // somlos-forflyttning: without an active enemy the route is one even line.
   const available = route.contested
     ? Math.max(0, route.available)
     : points.length;
-  const roundEnd = (index: number) =>
-    index === points.length - 1 ||
-    (route.contested &&
-      (index === available ||
-        (index > available && (index - available) % perRound === 0)));
   sketch.push();
-  sketch.noFill();
-  sketch.strokeCap(sketch.ROUND);
+  sketch.strokeWeight(1 / zoom);
   for (let index = 1; index < points.length; index++) {
     const from = points[index - 1]!;
     const to = points[index]!;
-    sketch.stroke(index <= available ? '#f4d27a' : 'rgba(244, 210, 122, 0.45)');
-    sketch.strokeWeight(3 / zoom);
+    sketch.stroke(index <= available ? ROUTE_COLOR : LATER_COLOR);
     sketch.line(from.x, from.y, to.x, to.y);
   }
   sketch.noStroke();
-  for (let index = 1; index < points.length; index++) {
-    const point = points[index]!;
-    sketch.fill(index <= available ? '#f4d27a' : 'rgba(244, 210, 122, 0.6)');
-    sketch.circle(point.x, point.y, (roundEnd(index) ? 9 : 4) / zoom);
-  }
+  if (route.contested)
+    for (let index = 1; index < points.length - 1; index++) {
+      const roundEnd =
+        index === available ||
+        (index > available && (index - available) % perRound === 0);
+      if (!roundEnd) continue;
+      sketch.fill(index <= available ? ROUTE_COLOR : LATER_COLOR);
+      sketch.circle(points[index]!.x, points[index]!.y, 5 / zoom);
+    }
+  const tip = points.at(-1)!;
+  const before = points.at(-2)!;
+  const angle = Math.atan2(tip.y - before.y, tip.x - before.x);
+  const length = 8 / zoom;
+  const width = 3 / zoom;
+  sketch.fill(points.length - 1 <= available ? ROUTE_COLOR : LATER_COLOR);
+  sketch.triangle(
+    tip.x,
+    tip.y,
+    tip.x - Math.cos(angle) * length - Math.sin(angle) * width,
+    tip.y - Math.sin(angle) * length + Math.cos(angle) * width,
+    tip.x - Math.cos(angle) * length + Math.sin(angle) * width,
+    tip.y - Math.sin(angle) * length - Math.cos(angle) * width,
+  );
   sketch.pop();
 }

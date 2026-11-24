@@ -292,7 +292,13 @@ export class GalaxyMapView implements MapPort {
           model.camera.zoom,
           model.screen === 'fleets',
         );
-    renderTravelRoute(sketch, model.travelRoute, model.camera.zoom);
+    // fardvag-fran-flottan: the route starts at the fleet's drawn position.
+    const fleetPoint =
+      movementPoints.get(model.fleet.id) ??
+      FleetMapLayout.markers([model.fleet]).find(
+        (marker) => marker.fleet.id === model.fleet.id,
+      )?.point;
+    renderTravelRoute(sketch, model.travelRoute, model.camera.zoom, fleetPoint);
     renderMapOverlays(sketch, model, movementPoints, this.#shipImages);
     if (this.#canvas)
       this.#canvas.style.cursor = model.fleetDragging
