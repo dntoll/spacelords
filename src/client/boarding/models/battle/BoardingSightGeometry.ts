@@ -133,6 +133,14 @@ function walk(
     exited: number,
   ) => boolean | number | null,
 ): number | null {
+  if (
+    ![from.q, from.r, direction.q, direction.r, length].every(
+      Number.isFinite,
+    ) ||
+    (direction.q === 0 && direction.r === 0)
+  ) {
+    return null;
+  }
   let q = Math.round(from.q);
   let r = Math.round(from.r);
   const stepQ = Math.sign(direction.q);
@@ -304,6 +312,7 @@ export function boardingStrayShot(
   const dq = target.q - from.q;
   const dr = target.r - from.r;
   const distance = Math.hypot(dq, dr);
+  if (distance === 0) return { to: { ...from } };
   const offset = 0.76 + 0.24 * Math.min(1, Math.max(0, miss - 1) / 19);
   const q = dq - ((side * dr) / distance) * offset;
   const r = dr + ((side * dq) / distance) * offset;
