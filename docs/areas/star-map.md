@@ -8,6 +8,10 @@ flotta till ett mål. Planeter är platser; spelaren äger dem inte
 
 ## Krav
 
+- **Alltid animerad stjärnkarta:** `stjarnkarta-alltid-animerad` (2026-11-24)
+  är **Fullständigt implementerat**. Spelarens flotta och synliga pirater
+  animeras på Star map även när operativsystemet anger reducerad rörelse.
+
 - **Markerad outforskad hex:** `markerad-outforskad-hex` (2026-11-24) är
   **Fullständigt implementerat**. En vald outforskad hex behåller samma mörka
   fyllfärg som en omarkerad outforskad hex, med en synlig markeringskontur.

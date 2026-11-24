@@ -54,6 +54,7 @@ engelska.
 - Spelaren zoomar och panorerar, väljer himlakroppar och flottor och drar en
   flotta till ett mål.
 - En markerad outforskad hex behåller sin mörka fyllning och har en synlig kontur.
+- Rörelser på Star map animeras även när systemets animationer är avstängda.
 - Flottorna ger sikt. Teleskop ökar räckvidden. En pirat utanför sikten
   visas vid sin senast kända plats; när den flyttat sig visas ett frågetecken.
 - Flottan rör sig jämnt utan stopp vid rundslut längs en så rak väg som

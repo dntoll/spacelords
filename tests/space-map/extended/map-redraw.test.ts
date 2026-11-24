@@ -27,6 +27,68 @@ beforeAll(async () => {
 });
 afterEach(() => vi.unstubAllGlobals());
 
+it.each(['player', 'pirate'])(
+  'stjarnkarta-alltid-animerad: animates %s movement with reduced motion enabled',
+  async (side) => {
+    const container = document.createElement('div');
+    const noop = () => {};
+    const sketch = {
+      setup: noop,
+      draw: noop,
+      createCanvas: () => container.append(document.createElement('canvas')),
+      pixelDensity: noop,
+      noLoop: noop,
+      textFont: noop,
+      loadImage: () => new Promise(() => {}),
+    };
+    runtime.sketch = sketch as unknown as p5;
+    const callbacks = new Map<number, FrameRequestCallback>();
+    let sequence = 0;
+    vi.stubGlobal('matchMedia', () => ({ matches: true }));
+    vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => {
+      callbacks.set(++sequence, callback);
+      return sequence;
+    });
+    vi.stubGlobal('cancelAnimationFrame', (id: number) => callbacks.delete(id));
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        observe() {}
+        disconnect() {}
+      },
+    );
+    const view = new GalaxyMapView(container, noop);
+    sketch.setup();
+    const model = new AppModel().snapshot;
+    view.render(model);
+    const from = new HexCoordinate(0, 0);
+    const to = new HexCoordinate(1, 0);
+    const progress = vi.fn();
+    const animation = view.animateTurnStep(
+      {
+        movements: [
+          {
+            fleetId: side === 'player' ? model.fleet.id : 'pirate-test',
+            from,
+            to,
+          },
+        ],
+      },
+      progress,
+      400,
+    );
+    expect(progress).not.toHaveBeenCalled();
+    const start = performance.now();
+    const tick = callbacks.get(sequence)!;
+    tick(start + 120);
+    expect(progress).toHaveBeenCalled();
+    expect(progress.mock.calls[0]![0]).toBeGreaterThan(0);
+    expect(progress.mock.calls[0]![0]).toBeLessThan(1);
+    view.dispose();
+    await animation;
+  },
+);
+
 it('markerad-outforskad-hex: keeps the unknown fill while drawing a selected outline', () => {
   const noop = () => {};
   let fill = '';

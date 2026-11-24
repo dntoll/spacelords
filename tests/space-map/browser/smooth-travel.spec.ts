@@ -12,6 +12,41 @@ import {
 import { selectMapHex } from './map-helpers.js';
 import { seedGame } from './save-helpers.js';
 
+test('stjarnkarta-alltid-animerad: moves through intermediate frames with reduced motion enabled', async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.clock.install({ time: new Date('2026-11-24T00:00:00Z') });
+  const example = createExampleGalaxy();
+  const galaxy = new Galaxy(
+    example.player,
+    [example.systems[0]!],
+    example.homePlanet.id,
+  );
+  const game = new Game(galaxy);
+  const start = game.fleetSnapshot().position!;
+  const target = new HexCoordinate(start.q + 2, start.r);
+  await seedGame(page, {
+    ...game.exportState(),
+    knownObjects: galaxy.systems.flatMap((system) => [
+      system.star.id,
+      ...system.planets.map((planet) => planet.id),
+    ]),
+  });
+  await page.clock.pauseAt(new Date('2026-11-24T01:00:00Z'));
+  const canvas = page.locator('canvas[data-rendered="true"]');
+  await expect(canvas).toBeVisible();
+  await selectMapHex(page, target);
+  await selectMapHex(page, target);
+  await page.clock.runFor(150);
+  const progress = await canvas.getAttribute('data-moving-progress');
+  expect(progress).not.toBeNull();
+  expect(Number(progress)).toBeGreaterThan(0);
+  expect(Number(progress)).toBeLessThan(1);
+  await page.clock.runFor(2000);
+  await expect(canvas).not.toHaveAttribute('data-moving-progress');
+});
+
 test('rak-och-jamn-resa: the marker follows one straight line across round boundaries', async ({
   page,
 }) => {
