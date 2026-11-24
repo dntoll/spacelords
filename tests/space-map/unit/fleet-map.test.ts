@@ -64,7 +64,7 @@ function drawing() {
   };
 }
 
-it('destinationer-for-aktiva-skepp: hides idle fleet arrows during movement and all arrows during event playback', () => {
+it('destinationer-for-aktiva-skepp: keeps the moving fleet’s arrow during movement', () => {
   const first = fleet('moving');
   const model = new AppModel().snapshot;
   const move = {
@@ -72,21 +72,16 @@ it('destinationer-for-aktiva-skepp: hides idle fleet arrows during movement and 
     from: first.position!,
     to: first.destination!,
   };
-  for (const moving of [true, false]) {
-    const { sketch } = drawing();
-    renderMapOverlays(sketch as unknown as p5, {
-      ...model,
-      screen: 'fleets',
-      fleet: first,
-      pirates: [],
-      turnMovement: moving ? move : null,
-      turnMovements: moving ? [move] : [],
-      eventPlayback: moving
-        ? null
-        : { round: 1, events: [], index: 0, stage: 'announcing' },
-    });
-    expect(sketch.line).toHaveBeenCalledTimes(moving ? 1 : 0);
-  }
+  const { sketch } = drawing();
+  renderMapOverlays(sketch as unknown as p5, {
+    ...model,
+    screen: 'fleets',
+    fleet: first,
+    pirates: [],
+    turnMovement: move,
+    turnMovements: [move],
+  });
+  expect(sketch.line).toHaveBeenCalledTimes(1);
 });
 
 describe('destinationspilar-endast-i-flottvyn', () => {

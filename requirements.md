@@ -46,8 +46,10 @@ kraven med stabila namn och status. Statusen nedan sammanfattar området.
   terräng, kamera, kartobjekt och genererade bilder, samt styrningen med
   hexval och väg (`hexval-med-vag`), AP och turordning utan End turn
   (`ap-pa-starmap`), glidande hexsteg
-  (`glidande-hexsteg`), kamera som följer skeppet
-  (`kamera-foljer-skepp`), upptäckter som stannar resan
+  (`glidande-hexsteg`), kamera med död zon och fri panorering
+  (`kamera-med-dod-zon`), sömlös förflyttning utan synliga rundor
+  (`somlos-forflyttning`), händelser som toppnotiser
+  (`handelser-som-toppnotis`), upptäckter som stannar resan
   (`upptackt-stannar-resan`) och resor som fortsätter när ingen pirat syns
   (`resa-utan-synliga-pirater`). **Fullständigt implementerat** utom
   `stjarnsystem-och-asteroidbalten`, som är **Delvis implementerat**.
@@ -63,9 +65,9 @@ kraven med stabila namn och status. Statusen nedan sammanfattar området.
   skeppsteknikerna, kön och forskningstiden. Trädet och kön är **Fullständigt
   implementerat**; forskningen går inte framåt förrän
   `flottforskning-av-tekniker` är beslutad (**Ej implementerat**).
-- **[Rundan och händelser](docs/areas/turn-and-decisions.md):** uppspelningen
-  av rundan, händelser och avbrott. Allt kvarvarande är **Fullständigt
-  implementerat**.
+- **[Rundan och händelser](docs/areas/turn-and-decisions.md):** rundor i
+  bakgrunden, händelser som toppnotiser, kamera med död zon och avbrott.
+  Allt kvarvarande är **Fullständigt implementerat**.
 - **[Space pirates](docs/areas/pirates-and-salvage.md):** pirater,
   patrullering och strid per hex; strid när spelarens flotta och en pirat
   delar hex (`strid-i-samma-hex`). Allt kvarvarande är **Fullständigt

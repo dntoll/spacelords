@@ -15,7 +15,7 @@ export function renderMapOverlays(
   renderMapFleets(
     sketch,
     [model.fleet, ...(model.pirates ?? []).map(pirateAsFleet)].map((fleet) =>
-      (model.turnMovement || model.eventPlayback) &&
+      model.turnMovement &&
       !model.turnMovements.some((movement) => movement.fleetId === fleet.id)
         ? { ...fleet, destination: null }
         : fleet,

@@ -1,6 +1,8 @@
 /** speltexter-i-vy: outcomes describe what happened. The view chooses the sentence. */
 export type DiscoveryFlash = {
-  readonly kind: 'planet' | 'planet-explored' | 'star' | 'pirate' | 'wreck';
+  /** handelser-som-toppnotis: `event` carries a whole sentence as its name. */
+  readonly kind:
+    'planet' | 'planet-explored' | 'star' | 'pirate' | 'wreck' | 'event';
   readonly name: string;
 };
 

@@ -67,9 +67,8 @@ test('asteroidbalten / nebulosornas-sikt: discovered terrain explains movement a
     page.getByRole('heading', { name: 'Sparse asteroid belt', exact: true }),
   ).toBeVisible();
   await expect(
-    page.getByText(
-      'Entering or leaving this hex uses a full round of movement, regardless of engine.',
-      { exact: true },
-    ),
+    page.getByText('Ships slow to a crawl when entering or leaving this hex.', {
+      exact: true,
+    }),
   ).toBeVisible();
 });

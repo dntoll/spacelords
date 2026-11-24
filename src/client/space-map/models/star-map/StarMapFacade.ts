@@ -141,9 +141,9 @@ export class StarMapFacade {
     return this.select(HexGeometry.fromPoint(world));
   }
 
-  /** klick-pa-synlig-hex: hits use the camera the map is drawing. */
+  /** kamera-med-dod-zon: the map has a single camera that the player steers. */
   #shownCamera() {
-    return this.host.eventCamera ?? this.host.camera;
+    return this.host.camera;
   }
 
   openMap(): void {
@@ -170,21 +170,7 @@ export class StarMapFacade {
   resizeMap(viewport: MapViewport): void {
     if (!Object.values(viewport).every((v) => Number.isFinite(v) && v > 0))
       return;
-    const previous = this.host.mapViewport;
     this.host.mapViewport = Object.freeze({ ...viewport });
-    if (
-      this.host.eventCamera &&
-      this.host.playbackPositions.length &&
-      (!previous ||
-        previous.width !== viewport.width ||
-        previous.height !== viewport.height ||
-        previous.availableWidth !== viewport.availableWidth ||
-        previous.availableHeight !== viewport.availableHeight)
-    ) {
-      const animating = !!this.host.cameraFraming;
-      this.host.prepareCameraFraming();
-      if (!animating) this.host.finishCameraFraming();
-    }
     if (this.host.pendingMapFocus) {
       // centrerat-kartfokus: use the space left by the newly rendered panels.
       const x = (viewport.availableWidth - viewport.width) / 2;

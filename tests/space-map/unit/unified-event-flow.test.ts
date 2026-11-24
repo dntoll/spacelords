@@ -1,6 +1,5 @@
 import { completeTacticalBattles } from '../../fixtures/tactical-combat.js';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { EventPlayback } from '../../../src/client/space-map/models/turn/EventPlayback.js';
 import { AppModel } from '../../../src/client/app/models/AppModel.js';
 import { MasterController } from '../../../src/client/app/controllers/MasterController.js';
 import {
@@ -67,11 +66,6 @@ describe('gemensamt-handelseflode', () => {
       expect(text.match(/Lost /g)).toHaveLength(1);
       expect(text.match(/Survivors:/g)).toHaveLength(1);
       expect(event.text).toContain('civilian ships.');
-      expect(
-        model.snapshot.eventPlayback?.events.some(
-          (item) => item.decision?.title === 'Battle report',
-        ),
-      ).not.toBe(true);
       expect(model.snapshot.events).toEqual(saved.events);
     },
   );
@@ -89,36 +83,7 @@ describe('gemensamt-handelseflode', () => {
     expect(model.snapshot.phase).toBe('interrupted');
     expect(model.snapshot.notice?.kind).toBe('discovery');
     expect(model.snapshot.travelling).toBe(false);
-    expect(
-      model.snapshot.eventPlayback?.events.some((event) => event.decision),
-    ).not.toBe(true);
     expect(model.snapshot.events.some((event) => event.position)).toBe(true);
-  });
-
-  it('waits for an explicit choice and files each interactive event once', () => {
-    const playback = new EventPlayback(1, [
-      {
-        id: 'contact',
-        round: 1,
-        text: 'Pirate ship in sight.',
-        decision: {
-          title: 'Pirate ship in sight',
-          details: ['HEX 2,0'],
-          fleetId: 'fleet-home',
-        },
-      },
-      { id: 'arrival', round: 1, text: 'Fleet arrived.' },
-    ]);
-    expect(playback.snapshot.stage).toBe('awaiting-choice');
-    expect(playback.advance()).toBe(true);
-    expect(playback.current?.id).toBe('contact');
-    playback.choose('ignore');
-    expect(playback.snapshot.stage).toBe('filing');
-    playback.choose('handle');
-    expect(playback.snapshot.choice).toBe('ignore');
-    playback.advance();
-    expect(playback.current?.id).toBe('arrival');
-    expect(playback.snapshot.stage).toBe('announcing');
   });
 
   it('upptackt-stannar-resan / spara-avbrutet-ar: a discovery flash pauses the round and reload does not replay movement', async () => {
@@ -137,7 +102,6 @@ describe('gemensamt-handelseflode', () => {
     current.controller.dispose();
     current = slot.open();
     expect(current.model.snapshot.notice?.kind).toBe('discovery');
-    expect(current.model.snapshot.eventPlayback).toBeNull();
     expect(slot.saved().state.fleets[0]!.position).toEqual(pausedPosition);
     expect(slot.saved().state.simulation!.remaining).toEqual(pausedMovement);
     // fiendeupptackt-utan-end-turn: the pirate flash continues the round.
@@ -150,13 +114,11 @@ describe('gemensamt-handelseflode', () => {
       await vi.advanceTimersByTimeAsync(1850);
       if (
         current.model.snapshot.phase === 'planning' &&
-        !current.model.snapshot.enemyTurnPending &&
-        !current.model.snapshot.eventPlayback
+        !current.model.snapshot.enemyTurnPending
       )
         break;
     }
     expect(current.model.snapshot.phase).toBe('planning');
-    expect(current.model.snapshot.eventPlayback).toBeNull();
     expect(current.model.snapshot.round).toBe(2);
     // ap-pa-starmap: the fleet moves before the pirate, so a fight is not
     // certain here; a reload must never repeat one.
@@ -168,7 +130,6 @@ describe('gemensamt-handelseflode', () => {
     ).toBeLessThanOrEqual(1);
     current.controller.dispose();
     current = slot.open();
-    expect(current.model.snapshot.eventPlayback).toBeNull();
     expect(current.model.snapshot.round).toBe(2);
     current.controller.dispose();
   });
@@ -255,11 +216,6 @@ describe('gemensamt-handelseflode', () => {
     const slot = session(game.exportState());
     const { model, controller } = slot.open();
     await vi.advanceTimersByTimeAsync(20000);
-    expect(
-      model.snapshot.eventPlayback?.events.some(
-        (event) => event.decision?.title === 'Battle report',
-      ),
-    ).not.toBe(true);
     expect(model.snapshot.phase).toBe('planning');
     expect(model.snapshot.mapFleetId).toBeNull();
     expect(model.snapshot.fleet.canIssueOrders).toBe(false);

@@ -13,8 +13,8 @@ note as about
 end note
 package "Publik yta (index.js)" as public_surface #FFFFEE {
   rectangle "<b>controllers/index.js</b>\nFleetController\nProductionController\nResearchController\nSaveController\nStarMapController\nTurnController" as public__controllers
-  rectangle "<b>models/index.js</b>\nBrowserSaveRepository\nCamera\nCameraFraming\nEconomy\nEventPlayback\nFleetFacade\nFleetMapLayout\nGalaxy\nGame\nMapScreen\nPirateFleet\nProductionFacade\nResearchFacade\nResearchTree\nSaveFacade\nSaveRepository\nStarMapFacade\nTravel\nTurnFacade\nTurnMovementPlayback\nTurnSimulation\nexampleGalaxy" as public__models
-  rectangle "<b>views/index.js</b>\nDiscoveryView\nEventContent\nEventsView\nFleetMapPanel\nGalaxyMapView\nGameText\nMapGesture\nMapLocationHeading\nMapSelectionScroll\nPlanetImages\nProductionView\nResearchDetailsView\nResearchTreeView\nResearchView\nSaveMapPreview\nSaveSlotsView\nShipImages\nShipView\nTurnActionsView" as public__views
+  rectangle "<b>models/index.js</b>\nBrowserSaveRepository\nCamera\nEconomy\nFleetFacade\nFleetMapLayout\nGalaxy\nGame\nMapScreen\nPirateFleet\nProductionFacade\nResearchFacade\nResearchTree\nSaveFacade\nSaveRepository\nStarMapFacade\nTravel\nTurnFacade\nTurnMovementPlayback\nTurnSimulation\nexampleGalaxy" as public__models
+  rectangle "<b>views/index.js</b>\nDiscoveryView\nFleetMapPanel\nGalaxyMapView\nGameText\nMapGesture\nMapLocationHeading\nMapSelectionScroll\nPlanetImages\nProductionView\nResearchDetailsView\nResearchTreeView\nResearchView\nSaveMapPreview\nSaveSlotsView\nShipImages\nShipView" as public__views
 }
 package "(delat)" as space_map___delat_ {
   rectangle "<b>models</b>\nCamera\nCatalog\nDetection\nEconomy\nFleetCombat\nFleetPursuit\nGalaxy\nGalaxyTerrain\nGame\nGameSnapshots\nHexNavigation\nMapScreen\nPirateFleet\nPlanet\nShipEquipment\nSpiralGalaxyLayout\nTurnSimulation\nexampleGalaxy" as space_map___delat___models
@@ -44,12 +44,12 @@ package "saves" as space_map__saves {
 package "star-map" as space_map__star_map {
   rectangle "<b>controllers</b>\nStarMapController" as space_map__star_map__controllers
   rectangle "<b>models</b>\nFleetMapLayout\nMapViewport\nStarAppearance\nStarMapFacade\nTravel" as space_map__star_map__models
-  rectangle "<b>views</b>\nDetectionMapView\nFleetGlide\nFleetMapView\nGalaxyMapView\nMapEventView\nMapGesture\nMapOverlayView\nMapSelectionScroll\nTravelRouteView" as space_map__star_map__views
+  rectangle "<b>views</b>\nDetectionMapView\nFleetGlide\nFleetMapView\nGalaxyMapView\nMapGesture\nMapOverlayView\nMapSelectionScroll\nTravelRouteView" as space_map__star_map__views
 }
 package "turn" as space_map__turn {
   rectangle "<b>controllers</b>\nTurnController" as space_map__turn__controllers
-  rectangle "<b>models</b>\nCameraFraming\nEventDetails\nEventPlayback\nPlaybackOrder\nTurnFacade\nTurnMovementPlayback" as space_map__turn__models
-  rectangle "<b>views</b>\nDiscoveryView\nEventContent\nEventsView\nGameText\nTurnActionsView" as space_map__turn__views
+  rectangle "<b>models</b>\nEventDetails\nPlaybackOrder\nTurnFacade\nTurnMovementPlayback" as space_map__turn__models
+  rectangle "<b>views</b>\nDiscoveryView\nGameText" as space_map__turn__views
 }
 rectangle "boarding" as ext__boarding #EEEEEE
 rectangle "space-battle" as ext__space_battle #EEEEEE
@@ -62,7 +62,6 @@ space_map__saves__controllers ..> space_map__saves__models : typer
 space_map__star_map__controllers ..> space_map__star_map__models : typer
 space_map__star_map__views --> space_map__star_map__models
 space_map__turn__controllers ..> space_map__turn__models : typer
-space_map__turn__views ..> space_map__turn__models : typer
 space_map___delat_ --> space_map__fleets : 1
 space_map___delat_ --> space_map__research : 3
 space_map___delat_ ..> space_map__saves : 1, typer
@@ -73,7 +72,7 @@ space_map__research --> space_map___delat_ : 8
 space_map__research --> space_map__star_map : 1
 space_map__saves --> space_map___delat_ : 8
 space_map__star_map --> space_map___delat_ : 22
-space_map__turn --> space_map___delat_ : 15
+space_map__turn --> space_map___delat_ : 8
 space_map__turn --> space_map__star_map : 1
 space_map___delat_ --> ext__boarding : models
 space_map___delat_ --> ext__space_battle : models

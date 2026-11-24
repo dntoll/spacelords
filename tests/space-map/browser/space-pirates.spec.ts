@@ -110,11 +110,6 @@ for (const screen of ['Star map', 'Fleets']) {
     );
     expect(combats).toHaveLength(1);
     expect(combats[0]!.text.match(/Survivors:/g)).toHaveLength(1);
-    await page.locator('.turn-console > summary').click();
-    await expect(page.locator('[role="log"]')).toContainText(
-      'versus Space pirate',
-    );
-    await expect(page.locator('[role="log"] .combat-event-log')).toHaveCount(1);
     await finishRound(page);
     await page.reload();
     await startFirstSlot(page);

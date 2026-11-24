@@ -1,11 +1,9 @@
-import { scenarioTimeout } from '../../browser-timeouts.js';
 import { expect, test, type Page } from '@playwright/test';
 import { Game } from '../../../src/client/space-map/models/Game.js';
 import {
   HexCoordinate,
   HexGeometry,
 } from '../../../src/client/common/HexCoordinate.js';
-import { createExampleGalaxy } from '../../../src/client/space-map/models/exampleGalaxy.js';
 import { collectTurnFrames } from '../../fixtures/turn-steps.js';
 import { startFirstSlot } from './save-helpers.js';
 import { selectMapHex } from './map-helpers.js';
@@ -143,49 +141,6 @@ async function noOverflow(page: Page) {
   ).toEqual({ x: false, y: false });
 }
 
-async function noMenu(page: Page) {
-  for (const name of ['Pause', 'Play', 'Next', 'Skip'])
-    await expect(page.getByRole('button', { name, exact: true })).toHaveCount(
-      0,
-    );
-}
-
-test('handelseannonsering / handelser-pa-kartan / handelser-vid-ankomst: a finished move has no arrival announcement', async ({
-  page,
-}) => {
-  scenarioTimeout(90_000);
-  const errors: string[] = [];
-  page.on('pageerror', (error) => errors.push(error.message));
-  await page.setViewportSize({ width: 393, height: 851 });
-  await page.clock.install({ time: new Date('2026-10-27T00:00:00Z') });
-  await seed(page);
-  await page.clock.pauseAt(new Date('2026-10-27T01:00:00Z'));
-  await requestTurn(page);
-  const log = page.getByRole('log', { name: 'Game events' });
-  const console = page.getByRole('region', { name: 'Turn console' });
-  const end = idle(page);
-  await advanceUntil(page, async () => {
-    const notice = page.locator('.game-notice');
-    if ((await notice.isVisible()) && (await end.count()) > 0) {
-      const text = (await notice.textContent()) ?? '';
-      if (!text.includes('Pirate ship in sight')) await requestTurn(page);
-      return false;
-    }
-    return (await end.count()) > 0 && !(await notice.isVisible());
-  });
-  await expect(page.locator('.event-announcement')).toHaveCount(0);
-  await noMenu(page);
-  await console.locator('summary').click();
-  await expect(log).not.toContainText('arrived at');
-  await noOverflow(page);
-  await page.reload();
-  await page.clock.resume();
-  await startFirstSlot(page);
-  await console.locator('summary').click();
-  await expect(log).not.toContainText('arrived at');
-  expect(errors).toEqual([]);
-});
-
 for (const size of [
   { width: 393, height: 851 },
   { width: 851, height: 393 },
@@ -234,107 +189,3 @@ for (const size of [
     await noOverflow(page);
   });
 }
-
-test('senaste-aret-i-events / handelseannonsering: long yearly lists scroll internally and shrink after automatic announcements', async ({
-  page,
-}) => {
-  const initial = new Game(createExampleGalaxy()).exportState();
-  const events = Array.from({ length: 140 }, (_, index) => ({
-    id: `history-${index}`,
-    round: index < 20 ? 8 : 9,
-    text: `Historical event ${index} with a long description of an event at Tellus.`,
-  }));
-  await page.addInitScript(
-    (state) => {
-      localStorage.setItem('spacelords.expanded-galaxy-v12-reset', 'done');
-      if (!localStorage.getItem('spacelords.save.v2.1'))
-        localStorage.setItem(
-          'spacelords.save.v2.1',
-          JSON.stringify({ lastPlayed: '2026-10-27', state }),
-        );
-    },
-    {
-      ...initial,
-      round: 10,
-      events,
-    },
-  );
-  await page.setViewportSize({ width: 320, height: 568 });
-  await page.goto('./');
-  await startFirstSlot(page);
-  const console = page.getByRole('region', { name: 'Turn console' });
-  await console.locator('summary').click();
-  const log = page.getByRole('log', { name: 'Game events' });
-  await expect(log.locator('[data-event-id]')).toHaveCount(120);
-  for (const size of [
-    { width: 320, height: 568 },
-    { width: 667, height: 320 },
-  ]) {
-    await page.setViewportSize(size);
-    await expect
-      .poll(() => log.evaluate((node) => node.scrollHeight > node.clientHeight))
-      .toBe(true);
-    await expect(
-      page.getByRole('region', { name: 'Turn console' }),
-    ).toBeInViewport();
-    await noOverflow(page);
-  }
-  // ap-pa-starmap: give the current round one event, announced when it ends.
-  await page.evaluate(() => {
-    const slot = JSON.parse(localStorage.getItem('spacelords.save.v2.1')!) as {
-      state: { events: { id: string; round: number; text: string }[] };
-    };
-    slot.state.events.push({
-      id: 'recent-event',
-      round: 10,
-      text: 'A recent event at Tellus.',
-    });
-    localStorage.setItem('spacelords.save.v2.1', JSON.stringify(slot));
-  });
-  await page.setViewportSize({ width: 320, height: 568 });
-  await page.reload();
-  await startFirstSlot(page);
-  await requestTurn(page, true);
-  await expect(page.locator('.event-announcement')).toBeVisible();
-  await expect(log.locator('[data-event-id]')).toHaveCount(0);
-  await noMenu(page);
-  await expect(idle(page)).toHaveCount(1, { timeout: 5000 });
-  await expect
-    .poll(() =>
-      page.evaluate(
-        () =>
-          (
-            JSON.parse(localStorage.getItem('spacelords.save.v2.1')!) as {
-              state: { round: number };
-            }
-          ).state.round,
-      ),
-    )
-    .toBe(11);
-  if (!(await log.isVisible())) await console.locator('summary').click();
-  await expect(log.locator('[data-event-id]')).toHaveCount(1);
-  await expect(log).toContainText('Round 10');
-  await expect
-    .poll(() => console.evaluate((node) => node.clientHeight))
-    .toBeLessThan(160);
-  await noOverflow(page);
-});
-
-test('handelseannonsering / en-flotta-i-taget: reduced motion retains announcements and results without movement interpolation', async ({
-  page,
-}) => {
-  await page.emulateMedia({ reducedMotion: 'reduce' });
-  await seed(page, 'A recent event at Tellus.');
-  await requestTurn(page, true);
-  await expect(page.locator('.event-announcement')).toBeVisible();
-  await expect(page.locator('.event-announcement')).toHaveCSS(
-    'transition-duration',
-    '0s',
-  );
-  await expect(
-    page.locator('canvas[data-rendered="true"]'),
-  ).not.toHaveAttribute('data-moving-fleet');
-  await noMenu(page);
-  await expect(idle(page)).toHaveCount(1, { timeout: 12000 });
-  await expect(page.locator('.event-announcement')).toHaveCount(0);
-});

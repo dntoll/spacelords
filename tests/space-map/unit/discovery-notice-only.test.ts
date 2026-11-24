@@ -6,8 +6,6 @@ import { HexCoordinate } from '../../../src/client/common/HexCoordinate.js';
 import { Game } from '../../../src/client/space-map/models/Game.js';
 import { createExampleGalaxy } from '../../../src/client/space-map/models/exampleGalaxy.js';
 
-const discovery = /explored|discovered|in sight/i;
-
 describe('upptackt-som-toppnotis', () => {
   it('shows each discovery once as a top notice and never announces it in the middle', async () => {
     vi.useFakeTimers();
@@ -16,16 +14,22 @@ describe('upptackt-som-toppnotis', () => {
       let emit!: IntentHandler;
       let notices = 0;
       const announced: string[] = [];
+      const shown: string[] = [];
       const controller = new MasterController(model, {
         bind(handler) {
           emit = handler;
         },
         render(snapshot) {
           if (snapshot.notice?.kind === 'discovery') notices++;
-          const playback = snapshot.eventPlayback;
-          const current = playback?.events[playback.index];
-          if (current && discovery.test(current.text))
-            announced.push(current.text);
+          // A notice shown again after another one counts as repeated.
+          const name =
+            snapshot.notice?.kind === 'discovery'
+              ? snapshot.notice.flash.name
+              : null;
+          if (name && name !== shown.at(-1)) {
+            if (shown.includes(name)) announced.push(name);
+            shown.push(name);
+          }
         },
         animateTurnStep: () => Promise.resolve(),
         dispose() {},
@@ -45,7 +49,6 @@ describe('upptackt-som-toppnotis', () => {
         const idle = () =>
           model.snapshot.phase === 'planning' &&
           !model.snapshot.enemyTurnPending &&
-          !model.snapshot.eventPlayback &&
           !model.snapshot.turnMovement;
         for (let wait = 0; wait < 40 && !idle(); wait++)
           await vi.advanceTimersByTimeAsync(500);
@@ -80,6 +83,7 @@ describe('upptackt-som-toppnotis', () => {
       let emit!: IntentHandler;
       const notices: string[] = [];
       const announced: string[] = [];
+      const shown: string[] = [];
       const controller = new MasterController(model, {
         bind(handler) {
           emit = handler;
@@ -87,10 +91,15 @@ describe('upptackt-som-toppnotis', () => {
         render(snapshot) {
           if (snapshot.notice?.kind === 'discovery')
             notices.push(snapshot.notice.flash.name);
-          const playback = snapshot.eventPlayback;
-          const current = playback?.events[playback.index];
-          if (current && discovery.test(current.text))
-            announced.push(current.text);
+          // A notice shown again after another one counts as repeated.
+          const name =
+            snapshot.notice?.kind === 'discovery'
+              ? snapshot.notice.flash.name
+              : null;
+          if (name && name !== shown.at(-1)) {
+            if (shown.includes(name)) announced.push(name);
+            shown.push(name);
+          }
         },
         animateTurnStep: () => Promise.resolve(),
         dispose() {},
@@ -145,11 +154,9 @@ describe('upptackt-som-toppnotis', () => {
     }
     model.finishTurn();
     expect(model.snapshot.round).toBe(2);
-    model.beginEventPlayback();
-    const playback = model.snapshot.eventPlayback;
-    expect(playback?.events.map((event) => event.id) ?? []).not.toContain(
-      'event-sol',
-    );
+    model.advanceDiscoveryFlash();
+    model.noteEvents();
+    expect(model.snapshot.notice).toBeNull();
   });
 
   it('shows an arrival exploration of a planet only as a top notice', async () => {
@@ -169,17 +176,23 @@ describe('upptackt-som-toppnotis', () => {
       let emit!: IntentHandler;
       const notices: string[] = [];
       const announced: string[] = [];
+      const shown: string[] = [];
       const controller = new MasterController(model, {
         bind(handler) {
           emit = handler;
         },
         render(snapshot) {
           if (snapshot.notice?.kind === 'discovery')
-            notices.push(snapshot.notice.flash.kind);
-          const playback = snapshot.eventPlayback;
-          const current = playback?.events[playback.index];
-          if (current && discovery.test(current.text))
-            announced.push(current.text);
+            notices.push(snapshot.notice.flash.name);
+          // A notice shown again after another one counts as repeated.
+          const name =
+            snapshot.notice?.kind === 'discovery'
+              ? snapshot.notice.flash.name
+              : null;
+          if (name && name !== shown.at(-1)) {
+            if (shown.includes(name)) announced.push(name);
+            shown.push(name);
+          }
         },
         animateTurnStep: () => Promise.resolve(),
         dispose() {},
@@ -193,11 +206,41 @@ describe('upptackt-som-toppnotis', () => {
       }
       await vi.advanceTimersByTimeAsync(20_000);
       expect(model.snapshot.fleet.position?.key).toBe(planet.position.key);
-      expect(notices).toContain('planet-explored');
+      expect(
+        notices.some(
+          (name) => name === planet.name || name.startsWith('Planet explored'),
+        ),
+      ).toBe(true);
       expect(announced).toEqual([]);
       controller.dispose();
     } finally {
       vi.useRealTimers();
     }
+  });
+});
+
+describe('handelser-som-toppnotis', () => {
+  it('does not show the events of a loaded game again', () => {
+    const state = new Game(createExampleGalaxy()).exportState();
+    const loaded = new AppModel(undefined, {
+      load: () => ({
+        lastPlayed: '2026-11-24T00:00:00Z',
+        state: {
+          ...state,
+          events: [
+            {
+              id: 'charts',
+              round: 1,
+              text: 'Captured charts reveal a pirate presence.',
+            },
+          ],
+        },
+      }),
+      save() {},
+      clear() {},
+    });
+    loaded.startSlot(1);
+    loaded.noteEvents();
+    expect(loaded.snapshot.notice).toBeNull();
   });
 });

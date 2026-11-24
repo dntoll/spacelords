@@ -20,6 +20,9 @@ import type { AppIntent, AppPort } from '../views/ViewContracts.js';
 import type { Point } from '../../common/HexCoordinate.js';
 import { MapGesture } from '../../space-map/views/index.js';
 
+/** handelser-som-toppnotis: how long each top notice stays. */
+const NOTICE_DURATION = 1600;
+
 export class MasterController {
   readonly #saveCase: SaveController;
   readonly #boarding: BoardingController;
@@ -36,7 +39,6 @@ export class MasterController {
   #presented: AppReadModel | null = null;
   #runningTurn = false;
   #disposed = false;
-  #framingEvent = false;
   #battleAnimating = false;
   #playbackTimer: ReturnType<typeof setTimeout> | undefined;
   #fleetPointer: {
@@ -74,8 +76,8 @@ export class MasterController {
 
   dispose(): void {
     this.#disposed = true;
-    for (const resolve of this.#eventWaiters.splice(0)) resolve();
     clearTimeout(this.#playbackTimer);
+    clearTimeout(this.#noticeTimer);
     this.#cancelPointer();
     this.#view.dispose();
   }
@@ -96,13 +98,13 @@ export class MasterController {
     }
   }
 
-  /** handelser-vid-ankomst: turn playback waits for arrival events to close. */
-  #eventWaiters: (() => void)[] = [];
+  #noticeTimer: ReturnType<typeof setTimeout> | undefined;
 
-  #render(snapshot = this.#model.snapshot): void {
-    if (!snapshot.eventPlayback && this.#eventWaiters.length)
-      for (const resolve of this.#eventWaiters.splice(0))
-        queueMicrotask(resolve);
+  #render(given?: AppReadModel): void {
+    // handelser-som-toppnotis: events show at the top as soon as they happen.
+    this.#turn.publishEvents();
+    const snapshot = given ?? this.#model.snapshot;
+    this.#scheduleNotice(snapshot);
     const previous =
       this.#presented?.battleFeedback ?? this.#presented?.tacticalBattle;
     const battle = snapshot.battleFeedback ?? snapshot.tacticalBattle;
@@ -165,18 +167,29 @@ export class MasterController {
     if (
       !previous ||
       !isMapScreen(previous.screen) ||
-      previous.eventPlayback ||
-      previous.turnMovement ||
       previous.boardingBattle ||
       previous.editor ||
       previous.tacticalBattle ||
       previous.battleFeedback ||
-      previous.notice ||
-      this.#runningTurn ||
       (!startingPinch &&
         (this.#fleetPointer ||
           previous.fleetDragging ||
           previous.fleetDestinationPreview))
+    )
+      return false;
+    // kamera-med-dod-zon: the player may pan and zoom while the ship moves.
+    const moving = !!previous.turnMovement || this.#runningTurn;
+    if (moving && intent.type === 'pointer-start') {
+      this.#gesture.start(intent.id, intent.point);
+      return true;
+    }
+    if (moving && intent.type === 'pointer-end') {
+      this.#gesture.end(intent.id);
+      return true;
+    }
+    if (
+      moving &&
+      !['pan', 'zoom', 'pointer-move', 'map-leave'].includes(intent.type)
     )
       return false;
     if (intent.type === 'pointer-start') {
@@ -257,21 +270,6 @@ export class MasterController {
       return;
     }
     const before = this.#presented ?? this.#model.snapshot;
-    const playback = before.eventPlayback;
-    if (playback) {
-      if (
-        playback.stage === 'awaiting-choice' &&
-        ['handle-discoveries', 'ignore-discoveries'].includes(intent.type)
-      ) {
-        this.#turn.chooseEvent(
-          intent.type === 'handle-discoveries' ? 'handle' : 'ignore',
-        );
-        this.#model.save();
-        this.#render();
-        this.#schedulePlayback();
-      }
-      return;
-    }
     if (before.turnMovement) return;
     let mapOrder = false;
     if (intent.type.startsWith('open-')) {
@@ -328,11 +326,8 @@ export class MasterController {
         break;
       case 'continue-turn':
         if (this.#model.snapshot.interruption?.handling) {
-          this.#turn.continueEventHandling();
+          this.#turn.finishEventHandling();
           this.#model.save();
-          this.#render();
-          this.#schedulePlayback();
-          return;
         }
         void this.#runTurn(true);
         return;
@@ -613,30 +608,19 @@ export class MasterController {
     this.#schedulePlayback();
   }
 
-  /** fiendeupptackt-utan-end-turn: show each flash, then continue without End turn. */
-  #scheduleEnemyResume(): void {
-    const wait = this.#model.snapshot.notice?.kind === 'discovery' ? 1600 : 0;
-    this.#playbackTimer = setTimeout(() => {
-      if (this.#disposed || !this.#turn.enemyDiscoveryResume()) return;
-      this.#model.advanceDiscoveryFlash();
-      this.#render();
-      if (this.#model.snapshot.notice?.kind === 'discovery') {
-        this.#scheduleEnemyResume();
-        return;
-      }
-      void this.#runTurn(true);
-    }, wait);
-  }
-
-  /** upptackt-stannar-resan: each discovery stays briefly, then the next one. */
-  #scheduleDiscoveryFlash(): void {
-    if (this.#model.snapshot.notice?.kind !== 'discovery') return;
-    this.#playbackTimer = setTimeout(() => {
+  /**
+   * handelser-som-toppnotis: each top notice stays briefly, then the next.
+   * Notices never stop the game; only a stopping discovery waits for them.
+   */
+  #scheduleNotice(snapshot: AppReadModel): void {
+    if (this.#noticeTimer || snapshot.notice?.kind !== 'discovery') return;
+    this.#noticeTimer = setTimeout(() => {
+      this.#noticeTimer = undefined;
       if (this.#disposed) return;
       this.#model.advanceDiscoveryFlash();
       this.#render();
-      this.#schedulePlayback();
-    }, 1600);
+      if (!this.#runningTurn) this.#schedulePlayback();
+    }, NOTICE_DURATION);
   }
 
   /** hexval-med-vag: the confirmed hex starts the round at once. */
@@ -676,7 +660,6 @@ export class MasterController {
     const snapshot = activated
       ? this.#model.snapshot
       : (this.#presented ?? this.#model.snapshot);
-    const playback = snapshot.eventPlayback;
     if (this.#boarding.shouldPlayBoardingStep()) {
       // tydlig-bordningsstatus: let the shot finish before the defender step.
       const presentation = this.#view.boardingPresentation?.() ?? null;
@@ -727,95 +710,33 @@ export class MasterController {
         }, 450);
       return;
     }
-    if (playback?.stage === 'framing') {
-      if (!this.#framingEvent) void this.#frameEvent();
-      return;
-    }
-    if (!playback) {
-      if (this.#turn.discoveryPause()) {
-        this.#turn.publishDiscoveryFlashes();
-        this.#render();
-        // fiendeupptackt-utan-end-turn: the pirate flash continues the round.
-        if (this.#turn.enemyDiscoveryResume()) {
-          this.#scheduleEnemyResume();
-          return;
-        }
-        this.#scheduleDiscoveryFlash();
-        return;
-      }
+    if (this.#turn.discoveryPause()) {
+      this.#turn.publishDiscoveryFlashes();
+      this.#render();
+      // fiendeupptackt-utan-end-turn: the round goes on after the notices.
       if (
-        snapshot.phase === 'interrupted' &&
-        !snapshot.interruption?.handling &&
-        !snapshot.interruption?.tacticalBattles?.length
+        this.#turn.enemyDiscoveryResume() &&
+        this.#model.snapshot.notice?.kind !== 'discovery'
       )
         this.#playbackTimer = setTimeout(() => {
-          void this.#runTurn(true);
+          if (this.#turn.enemyDiscoveryResume()) void this.#runTurn(true);
         }, 0);
-      else if (!this.#runningTurn && this.#turn.continueVoyage())
-        // resa-utan-synliga-pirater: unseen pirates take no time.
-        this.#playbackTimer = setTimeout(() => {
-          if (this.#turn.continueVoyage()) void this.#runTurn();
-        }, 250);
       return;
     }
-    if (playback.stage === 'awaiting-choice') return;
-    this.#playbackTimer = setTimeout(
-      () => {
-        if (this.#disposed) return;
-        this.#turn.advanceEventPlayback();
-        this.#model.save();
-        this.#render();
-        this.#schedulePlayback();
-      },
-      playback.stage === 'announcing' ? 1400 : 450,
-    );
-  }
-
-  async #frameEvent(): Promise<void> {
-    this.#framingEvent = true;
-    try {
-      await this.#animateCamera();
-      if (!this.#disposed) {
-        this.#render();
-        this.#schedulePlayback();
-      }
-    } catch (error) {
-      if (!this.#disposed) {
-        this.#turn.finishCameraFraming();
-        this.#model.reportError(error);
-        this.#render();
-        this.#schedulePlayback();
-      }
-    } finally {
-      this.#framingEvent = false;
-    }
-  }
-
-  async #animateCamera(): Promise<void> {
-    while (!this.#disposed && this.#model.cameraFraming) {
-      const framing = this.#model.cameraFraming;
-      for (let index = 0; index < framing.transitions.length; index++) {
-        const onProgress = (progress: number) => {
-          if (
-            !this.#disposed &&
-            this.#turn.advanceCameraFraming(framing, index, progress)
-          ) {
-            const snapshot = this.#model.snapshot;
-            if (this.#view.renderCamera) this.#view.renderCamera(snapshot);
-            else this.#render(snapshot);
-            return true;
-          }
-          return false;
-        };
-        if (this.#view.animatePresentation)
-          await this.#view.animatePresentation(
-            framing.transitions[index]!.duration,
-            onProgress,
-          );
-        else onProgress(1);
-        if (this.#disposed || this.#model.cameraFraming !== framing) break;
-      }
-    }
+    if (
+      snapshot.phase === 'interrupted' &&
+      !snapshot.interruption?.handling &&
+      !snapshot.interruption?.tacticalBattles?.length
+    )
+      this.#playbackTimer = setTimeout(() => {
+        void this.#runTurn(true);
+      }, 0);
+    else if (!this.#runningTurn && this.#turn.continueVoyage())
+      // resa-utan-synliga-pirater / somlos-forflyttning: without an active
+      // enemy the next round follows at once, so the journey has no break.
+      this.#playbackTimer = setTimeout(() => {
+        if (this.#turn.continueVoyage()) void this.#runTurn();
+      }, 0);
   }
 
   async #runTurn(resume = false): Promise<void> {
@@ -826,7 +747,6 @@ export class MasterController {
     )
       return;
     this.#runningTurn = true;
-    const startRound = this.#model.snapshot.round;
     try {
       if (resume) this.#turn.continueTurn();
       else this.#turn.startTurn();
@@ -873,33 +793,12 @@ export class MasterController {
             ) ?? Promise.resolve());
             if (this.#disposed) return;
             this.#turn.completeTurnMovement();
-            // handelser-vid-ankomst: what a ship found is shown as soon as it
-            // arrives, before other fleets move on and the camera leaves.
-            const arrived = batch
-              .filter((track) => track.length === index + 1)
-              .map((track) => track.at(-1)!.to);
-            if (arrived.length) {
-              this.#turn.beginEventPlayback(arrived);
-              if (this.#model.snapshot.eventPlayback) {
-                this.#render();
-                this.#schedulePlayback();
-                await new Promise<void>((resolve) =>
-                  this.#eventWaiters.push(resolve),
-                );
-                if (this.#disposed) return;
-              }
-            }
           }
         }
-        this.#turn.endMovementPlayback(true);
+        this.#turn.endMovementPlayback();
       }
-      // ap-pa-starmap: a move that leaves AP ends no round, so the previous
-      // round's events are not announced again.
-      if (
-        this.#model.snapshot.round > startRound ||
-        this.#model.snapshot.phase === 'interrupted'
-      )
-        this.#turn.beginEventPlayback();
+      if (this.#model.snapshot.phase === 'planning')
+        this.#turn.restoreTurnContext();
       this.#render();
       this.#schedulePlayback();
     } catch (error) {
@@ -910,8 +809,7 @@ export class MasterController {
     } finally {
       this.#runningTurn = false;
       // resa-utan-synliga-pirater: a finished round may start the next one.
-      if (!this.#disposed && !this.#model.snapshot.eventPlayback)
-        this.#schedulePlayback();
+      if (!this.#disposed) this.#schedulePlayback();
     }
   }
 }

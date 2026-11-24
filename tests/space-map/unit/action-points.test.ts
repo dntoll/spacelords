@@ -180,7 +180,11 @@ describe('ap-pa-starmap / handelseannonsering', () => {
           emit = handler;
         },
         render(snapshot) {
-          if (snapshot.eventPlayback) announced = true;
+          if (
+            snapshot.notice?.kind === 'discovery' &&
+            snapshot.notice.flash.name === 'An old event.'
+          )
+            announced = true;
         },
         animateTurnStep: () => Promise.resolve(),
         dispose() {},

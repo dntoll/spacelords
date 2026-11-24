@@ -2,7 +2,6 @@ import type {
   TurnMovementPlayback,
   TurnMovement,
 } from '../../models/turn/TurnMovementPlayback.js';
-import type { CameraFraming } from '../../models/turn/CameraFraming.js';
 import { type TurnFrame } from '../../models/Game.js';
 import type { AppReadModel } from '../../../app/models/AppModel.js';
 import type { TurnFacade } from '../../models/turn/TurnFacade.js';
@@ -54,34 +53,17 @@ export class TurnController {
     return this.facade.finishTurn();
   }
 
-  beginEventPlayback(
-    at?: readonly { readonly q: number; readonly r: number }[],
-  ): void {
-    return this.facade.beginEventPlayback(at);
+  /** handelser-som-toppnotis: new events become top notices at once. */
+  publishEvents(): void {
+    return this.facade.publishEvents();
   }
 
-  chooseEvent(choice: 'handle' | 'ignore'): void {
-    return this.facade.chooseEvent(choice);
+  finishEventHandling(): void {
+    return this.facade.finishEventHandling();
   }
 
-  continueEventHandling(): void {
-    return this.facade.continueEventHandling();
-  }
-
-  advanceEventPlayback(): void {
-    return this.facade.advanceEventPlayback();
-  }
-
-  advanceCameraFraming(
-    framing: CameraFraming,
-    index: number,
-    progress: number,
-  ): boolean {
-    return this.facade.advanceCameraFraming(framing, index, progress);
-  }
-
-  finishCameraFraming(): void {
-    return this.facade.finishCameraFraming();
+  restoreTurnContext(): void {
+    return this.facade.restoreTurnContext();
   }
 
   beginMovementPlayback(
@@ -89,10 +71,6 @@ export class TurnController {
     origin: AppReadModel,
   ): void {
     return this.facade.beginMovementPlayback(playback, origin);
-  }
-
-  frameTurnTrack(track: readonly TurnMovement[]): void {
-    return this.facade.frameTurnTrack(track);
   }
 
   focusTurnMovement(movement: TurnMovement | readonly TurnMovement[]): void {
@@ -111,7 +89,7 @@ export class TurnController {
     return this.facade.advanceTurnMovement(progress);
   }
 
-  endMovementPlayback(preserveCamera = false): void {
-    return this.facade.endMovementPlayback(preserveCamera);
+  endMovementPlayback(): void {
+    return this.facade.endMovementPlayback();
   }
 }

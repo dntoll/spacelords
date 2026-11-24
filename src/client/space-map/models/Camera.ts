@@ -90,6 +90,37 @@ export class Camera {
     };
   }
 
+  /** kamera-med-dod-zon: move only as far as needed to keep a point in bounds. */
+  revealPoint(
+    world: Point,
+    bounds: {
+      readonly left: number;
+      readonly right: number;
+      readonly top: number;
+      readonly bottom: number;
+    },
+  ): void {
+    if (
+      !Number.isFinite(world.x) ||
+      !Number.isFinite(world.y) ||
+      !Object.values(bounds).every(Number.isFinite)
+    )
+      return;
+    const screen = {
+      x: (world.x - this.#center.x) * this.#zoom,
+      y: (world.y - this.#center.y) * this.#zoom,
+    };
+    const shift = (value: number, low: number, high: number) =>
+      value < low ? value - low : value > high ? value - high : 0;
+    const dx = shift(screen.x, bounds.left, bounds.right);
+    const dy = shift(screen.y, bounds.top, bounds.bottom);
+    if (!dx && !dy) return;
+    this.#setCenter({
+      x: this.#center.x + dx / this.#zoom,
+      y: this.#center.y + dy / this.#zoom,
+    });
+  }
+
   focus(position: HexCoordinate): void {
     this.focusPoint(HexGeometry.toPoint(position));
   }

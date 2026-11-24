@@ -23,7 +23,6 @@ export class BattleFacade {
     if (this.host.screen !== 'saves') return;
     this.host.testBattle = createTestBattle();
     this.host.battleFeedback = null;
-    this.host.eventPlayback = null;
     this.host.movementPlayback = null;
     this.host.screen = 'map';
   }
@@ -65,6 +64,5 @@ export class BattleFacade {
   finishBattleFeedback(): void {
     this.host.battleFeedback = null;
     if (this.host.testBattle) this.host.openSaves();
-    else this.host.beginEventPlayback();
   }
 }

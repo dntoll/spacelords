@@ -208,9 +208,14 @@ describe('frontend-backend-mock', () => {
     expect(model.snapshot.phase).toBe('simulating');
     expect(repo.load(1)?.state.phase).toBe('planning');
     finishAnimation();
-    for (let wait = 0; wait < 40 && repo.load(1)?.state.round !== 2; wait++)
+    for (
+      let wait = 0;
+      wait < 40 && (repo.load(1)?.state.round ?? 1) < 2;
+      wait++
+    )
       await new Promise((resolve) => setTimeout(resolve, 50));
-    expect(repo.load(1)?.state.round).toBe(2);
+    // somlos-forflyttning: without an enemy the journey goes on round after round.
+    expect(repo.load(1)?.state.round).toBeGreaterThanOrEqual(2);
     expect(repo.load(1)?.state.phase).toBe('planning');
     controller.dispose();
   });

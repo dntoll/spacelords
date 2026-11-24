@@ -91,31 +91,6 @@ body {
   grid-template-columns: minmax(0, 1fr);
   grid-template-rows: auto minmax(0, 1fr);
 }
-#app.has-game-footer {
-  grid-template-rows: auto minmax(0, 1fr) auto;
-}
-.game-turn-actions {
-  position: relative;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  align-items: end;
-  gap: 8px;
-  padding: 4px 8px max(4px, env(safe-area-inset-bottom));
-  min-height: 0;
-  background: #09121b;
-  z-index: 4;
-}
-.game-turn-actions > .turn-console {
-  position: static;
-  width: 100%;
-  height: auto;
-  max-height: 40dvh;
-  padding: 0 8px;
-}
-.game-turn-actions .console-log {
-  max-height: calc(40dvh - 48px);
-  padding-bottom: 4px;
-}
 button,
 select {
   font: inherit;
@@ -851,61 +826,11 @@ p {
 /* fabrikskoer / kompakta-bygghandlingar: always-visible ship ordering. */
 
 /* handelser: reserve space for Events while keeping map controls separate. */
-.turn-console {
-  position: absolute;
-  right: max(12px, env(safe-area-inset-right));
-  bottom: max(68px, calc(env(safe-area-inset-bottom) + 68px));
-  width: min(var(--events-width, 320px), calc(100% - 24px));
-  height: var(--events-height, 84px);
-  padding: 6px 8px;
-  display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
-  gap: 4px;
-  z-index: 2;
-}
-.turn-console h2 {
-  margin: 0;
-  font-size: 0.7rem;
-  color: var(--accent);
-}
-.console-log {
-  overflow: auto;
-  overscroll-behavior: contain;
-  min-height: 0;
-  font-size: 0.7rem;
-  line-height: 1.4;
-}
-.console-log ol {
-  margin: 0;
-  padding-left: 1.6em;
-}
-.console-log > ol {
-  padding-left: 0;
-  list-style: none;
-}
-.console-log ul {
-  margin: 0;
-  padding-left: 1.4em;
-}
-.console-log h3 {
-  margin: 3px 0;
-  font-size: inherit;
-  color: var(--accent);
-}
-.console-log li {
-  padding-bottom: 3px;
-  overflow-wrap: anywhere;
-}
-.console-empty {
-  color: var(--muted);
-}
 .selection-panel {
   max-height: calc(100% - var(--events-height, 84px) - 92px);
 }
 @media (min-width: 900px) and (min-height: 600px) {
   .map-page {
-    --events-width: clamp(320px, 32vw, 520px);
-    --events-height: clamp(120px, 22dvh, 260px);
   }
 }
 @media (max-width: 600px) {
@@ -915,9 +840,6 @@ p {
   }
 }
 @media (max-height: 500px) {
-  .turn-console {
-    height: 64px;
-  }
   .selection-panel {
     top: 12px;
     bottom: auto;
@@ -1456,40 +1378,6 @@ p {
 }
 
 /* utvikbara-events / rundkontroller-pa-fler-vyer */
-.turn-console {
-  height: auto;
-  max-height: min(var(--events-max-height, 260px), calc(100dvh - 130px));
-  display: block;
-}
-.turn-console > summary {
-  min-height: 44px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  cursor: pointer;
-  color: var(--accent);
-  flex-shrink: 0;
-}
-.turn-console > summary::before {
-  content: '▸';
-}
-.turn-console[open] > summary::before {
-  content: '▾';
-}
-.turn-console > summary h2 {
-  font-size: 0.8rem;
-}
-.turn-console .console-log {
-  flex: 0 1 auto;
-  max-height: min(
-    calc(var(--events-max-height, 260px) - 56px),
-    calc(100dvh - 190px)
-  );
-}
-.turn-console[open] {
-  display: flex;
-  flex-direction: column;
-}
 
 /* kompakta-flottkort / flottorder-som-symboler: keep one header and one ship row. */
 .compact-fleet-card .ship-token-label {
@@ -1616,26 +1504,6 @@ body:has(.discovery-controls) .selection-panel {
 }
 
 /* gemensam-events-panel: keep the footer outside the scrolling selection. */
-.map-page > .turn-actions {
-  position: absolute;
-  left: max(8px, env(safe-area-inset-left));
-  right: max(8px, env(safe-area-inset-right));
-  bottom: max(8px, env(safe-area-inset-bottom));
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  align-items: end;
-  gap: 8px;
-  z-index: 4;
-  pointer-events: none;
-}
-.map-page > .turn-actions > * {
-  pointer-events: auto;
-}
-.map-page > .turn-actions .turn-console {
-  position: static;
-  width: min(var(--events-width, 320px), 100%);
-  justify-self: end;
-}
 /* kartpanel-till-events: the shared footer already reserves the Events area. */
 .map-page .selection-panel,
 .map-page .selection-panel:has(.map-fleet-management),
@@ -1651,244 +1519,14 @@ body:has(.discovery-controls) .selection-panel {
     );
   }
 }
-.event-destination {
-  visibility: hidden;
-}
 /* handelseannonsering: leave the event location unobscured, then land in the log. */
-.event-content-row,
-.event-content-heading {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-}
-.event-content-row > span:last-child {
-  min-width: 0;
-  overflow-wrap: anywhere;
-}
-.event-content-row + .event-content-row,
-.event-content-heading + .event-content-row {
-  margin-top: 0.4rem;
-}
-.event-illustration {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 1.8rem;
-  height: 1.8rem;
-  flex: 0 0 auto;
-  color: #91d9f5;
-  font-size: 1.3rem;
-}
-.event-illustration img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-}
-.event-illustration:empty::before {
-  content: attr(data-symbol);
-}
-.event-announcement .event-illustration {
-  width: 2.8rem;
-  height: 2.8rem;
-}
-.event-announcement {
-  --event-marker-gap: 82px;
-  position: fixed;
-  top: var(--event-origin-y, 50%);
-  left: var(--event-origin-x, 50%);
-  /* handelseannonsering: the top edge is the marker gap. A -50% shift would
-     lift that edge when the box grows after measurement. */
-  transform: translate(-50%, 0);
-  z-index: 1000;
-  width: var(--event-width, min(620px, calc(100vw - 32px)));
-  padding: 20px 24px;
-  border: 1px solid #ffdc88;
-  border-radius: 12px;
-  background: #09121bf5;
-  box-shadow: 0 8px 48px #000b;
-  color: #ffdc88;
-  font-size: clamp(1rem, 3vw, 1.4rem);
-  line-height: 1.4;
-  text-align: center;
-  overflow-wrap: anywhere;
-  pointer-events: none;
-  transition:
-    transform 450ms ease-in,
-    opacity 450ms ease-in;
-}
-.event-announcement[data-stage='filing'] {
-  transform: translate(-50%, 0)
-    translate(var(--event-target-x, 0px), var(--event-target-y, 0px))
-    scale(var(--event-target-scale, 1));
-  opacity: 0.35;
-}
-.event-announcement p {
-  margin: 0;
-}
-.event-announcement-planet {
-  overflow-y: auto;
-  pointer-events: auto;
-  font-size: 1rem;
-  text-align: left;
-}
-.event-announcement-planet .event-text,
-.event-entries > li {
-  white-space: pre-line;
-}
-.event-announcement-planet .event-report,
-.event-entries .event-report {
-  white-space: normal;
-}
-@media (orientation: landscape) and (max-height: 500px) {
-  .event-announcement-planet {
-    padding: 6px 10px;
-    font-size: 0.8rem;
-    line-height: 1.2;
-  }
-  .event-announcement-planet .event-illustration {
-    width: 1.4rem;
-    height: 1.4rem;
-  }
-  .event-announcement-planet .event-content-row,
-  .event-announcement-planet .event-content-heading {
-    gap: 0.4rem;
-  }
-  .event-announcement-planet .event-content-row {
-    margin-top: 0.2rem;
-  }
-}
-.event-announcement-interactive {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 10px 14px;
-  font-size: 1rem;
-  line-height: 1.3;
-  pointer-events: auto;
-}
-.event-announcement-interactive .event-text {
-  flex-shrink: 0;
-  font-weight: 700;
-}
-.event-details {
-  min-height: 0;
-  overflow-y: auto;
-  font-size: 0.875rem;
-}
-.event-details p + p {
-  margin-top: 6px;
-}
-.event-actions {
-  display: flex;
-  flex-wrap: wrap;
-  flex-shrink: 0;
-  justify-content: center;
-  gap: 12px;
-}
-.event-actions button {
-  min-width: 88px;
-  min-height: 44px;
-}
-.event-announcement-interactive[data-stage='filing'] {
-  pointer-events: none;
-}
 @media (max-height: 360px) {
   /* gemensamt-handelseflode: leave room for the marker, choices and End turn. */
-  .has-interactive-event > .app-header > .brand {
-    display: none;
-  }
-  .event-announcement {
-    --event-marker-gap: 74px;
-    padding: 6px 12px;
-    font-size: 0.875rem;
-    line-height: 1.25;
-  }
   /* viewport-game-layout: on short screens Build selection scrolls as one page
      so the catalog is not squeezed to nothing under its heading and search. */
 }
-@media (prefers-reduced-motion: reduce) {
-  .event-announcement {
-    transition: none;
-  }
-  .event-announcement[data-stage='filing'] {
-    transform: translate(-50%, 0);
-    opacity: 0;
-  }
-}
 /* sekventiella-arshandelser / handelser-pa-kartan: the map and log share space. */
-.map-page.is-event-playback {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(240px, 35%);
-  grid-template-rows: minmax(0, 1fr);
-  gap: 8px;
-  padding: 8px;
-}
-.map-page.is-event-playback .map-container {
-  position: relative;
-  inset: auto;
-  grid-column: 1;
-  grid-row: 1;
-  min-width: 0;
-  min-height: 0;
-}
-.map-page.is-event-playback > .turn-actions {
-  position: static;
-  grid-column: 2;
-  grid-row: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: end;
-  min-height: 0;
-  min-width: 0;
-  pointer-events: auto;
-}
-.map-page.is-event-playback > .turn-actions .turn-console {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  min-height: 0;
-  max-height: calc(100% - 52px);
-  flex: 0 1 auto;
-  overflow: hidden;
-}
-.is-event-playback .turn-console > summary {
-  flex-shrink: 0;
-  cursor: default;
-}
-.is-event-playback .turn-console > summary::before {
-  display: none;
-}
-.is-event-playback .console-log {
-  max-height: none;
-  flex: 0 1 auto;
-}
-.is-event-playback .end-turn {
-  align-self: end;
-  flex-shrink: 0;
-}
-@media (orientation: portrait) and (max-width: 900px) {
-  .map-page.is-event-playback {
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: minmax(0, 1fr) auto;
-  }
-  .map-page.is-event-playback > .turn-actions {
-    grid-column: 1;
-    grid-row: 2;
-    max-height: 45dvh;
-  }
-  .map-page.is-event-playback > .turn-actions .turn-console {
-    max-height: calc(45dvh - 52px);
-  }
-}
 /* gemensam-events-panel: the persistent footer owns the log in every layout. */
-.map-page.is-event-playback {
-  display: block;
-  padding: 0;
-}
-.map-page.is-event-playback .map-container {
-  position: absolute;
-  inset: 0;
-}
 .sortable-queue {
   margin: 0;
   padding: 0;
@@ -1955,12 +1593,6 @@ body:has(.discovery-controls) .selection-panel {
   opacity: 0.9;
   max-height: 96px;
   overflow: hidden;
-}
-.game-turn-actions > .turn-console {
-  position: static;
-  max-height: 40dvh;
-  width: 100%;
-  padding: 0 8px;
 }
 
 /* uppmarksamhet-vid-titel: share the brand row above navigation. */
@@ -2562,10 +2194,6 @@ body:has(.discovery-controls) .selection-panel {
 
 #app.has-local-editor-nav {
   grid-template-rows: auto minmax(0, 1fr) auto;
-}
-
-#app.has-game-footer.has-local-editor-nav {
-  grid-template-rows: auto minmax(0, 1fr) auto auto auto;
 }
 
 .local-editor-nav {
