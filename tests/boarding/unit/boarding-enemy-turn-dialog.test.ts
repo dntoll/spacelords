@@ -65,6 +65,16 @@ it('motstandartur-i-mitten: the dialog leaves when a soldier may act again', () 
   boarding.dispose();
 });
 
+it('ihopfallbar-bordningslogg: keeps the log control stable during defender updates', () => {
+  const boarding = view();
+  const state = turnOf('defender');
+  boarding.render(state);
+  const summary = document.querySelector('.boarding-details summary');
+  boarding.render({ ...state, log: [...state.log, 'A defender moves.'] });
+  expect(document.querySelector('.boarding-details summary')).toBe(summary);
+  boarding.dispose();
+});
+
 it('forsvarartur-fastnar-inte: a failed movement presentation releases the defender turn', async () => {
   const warning = vi.spyOn(console, 'warn').mockImplementation(() => {});
   const initial = turnOf('defender');
