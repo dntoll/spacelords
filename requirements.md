@@ -45,7 +45,8 @@ kraven med stabila namn och status. Statusen nedan sammanfattar området.
   (`sparbart-efter-sista-piratskeppet`). Allt är **Fullständigt implementerat**.
 - **[Stjärnkartan och grafiken](docs/areas/star-map.md):** hexkartan, sikt,
   terräng, kamera, kartobjekt och genererade bilder, samt styrningen med
-  hexval och väg (`hexval-med-vag`), AP och turordning utan End turn
+  hexval och väg (`hexval-med-vag`), mörk fyllning i vald outforskad hex
+  (`markerad-outforskad-hex`), AP och turordning utan End turn
   (`ap-pa-starmap`), glidande hexsteg
   (`glidande-hexsteg`, `flytande-forflyttning`) och rakare vägval
   (`rakare-vag`, `rak-och-jamn-resa`, `stabil-fardvag`), kamera med död zon och fri panorering

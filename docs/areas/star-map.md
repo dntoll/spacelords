@@ -8,6 +8,10 @@ flotta till ett mål. Planeter är platser; spelaren äger dem inte
 
 ## Krav
 
+- **Markerad outforskad hex:** `markerad-outforskad-hex` (2026-11-24) är
+  **Fullständigt implementerat**. En vald outforskad hex behåller samma mörka
+  fyllfärg som en omarkerad outforskad hex, med en synlig markeringskontur.
+
 - **Styrning med hexval:** `hexval-med-vag` (2026-11-22) är **Fullständigt
   implementerat**. Ett tryck på en hex markerar den, visar information om
   hexen och ritar vägen dit för spelarens flotta, med rundans steg ljusare och

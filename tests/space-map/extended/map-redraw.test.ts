@@ -2,6 +2,7 @@
 import { afterEach, beforeAll, expect, it, vi } from 'vitest';
 import type p5 from 'p5';
 import { AppModel } from '../../../src/client/app/models/AppModel.js';
+import { HexCoordinate } from '../../../src/client/common/HexCoordinate.js';
 import type { GalaxyMapView as GalaxyMapViewClass } from '../../../src/client/space-map/views/star-map/GalaxyMapView.js';
 
 const runtime = vi.hoisted(() => ({ sketch: null as p5 | null }));
@@ -25,6 +26,81 @@ beforeAll(async () => {
     await import('../../../src/client/space-map/views/star-map/GalaxyMapView.js'));
 });
 afterEach(() => vi.unstubAllGlobals());
+
+it('markerad-outforskad-hex: keeps the unknown fill while drawing a selected outline', () => {
+  const noop = () => {};
+  let fill = '';
+  let stroke = '';
+  const shapes: { fill: string; stroke: string }[] = [];
+  const sketch = new Proxy(
+    {
+      width: 800,
+      height: 600,
+      CLOSE: 'close',
+      drawingContext: { setLineDash: noop },
+      fill: (color: unknown) => {
+        fill = String(color);
+      },
+      stroke: (color: string) => {
+        stroke = color;
+      },
+      beginShape: () => shapes.push({ fill, stroke }),
+      setup: noop,
+      draw: noop,
+    },
+    {
+      get: (target, key): unknown =>
+        (Reflect.get(target, key) as unknown) ?? noop,
+    },
+  );
+  runtime.sketch = sketch as unknown as p5;
+  vi.stubGlobal(
+    'ResizeObserver',
+    class {
+      observe() {}
+      disconnect() {}
+    },
+  );
+  vi.stubGlobal('cancelAnimationFrame', noop);
+  const view = new GalaxyMapView(document.createElement('div'), noop);
+  const model = new AppModel().snapshot;
+  const cell = {
+    ...model.cells[0]!,
+    position: new HexCoordinate(0, 0),
+    visible: false,
+    explored: false,
+    object: null,
+    terrain: 'space' as const,
+  };
+  view.render({
+    ...model,
+    cells: [cell],
+    selected: cell,
+    camera: { ...model.camera, center: { x: 0, y: 0 }, zoom: 1 },
+    fleet: { ...model.fleet, position: null },
+    pirates: [],
+    pirateMemories: [],
+    travelRoute: null,
+  });
+  sketch.draw();
+  expect(shapes).toContainEqual({ fill: '#0d1c28', stroke: '#1e303c' });
+  expect(shapes).toContainEqual({ fill: '#0d1c28', stroke: '#ade8cf' });
+  shapes.length = 0;
+  const explored = { ...cell, explored: true };
+  view.render({
+    ...model,
+    cells: [explored],
+    selected: explored,
+    camera: { ...model.camera, center: { x: 0, y: 0 }, zoom: 1 },
+    fleet: { ...model.fleet, position: null },
+    pirates: [],
+    pirateMemories: [],
+    travelRoute: null,
+  });
+  sketch.draw();
+  expect(shapes).toContainEqual({ fill: '#1b3e41', stroke: '#ade8cf' });
+  view.dispose();
+});
 
 it('responsiv-stjarnkarta: coalesces updates into one paint and cancels pending paints on disposal', () => {
   const container = document.createElement('div');

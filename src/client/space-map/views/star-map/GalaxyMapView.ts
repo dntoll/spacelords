@@ -432,7 +432,7 @@ export class GalaxyMapView implements MapPort {
     if (zoom < 0.18 && !selected) sketch.noStroke();
     else sketch.strokeWeight((selected ? 1.8 : 0.7) / zoom);
     sketch.fill(
-      selected
+      selected && cell.explored
         ? '#1b3e41'
         : cell.visible
           ? '#112d34'
