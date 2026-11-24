@@ -79,6 +79,7 @@ engelska.
 - Upptäckter, piratkontakter och strider kan avbryta rundan, så att spelaren
   kan välja vad som ska hända.
 - Efter en avslutad strid fortsätter spelet så att spelaren kan ge nya order.
+- Rymdstriden avslutas när alla motståndarskepp har tagits över.
 
 ## Pirater och strid
 

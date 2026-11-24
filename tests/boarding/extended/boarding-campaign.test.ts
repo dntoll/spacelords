@@ -1,5 +1,5 @@
 import { BoardingEngagement } from '../../../src/client/boarding/models/battle/BoardingEngagement.js';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { composeBoardingMaps } from '../../../src/client/boarding/models/map/BoardingComposer.js';
 import { BoardingBattle } from '../../../src/client/boarding/models/battle/BoardingBattle.js';
 import {
@@ -70,6 +70,7 @@ describe('sparbart-efter-sista-piratskeppet', () => {
     expect(game.boardingBattle).not.toBeNull();
     game.finishBoarding('victory');
     expect(() => Game.restore(game.exportState())).not.toThrow();
+    expect(Game.restore(game.exportState()).tacticalBattle).not.toBeNull();
   });
 });
 
@@ -513,7 +514,30 @@ describe('bordningsbeloning-last-teknik-karta', () => {
       game.playBattleActivation(false, { allowDock: false });
     expect(game.boardingBattle).not.toBeNull();
     const before = new Set(game.exportState().explored);
+    const boardingState = game.exportState();
+    const oldBehavior = vi
+      .spyOn(TacticalBattle.prototype, 'finishIfDecided')
+      .mockReturnValue(false);
     game.finishBoarding('victory');
+    oldBehavior.mockRestore();
+    // avsluta-strid-efter-sista-overtaandet: old saves must finish a battle
+    // whose last enemy changed sides during boarding.
+    const recovered = Game.restore(game.exportState());
+    expect(recovered.tacticalBattle).toBeNull();
+    recovered.continueTurn();
+    for (let step = 0; recovered.phase === 'simulating' && step < 30; step++) {
+      const frame = recovered.nextTurnFrame();
+      if (!frame) {
+        recovered.finishTurn();
+        break;
+      }
+      recovered.applyFrame(frame);
+    }
+    expect(recovered.fleet(state.fleets[0]!.id)?.canIssueOrders).toBe(true);
+    const newGame = Game.restore(boardingState);
+    newGame.finishBoarding('victory');
+    expect(newGame.tacticalBattle).toBeNull();
+    expect(newGame.fleet(state.fleets[0]!.id)?.ships['Transport ship']).toBe(1);
     // sparbart-efter-sista-piratskeppet: an emptied pirate fleet can still be
     // participating in the interrupted tactical battle.
     expect(() => Game.restore(game.exportState())).not.toThrow();
@@ -532,11 +556,8 @@ describe('bordningsbeloning-last-teknik-karta', () => {
       true,
     );
     app.startSlot(1);
-    expect(
-      app.snapshot.tacticalBattle?.pieces.find(
-        (piece) => piece.id === defender.id,
-      )?.side,
-    ).toBe('player');
+    expect(app.snapshot.tacticalBattle).toBeNull();
+    expect(app.snapshot.fleet.ships['Transport ship']).toBe(1);
     app.openSaves();
     app.startSlot(2);
     expect(app.snapshot.screen).toBe('map');
