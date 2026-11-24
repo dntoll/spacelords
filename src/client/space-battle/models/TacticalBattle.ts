@@ -2215,6 +2215,11 @@ export class TacticalBattle {
       this.#finishActivation();
   }
 
+  /** avsluta-strid-efter-sista-overtaandet: boarding can remove the last opponent. */
+  finishIfDecided(): boolean {
+    return this.#phase === 'fighting' && this.#checkComplete();
+  }
+
   #checkComplete(): boolean {
     if (
       (['player', 'enemy'] as const).some(

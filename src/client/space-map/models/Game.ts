@@ -501,6 +501,10 @@ export class Game {
       if (game.#chartedPirates.has(pirate.id) && !pirate.lastKnownPosition)
         pirate.observe();
     game.#linkInterruptionEvents();
+    // Recover older saves made after the last enemy ship was captured.
+    const battle = game.#simulation?.tacticalBattles[0];
+    if (battle && !game.#simulation?.boarding && battle.finishIfDecided())
+      game.#finishTacticalBattle();
     // Exercise derived data before accepting a stored record.
     game.mapSnapshot();
     game.fleetSnapshot();
@@ -1041,6 +1045,7 @@ export class Game {
         ? 'Boarding won. Both ships join your fleet.'
         : 'Boarding lost. Pirates take both ships.',
     );
+    if (battle.finishIfDecided()) this.#finishTacticalBattle();
   }
   #captureBattleShip(piece: BattlePiece, winner: 'player' | 'enemy'): void {
     const battle = this.#simulation!.tacticalBattles[0]!;

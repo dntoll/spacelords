@@ -7,6 +7,12 @@ order till skeppen, och striden kan också testas fristående från
 
 ## Krav
 
+- **Avslut efter övertagande:** `avsluta-strid-efter-sista-overtaandet`
+  (2026-11-24) är **Fullständigt implementerat** i utforskningen. När sista
+  motståndarens skepp har tagits över avslutas rymdstriden automatiskt och
+  rundan fortsätter. Även sparningar där en sådan strid redan har fastnat kan
+  öppnas och fortsätta, med de övertagna skeppen kvar.
+
 - **Strid som spelgränssnitt:** `fullskarms-stridskarta`,
   `skeppsnara-stridskontroller`, `vapensymboler-i-strid`,
   `avfyra-pa-markerat-mal` och `begransad-stridskamera` är

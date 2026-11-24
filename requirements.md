@@ -81,6 +81,8 @@ kraven med stabila namn och status. Statusen nedan sammanfattar området.
   (`animerade-piratsteg`). Allt kvarvarande är **Fullständigt
   implementerat**.
 - **[Rymdstrid](docs/areas/space-battle.md):** taktisk strid och testläget.
+  Striden avslutas när sista motståndarskeppet övertas
+  (`avsluta-strid-efter-sista-overtaandet`).
   **Fullständigt implementerat** utom `utforskade-stridsuppgraderingar`, som
   är **Delvis implementerat** eftersom uppgraderingar inte kan monteras.
 - **[Bordning](docs/areas/boarding.md):** bordningsstrid, grafik, ljus och
