@@ -78,6 +78,7 @@ engelska.
   ordning med kameran på platsen.
 - Upptäckter, piratkontakter och strider kan avbryta rundan, så att spelaren
   kan välja vad som ska hända.
+- Efter en avslutad strid fortsätter spelet så att spelaren kan ge nya order.
 
 ## Pirater och strid
 

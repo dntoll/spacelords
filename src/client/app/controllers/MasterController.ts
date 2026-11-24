@@ -726,7 +726,6 @@ export class MasterController {
     }
     if (
       snapshot.phase === 'interrupted' &&
-      !snapshot.interruption?.handling &&
       !snapshot.interruption?.tacticalBattles?.length
     )
       this.#playbackTimer = setTimeout(() => {

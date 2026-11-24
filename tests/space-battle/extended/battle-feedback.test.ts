@@ -20,6 +20,59 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
+it('order-efter-aterupptagen-strid: resumes the interrupted round when loading a game after combat', async () => {
+  vi.useFakeTimers();
+  const first = setup();
+  const target = first.model.snapshot.tacticalBattle!.pieces.find(
+    (piece) => piece.side === 'enemy',
+  )!;
+  first.emit({
+    type: 'battle-command',
+    command: { type: 'fire', weapon: 'Cannon', at: target.position! },
+  });
+  expect(first.model.snapshot.tacticalBattle).toBeNull();
+  first.model.openSaves();
+  const original = first.save.mock.lastCall![1];
+  const saved = {
+    ...original,
+    state: {
+      ...original.state,
+      simulation: {
+        ...original.state.simulation!,
+        handling: true,
+        battles: original.state.simulation!.battles!.map((battle) => ({
+          ...battle,
+          fleetId: null,
+          fleetIds: [],
+        })),
+      },
+    },
+  };
+  expect(saved.state.phase).toBe('interrupted');
+  first.controller.dispose();
+
+  const repo: SaveRepository = {
+    load: () => saved,
+    save: vi.fn(),
+    clear: vi.fn(),
+  };
+  const model = new AppModel(undefined, repo);
+  let emit: (intent: AppIntent) => void = () => {};
+  const controller = new MasterController(model, {
+    bind: (handler) => {
+      emit = handler;
+    },
+    render() {},
+    dispose() {},
+  });
+  controller.start();
+  emit({ type: 'start-slot', id: 1 });
+  await vi.advanceTimersByTimeAsync(1000);
+  expect(model.snapshot.phase).toBe('planning');
+  expect(model.snapshot.fleet.canIssueOrders).toBe(true);
+  controller.dispose();
+});
+
 function setup() {
   const game = arrangeBattle(encounterGame(), (state) => ({
     ...state,
@@ -42,9 +95,10 @@ function setup() {
       hull: p.side === 'enemy' ? 1 : p.hull,
     })),
   }));
+  const save = vi.fn<SaveRepository['save']>();
   const repo: SaveRepository = {
     load: () => ({ lastPlayed: '2026-10-31', state: game.exportState() }),
-    save: vi.fn(),
+    save,
     clear: vi.fn(),
   };
   const model = new AppModel(undefined, repo);
@@ -59,7 +113,7 @@ function setup() {
   };
   const controller = new MasterController(model, view);
   controller.start();
-  return { model, controller, emit, repo, view };
+  return { model, controller, emit, repo, view, save };
 }
 
 it('animerade-stridsskott: waits for the final shot before timing the outcome and ignores commands during effects', async () => {

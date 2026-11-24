@@ -10,6 +10,12 @@ utan en pirat i sikte märks de inte, och en resa går i ett svep
 
 ## Krav
 
+- **Order efter återupptagen strid:** `order-efter-aterupptagen-strid`
+  (2026-11-24) är **Fullständigt implementerat**. När en sparad strid är
+  avslutad fortsätter rundan automatiskt, även om en äldre sparning fortfarande
+  markerar stridsrapporten som aktiv. Spelaren kan därefter ge nya order på
+  Star map; upptäckter och pågående strider hanteras som tidigare.
+
 - **Sömlös förflyttning:** `somlos-forflyttning` (2026-11-24) är
   **Fullständigt implementerat**. Utan en pirat i sikte följer nästa runda
   direkt, utan paus, så resan blir en enda rörelse. Vägvalet visar då bara
