@@ -500,6 +500,9 @@ export class Game {
     for (const pirate of game.#pirates)
       if (game.#chartedPirates.has(pirate.id) && !pirate.lastKnownPosition)
         pirate.observe();
+    const recoveredBoarding = game.#simulation?.boarding;
+    if (recoveredBoarding?.battle.snapshot.phase === 'complete')
+      game.#resolveBoarding(recoveredBoarding);
     game.#linkInterruptionEvents();
     // Recover older saves made after the last enemy ship was captured.
     const battle = game.#simulation?.tacticalBattles[0];

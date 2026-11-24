@@ -33,3 +33,12 @@ describe('missade-skott-traffar-annat', () => {
     expect(blocked.to.q).toBeLessThan(result.to.q);
   });
 });
+
+describe('forsvararskott-samma-ruta', () => {
+  it('finishes a missed shot when shooter and target share a tile', () => {
+    const position = { q: 1, r: 1 };
+    expect(
+      boardingStrayShot(position, position, 1, 1, 12, 7, () => false, []),
+    ).toEqual({ to: position });
+  });
+});

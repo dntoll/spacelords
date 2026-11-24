@@ -8,6 +8,17 @@ fönster, utrustning och en lokal karteditor. Detaljerna står i
 
 ## Krav
 
+- **Skott på samma ruta:** `forsvararskott-samma-ruta` (2026-11-24) är
+  **Fullständigt implementerat**. Ett missat skott där skytt och mål står på
+  samma ruta avslutas utan att striden eller gränssnittet låser sig.
+
+- **Återställ sparad försvarartur:** `sparad-forsvarartur-aterhamtas`
+  (2026-11-24) är **Fullständigt implementerat**. En sparad bordning där
+  den aktiva försvararen inte längre kan agera, saknar giltig aktivering eller
+  där ingen aktiv soldat finns angiven
+  fortsätter till nästa soldat. Om inga försvarare återstår avslutas bordningen
+  och det övertagna skeppet behålls.
+
 - **Försvararturen fortsätter:** `forsvarartur-fastnar-inte` (2026-11-24) är
   **Fullständigt implementerat**. Försvararnas tur lämnas vidare om en
   automatisk handling inte kan planeras. Om visningen av en handling misslyckas

@@ -105,6 +105,8 @@ export class BoardingEngagement {
         true,
       );
     }
+    const battle = BoardingBattle.restore(composed.map, saved.battle);
+    battle.recoverDefenderActivation();
     return new BoardingEngagement(
       saved.attackerId,
       saved.defenderId,
@@ -112,7 +114,7 @@ export class BoardingEngagement {
       saved.defenderType,
       saved.playerIsAttacker,
       composed,
-      BoardingBattle.restore(composed.map, saved.battle),
+      battle,
       saved.seenRound,
     );
   }

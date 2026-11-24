@@ -91,6 +91,94 @@ function gameInBoarding(): Game {
 }
 
 describe('bordning under avbruten runda', () => {
+  it('sparad-forsvarartur-aterhamtas: resolves a save when its last defender is already incapacitated', () => {
+    const game = gameInBoarding();
+    for (
+      let step = 0;
+      !game.boardingDefenderActing && game.boardingBattle && step < 8;
+      step++
+    )
+      game.commandBoarding({ type: 'end-activation' });
+    const state = game.exportState();
+    const engagement = state.simulation!.boarding!;
+    const restored = Game.restore({
+      ...state,
+      simulation: {
+        ...state.simulation!,
+        boarding: {
+          ...engagement,
+          battle: {
+            ...engagement.battle,
+            people: engagement.battle.people.map((person) =>
+              person.side === 'defender'
+                ? { ...person, status: 'incapacitated' as const, hitPoints: 0 }
+                : person,
+            ),
+          },
+        },
+      },
+    });
+    expect(restored.boardingBattle).toBeNull();
+    expect(restored.fleet('fleet-home')!.ships['Transport ship']).toBe(1);
+  });
+  it.each(['inactive', 'missing activation', 'missing actor'] as const)(
+    'sparad-forsvarartur-aterhamtas: repairs a saved defender turn with %s',
+    (problem) => {
+      const game = gameInBoarding();
+      for (
+        let step = 0;
+        !game.boardingDefenderActing && game.boardingBattle && step < 8;
+        step++
+      )
+        game.commandBoarding({ type: 'end-activation' });
+      expect(game.boardingDefenderActing).toBe(true);
+      const saved = game.exportState();
+      const engagement = saved.simulation!.boarding!;
+      const battle = engagement.battle;
+      const defender = battle.people.find(
+        (person) => person.id === battle.currentActorId,
+      )!;
+      const player = battle.people.find(
+        (person) => person.side === 'player' && person.status === 'active',
+      )!;
+      const broken = {
+        ...saved,
+        simulation: {
+          ...saved.simulation!,
+          boarding: {
+            ...engagement,
+            battle: {
+              ...battle,
+              initiativeOrder: [defender.id, player.id],
+              initiativeIndex: 0,
+              finishedActors: [],
+              postponed: [],
+              currentActorId:
+                problem === 'missing actor' ? null : battle.currentActorId,
+              activation:
+                problem === 'missing activation' || problem === 'missing actor'
+                  ? null
+                  : battle.activation,
+              people: battle.people.map((person) =>
+                problem === 'inactive' && person.id === defender.id
+                  ? {
+                      ...person,
+                      status: 'incapacitated' as const,
+                      hitPoints: 0,
+                    }
+                  : person,
+              ),
+            },
+          },
+        },
+      };
+      const restored = Game.restore(broken);
+      expect(restored.boardingBattle?.currentActorId).toBe(player.id);
+      expect(
+        Game.restore(restored.exportState()).boardingBattle?.currentActorId,
+      ).toBe(player.id);
+    },
+  );
   it('forsvarartur-fastnar-inte: resumes a saved defender turn and returns control to a soldier', async () => {
     const game = gameInBoarding();
     for (

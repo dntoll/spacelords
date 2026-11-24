@@ -801,6 +801,19 @@ export class BoardingBattle {
     });
   }
 
+  /** sparad-forsvarartur-aterhamtas: recover an unusable saved defender activation. */
+  recoverDefenderActivation(): void {
+    if (this.#state.phase !== 'fighting') return;
+    const actor = this.#state.people.find(
+      (person) => person.id === this.#state.currentActorId,
+    );
+    if (actor && actor.side !== 'defender') return;
+    if (actor?.status === 'active' && this.#state.activation?.id === actor.id)
+      return;
+    this.synchronize();
+    if (this.#state.phase === 'fighting') this.#finishActivation();
+  }
+
   static forward(position: BoardingCell, facing: number): BoardingCell {
     const direction = ADJACENT_DIRECTIONS[normalizeFacing(facing)]!;
     return Object.freeze({
