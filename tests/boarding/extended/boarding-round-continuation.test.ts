@@ -91,6 +91,58 @@ function gameInBoarding(): Game {
 }
 
 describe('bordning under avbruten runda', () => {
+  it('forsvarartur-fastnar-inte: resumes a saved defender turn and returns control to a soldier', async () => {
+    const game = gameInBoarding();
+    for (
+      let step = 0;
+      !game.boardingDefenderActing && game.boardingBattle && step < 8;
+      step++
+    )
+      game.commandBoarding({ type: 'end-activation' });
+    expect(game.boardingDefenderActing).toBe(true);
+    const storage = new Map<string, string>();
+    const saves = new BrowserSaveRepository({
+      getItem: (key) => storage.get(key) ?? null,
+      setItem: (key, value) => void storage.set(key, value),
+      removeItem: (key) => void storage.delete(key),
+    });
+    saves.save(1, {
+      lastPlayed: new Date().toISOString(),
+      state: game.exportState(),
+    });
+    const model = new AppModel(createExampleGalaxy(), saves);
+    model.startSlot(1);
+    vi.useFakeTimers();
+    const controller = new MasterController(model, {
+      bind() {},
+      render() {},
+      dispose() {},
+    });
+    controller.start();
+    for (let step = 0; step < 80; step++) {
+      const battle = model.snapshot.boardingBattle;
+      if (
+        !battle ||
+        battle.phase !== 'fighting' ||
+        battle.people.some(
+          (person) =>
+            person.id === battle.currentActorId && person.side === 'player',
+        )
+      )
+        break;
+      await vi.advanceTimersByTimeAsync(500);
+    }
+    const battle = model.snapshot.boardingBattle;
+    expect(
+      !battle ||
+        battle.phase !== 'fighting' ||
+        battle.people.some(
+          (person) =>
+            person.id === battle.currentActorId && person.side === 'player',
+        ),
+    ).toBe(true);
+    controller.dispose();
+  });
   it('keeps boarding clicks from being replaced by continuing the round', async () => {
     const game = gameInBoarding();
     const boarding = game.boardingBattle!;

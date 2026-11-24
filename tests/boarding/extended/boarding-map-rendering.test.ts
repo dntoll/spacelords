@@ -452,6 +452,23 @@ it('jamn-ljuskarta-under-forflyttning / bordning-jamn-bildfrekvens: floors look 
   view.dispose();
 });
 
+it('forsvarartur-fastnar-inte: cancelling a stalled presentation completes its movement', async () => {
+  const { view, state, player } = scene(true);
+  const next = {
+    ...state,
+    people: [
+      {
+        ...player,
+        position: { q: player.position.q + 1, r: player.position.r },
+      },
+    ],
+  };
+  const motion = view.playMotion(state, next);
+  view.cancelPresentation();
+  await expect(motion).resolves.toBeUndefined();
+  view.dispose();
+});
+
 it('jamn-ljuskarta-under-forflyttning / skuggor-mellan-rutor: a walking figure relights only the floor around its lamp, every frame', async () => {
   const { view, state, player, masks, map } = scene(true, [
     boardingCeilingLight({ q: 2, r: 3 }),

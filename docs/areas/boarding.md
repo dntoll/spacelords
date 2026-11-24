@@ -8,6 +8,12 @@ fönster, utrustning och en lokal karteditor. Detaljerna står i
 
 ## Krav
 
+- **Försvararturen fortsätter:** `forsvarartur-fastnar-inte` (2026-11-24) är
+  **Fullständigt implementerat**. Försvararnas tur lämnas vidare om en
+  automatisk handling inte kan planeras. Om visningen av en handling misslyckas
+  eller inte blir klar återgår spelet till det aktuella stridsläget utan att
+  fastna. Regeln gäller även när en sparad bordning återupptas.
+
 - **Landgång och bordningsgränssnitt:** `landgang-med-bordningsstart`,
   `airlock-oppnar-at-blickriktning`, `ihopfallbar-bordningslogg` och
   `beskrivning-av-vald-bordningsruta`, `granat-mot-vald-fiende`,

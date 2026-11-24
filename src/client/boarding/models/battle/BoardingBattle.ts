@@ -2988,14 +2988,14 @@ export class BoardingBattle {
         return acted;
       const beforeId = actor.id;
       const beforeRemaining = this.#state.activation?.remaining ?? 0;
-      const command = chooseDefenderCommand(this, actor);
-      this.#replace({
-        log: [...this.#state.log, hiddenDefenderActivity(command)],
-      });
       try {
+        const command = chooseDefenderCommand(this, actor);
+        this.#replace({
+          log: [...this.#state.log, hiddenDefenderActivity(command)],
+        });
         this.command(command);
       } catch {
-        // forsvarare-och-civilister: a rejected AI action must still yield the turn.
+        // forsvarartur-fastnar-inte: failed planning or actions still yield the turn.
         if (
           this.#state.phase === 'fighting' &&
           this.#state.currentActorId === beforeId

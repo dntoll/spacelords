@@ -566,7 +566,7 @@ it('actionpoints-och-riktad-forflyttning / tydlig-bordningsstatus / ap-fargad-bo
     ),
   };
   view.render(stepped, null, [stepped]);
-  await Promise.resolve();
+  await view.whenIdle();
   expect(playMotion).toHaveBeenCalled();
   const defender = created.snapshot.people.find(
     (person) => person.side === 'defender',
