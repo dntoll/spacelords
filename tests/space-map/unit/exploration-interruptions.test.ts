@@ -54,6 +54,50 @@ function finish(game: Game, start = true) {
 }
 
 describe('upptacktsavbrott / order-under-upptacktsavbrott', () => {
+  it('order-vid-kartupptackt-utan-observator: permits new orders when a captured chart reveals a distant star', () => {
+    const galaxy = createExampleGalaxy();
+    const state = new Game(galaxy).exportState();
+    const star = galaxy.systems.find(
+      (system) => system.star.id === 'nadir',
+    )!.star;
+    const game = Game.restore({
+      ...state,
+      pirates: [],
+      explored: [...new Set([...state.explored, star.position.key])],
+      knownObjects: state.knownObjects!.filter((id) => id !== star.id),
+    });
+    game.setDestination('fleet-home', new HexCoordinate(3, 0));
+    interrupt(game);
+    expect(game.interruption!.discoveries).toContainEqual(
+      expect.objectContaining({ id: star.id, fleetId: null }),
+    );
+    expect(game.fleet('fleet-home')!.canIssueOrders).toBe(true);
+    expect(() =>
+      game.setDestination('fleet-home', new HexCoordinate(2, 0)),
+    ).not.toThrow();
+  });
+  it('order-vid-kartupptackt-utan-observator: allows a new destination after loading discoveries from captured charts', () => {
+    const game = contact();
+    interrupt(game);
+    const state = game.exportState();
+    const saved: GameState = {
+      ...state,
+      simulation: {
+        ...state.simulation!,
+        discoveries: state.simulation!.discoveries.map((discovery) => ({
+          ...discovery,
+          kind: 'star' as const,
+          fleetId: null,
+        })),
+      },
+    };
+    const loaded = Game.restore(saved);
+    expect(loaded.discoveryPause()).toBe(true);
+    expect(loaded.enemyDiscoveryResume()).toBe(false);
+    expect(() =>
+      loaded.setDestination('fleet-home', new HexCoordinate(7, -4)),
+    ).not.toThrow();
+  });
   it('interrupts after simultaneous movement, before contact combat, and resolves that contact before new orders move', () => {
     const game = contact(0);
     interrupt(game);
