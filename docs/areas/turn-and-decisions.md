@@ -17,6 +17,10 @@ utan en pirat i sikte märks de inte, och en resa går i ett svep
   sikte visas AP och rundslut som tidigare (`ap-pa-starmap`). Forskning och
   produktion räknar fortsatt i rundor i bakgrunden.
 
+- **Beställt, ej implementerat:** `flytande-forflyttning`, `rakare-vag`,
+  `pirat-minne-efter-sikt` och `animerade-piratsteg` är **Ej implementerat**.
+  Se plan i [rensningsplanen](../single-fleet-cleanup.md#nästa-steg-beställt-2026-11-24-ej-implementerat).
+
 - **Färdväg som orderpil:** `fardvag-som-orderpil`, `fardvag-fran-flottan`
   och `fardvag-under-resan` (2026-11-24) är **Fullständigt implementerat**.
   Färdvägen är flottans enda pil. Den ritas tunt i orderpilens blå färg från
