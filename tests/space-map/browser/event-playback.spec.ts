@@ -84,7 +84,9 @@ test('sikt-under-forflyttning: a newly observed hex brightens before the moving 
   await seed(page);
   await page.clock.pauseAt(new Date('2026-10-30T01:00:00Z'));
   const canvas = page.locator('canvas[data-rendered="true"]');
-  const target = HexGeometry.toPoint(new HexCoordinate(3, 0));
+  // fardvag-under-resan: the destination stays selected during the journey,
+  // so measure its unselected neighbour, which comes into sight in the same step.
+  const target = HexGeometry.toPoint(new HexCoordinate(3, -1));
   const color = () =>
     canvas.evaluate(
       (node, points) => {
