@@ -17,6 +17,15 @@ utan en pirat i sikte märks de inte, och en resa går i ett svep
   sikte visas AP och rundslut som tidigare (`ap-pa-starmap`). Forskning och
   produktion räknar fortsatt i rundor i bakgrunden.
 
+- **Färdväg som orderpil:** `fardvag-som-orderpil`, `fardvag-fran-flottan`
+  och `fardvag-under-resan` (2026-11-24) är **Fullständigt implementerat**.
+  Färdvägen är flottans enda pil. Den ritas tunt i orderpilens blå färg från
+  flottans ritade position genom hexarnas mitt och slutar i en pilspets. Den
+  ligger kvar under hela resan, även mellan rundorna, och visar bara den del
+  som återstår. Den markerade hexen behålls under förflyttningen. Det ersätter
+  den gula färdplanen och den blå orderpilen; bara en dragen destination och
+  fientliga flottor har kvar en rak pil.
+
 - **Händelser som toppnotis:** `handelser-som-toppnotis` (2026-11-24) är
   **Fullständigt implementerat**. Varje händelse visas en gång, när den
   inträffar, som en kort notis högst upp, utan att störa spelet. Det finns

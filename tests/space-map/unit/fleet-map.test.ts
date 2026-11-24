@@ -64,7 +64,7 @@ function drawing() {
   };
 }
 
-it('destinationer-for-aktiva-skepp: keeps the moving fleet’s arrow during movement', () => {
+it('fardvag-som-orderpil: the moving fleet has no separate order arrow', () => {
   const first = fleet('moving');
   const model = new AppModel().snapshot;
   const move = {
@@ -81,7 +81,7 @@ it('destinationer-for-aktiva-skepp: keeps the moving fleet’s arrow during move
     turnMovement: move,
     turnMovements: [move],
   });
-  expect(sketch.line).toHaveBeenCalledTimes(1);
+  expect(sketch.line).toHaveBeenCalledTimes(0);
 });
 
 describe('destinationspilar-endast-i-flottvyn', () => {
@@ -97,10 +97,9 @@ describe('destinationspilar-endast-i-flottvyn', () => {
         pirates: [],
         mapFleetId: null,
       });
-      expect(sketch.line).toHaveBeenCalledTimes(screen === 'fleets' ? 1 : 0);
-      expect(sketch.triangle).toHaveBeenCalledTimes(
-        screen === 'fleets' ? 2 : 1,
-      );
+      // fardvag-som-orderpil: the route replaces the order arrow.
+      expect(sketch.line).toHaveBeenCalledTimes(0);
+      expect(sketch.triangle).toHaveBeenCalledTimes(1);
     },
   );
 });
@@ -122,15 +121,14 @@ describe('vald-flotta-visar-destinationspil', () => {
           fleetDragging: dragging,
           fleetDestinationPreview: new HexCoordinate(-2, 0),
         });
-        expect(sketch.line).toHaveBeenCalledTimes(1);
-        const target = HexGeometry.toPoint(
-          dragging ? new HexCoordinate(-2, 0) : selected.destination!,
-        );
+        // fardvag-som-orderpil: only a dragged destination draws an arrow.
+        expect(sketch.line).toHaveBeenCalledTimes(dragging ? 1 : 0);
+        const target = HexGeometry.toPoint(new HexCoordinate(-2, 0));
         expect(
           sketch.line.mock.calls.filter(
             (call) => call[2] === target.x && call[3] === target.y,
           ),
-        ).toHaveLength(1);
+        ).toHaveLength(dragging ? 1 : 0);
         expect(selected.destination!.key).toBe('2,0');
       }
     },
@@ -229,7 +227,7 @@ describe('kartflottor', () => {
       for (const zoom of [0.5, 1, 2]) {
         const { sketch, render } = drawing();
         render([{ ...fleet('moving', 9), destination }], zoom);
-        const ships = sketch.triangle.mock.calls.slice(1);
+        const ships = sketch.triangle.mock.calls;
         expect(ships).toHaveLength(1);
         for (const [tipX, tipY, leftX, leftY, rightX, rightY] of ships) {
           const centerX = (tipX + leftX + rightX) / 3;
@@ -244,35 +242,6 @@ describe('kartflottor', () => {
       }
     },
   );
-
-  it('separates colocated fleets and starts each destination arrow at its own marker', () => {
-    const { sketch, render } = drawing();
-    render([fleet('first'), fleet('second'), fleet('empty', 0)]);
-    const lines = sketch.line.mock.calls;
-    expect(lines).toHaveLength(2);
-    expect(lines[0]!.slice(0, 2)).not.toEqual(lines[1]!.slice(0, 2));
-    for (const [x, y, endX, endY] of lines) {
-      expect(Math.hypot(x, y)).toBeGreaterThan(10);
-      expect([endX, endY]).toEqual(
-        Object.values(HexGeometry.toPoint(new HexCoordinate(2, 0))),
-      );
-      const ships = sketch.triangle.mock.calls.filter(
-        (points) => points[0] !== endX || points[1] !== endY,
-      );
-      expect(
-        ships.some(
-          ([a, b, c, d, e, f]) =>
-            Math.hypot((a + c + e) / 3 - x, (b + d + f) / 3 - y) < 0.001,
-        ),
-      ).toBe(true);
-      // Each arrow has an actual triangular head at the destination.
-      expect(
-        sketch.triangle.mock.calls.some(
-          (points) => points[0] === endX && points[1] === endY,
-        ),
-      ).toBe(true);
-    }
-  });
 
   it('skeppssprites-pa-kartan: represents each present type and keeps the group within its hex', () => {
     const mixed = {
@@ -341,14 +310,10 @@ describe('flottval-pa-kartan / dra-flottdestination', () => {
     expect(sketch.line.mock.calls[0]!.slice(2)).toEqual(
       Object.values(HexGeometry.toPoint(preview)),
     );
-    expect(sketch.line.mock.calls[1]!.slice(2)).toEqual(
-      Object.values(HexGeometry.toPoint(new HexCoordinate(2, 0))),
-    );
+    expect(sketch.line).toHaveBeenCalledTimes(1);
     const normal = drawing();
     normal.render([fleet('first')]);
-    expect(normal.sketch.line.mock.calls[0]!.slice(2)).toEqual(
-      Object.values(HexGeometry.toPoint(new HexCoordinate(2, 0))),
-    );
+    expect(normal.sketch.line).not.toHaveBeenCalled();
   });
 });
 

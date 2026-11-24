@@ -32,7 +32,8 @@ export const SHIP_PROFILES: Readonly<Record<CombatShipType, ShipProfile>> =
     'Salvage ship': { size: 2, hull: 5, movement: 3 },
     'Transport ship': { size: 3, hull: 6, movement: 2 },
     'Colony ship': { size: 3, hull: 8, movement: 2 },
-    Raptor: { size: 1, hull: 3, movement: 3 },
+    // raptor-talig-mot-pirater: survives three Raider cannon hits of 2 damage.
+    Raptor: { size: 1, hull: 7, movement: 3 },
   });
 export const WEAPONS = Object.freeze({
   Cannon: { min: 1, max: 3, arc: 120, dice: 2, threshold: 4, area: 0 },
@@ -52,6 +53,8 @@ export interface BattleFleet {
     readonly towing?: boolean;
     readonly missiles?: number;
     readonly armored?: boolean;
+    /** permanenta-skador: hull already lost before this battle. */
+    readonly damage?: number;
   }[];
 }
 export interface BattlePiece {
@@ -473,7 +476,10 @@ export class TacticalBattle {
             movement:
               (ship.towing ? 1 : SHIP_PROFILES[ship.type].movement) +
               Number(ship.ion),
-            hull: maxHull({ type: ship.type, armored }),
+            hull: Math.max(
+              1,
+              maxHull({ type: ship.type, armored }) - (ship.damage ?? 0),
+            ),
             missiles,
             hasMissiles: missiles > 0,
             armored,

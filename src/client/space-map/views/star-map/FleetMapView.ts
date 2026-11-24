@@ -41,6 +41,11 @@ export function renderMapFleets(
     // destinationspilar-endast-i-flottvyn
     // vald-flotta-visar-destinationspil: the selected fleet keeps its arrow.
     if (!showDestinationArrows && interaction.mapFleetId !== fleet.id) continue;
+    // fardvag-som-orderpil: the player's fleet shows its route instead; only
+    // a dragged destination and hostile fleets keep a straight arrow.
+    const dragging =
+      interaction.fleetDragging && interaction.mapFleetId === fleet.id;
+    if (!dragging && !pirateIds.includes(fleet.id)) continue;
     const target = destinationFor(fleet);
     if (!target) continue;
     const destination = HexGeometry.toPoint(target);

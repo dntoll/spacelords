@@ -31,6 +31,11 @@ export interface ShipUnit {
   /** Fighter missile salvos. Absent means the legacy pair of two. */
   readonly missiles?: number;
   readonly armored?: boolean;
+  /**
+   * permanenta-skador: hull lost in earlier battles. It stays until the ship
+   * is repaired; absent means undamaged.
+   */
+  readonly damage?: number;
   readonly engines: Readonly<{
     'Rocket engine': number;
     'Ion pulse engine': number;
