@@ -15,7 +15,4 @@ export * from './star-map/GalaxyMapView.js';
 export * from './star-map/MapGesture.js';
 export * from './star-map/MapSelectionScroll.js';
 export * from './turn/DiscoveryView.js';
-export * from './turn/EventContent.js';
-export * from './turn/EventsView.js';
 export * from './turn/GameText.js';
-export * from './turn/TurnActionsView.js';

@@ -17,11 +17,15 @@ export function renderTravelRoute(
     HexGeometry.toPoint(hex),
   );
   const perRound = Math.max(1, route.perRound);
-  const available = Math.max(0, route.available);
+  // somlos-forflyttning: without an active enemy the route is one even line.
+  const available = route.contested
+    ? Math.max(0, route.available)
+    : points.length;
   const roundEnd = (index: number) =>
     index === points.length - 1 ||
-    index === available ||
-    (index > available && (index - available) % perRound === 0);
+    (route.contested &&
+      (index === available ||
+        (index > available && (index - available) % perRound === 0)));
   sketch.push();
   sketch.noFill();
   sketch.strokeCap(sketch.ROUND);

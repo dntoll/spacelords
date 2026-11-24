@@ -22,8 +22,9 @@ samma uppdaterade resultat. Kravet förtydligar `aktuell-detektionssikt`,
 
 ## Räckvidd
 
-Räckvidd gäller hexavstånd åt alla håll. Andra skepp ser bara sin egen ruta.
-Startskeppet börjar med Telescope I. Planeter bidrar inte längre med sikt.
+Räckvidd gäller hexavstånd åt alla håll. En Raptor ser en hex, som
+Telescope I (`startflotta-med-raptor`). Andra skepp ser bara sin egen ruta.
+Planeter bidrar inte längre med sikt.
 
 `teleskopfabriker` och `teleskop-i-exploration-ships` är borttagna med
 fabrikerna och uppgraderingen vid varv (`single-fleet-rensning`). Hur

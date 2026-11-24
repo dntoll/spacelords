@@ -16,7 +16,13 @@ export function encounterGame(pirateCount = 1): Game {
         ...first,
         position: { q: 8, r: -4 },
         shipUnits: [],
-        ships: { ...first.ships, Fighter: 2, 'Transport ship': 1 },
+        ships: {
+          ...first.ships,
+          Raptor: 0,
+          'Exploration ship': 1,
+          Fighter: 2,
+          'Transport ship': 1,
+        },
       },
     ],
   });

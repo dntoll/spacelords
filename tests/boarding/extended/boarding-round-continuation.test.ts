@@ -38,6 +38,7 @@ function gameInBoarding(): Game {
           ...state.fleets[0]!.ships,
           Fighter: 0,
           'Exploration ship': 0,
+          Raptor: 0,
           'Space pirate': 1,
           'Transport ship': 0,
         },

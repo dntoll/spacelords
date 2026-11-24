@@ -16,8 +16,10 @@ flotta till ett mål. Planeter är platser; spelaren äger dem inte
   målet och startar rundan direkt. Ett tryck på en annan hex flyttar bara
   markeringen. Move- och Stop-knapparna finns inte kvar
   (`inga-move-stop-knappar`). Skeppet glider en hex i taget
-  (`glidande-hexsteg`). Kameran följer skeppet så att det ligger nära mitten
-  (`kamera-foljer-skepp`), och ett klick träffar hexen under musen
+  (`glidande-hexsteg`). Kameran står still så länge skeppet är inom en
+  rektangel mitt på kartan och följer det annars till rektangelns kant; den
+  går alltid att panorera och zooma (`kamera-med-dod-zon`, se
+  [rundan och händelser](turn-and-decisions.md)). Ett klick träffar hexen under musen
   (`klick-pa-synlig-hex`).
 
 - **AP och turordning:** `ap-pa-starmap` (2026-11-22) är **Fullständigt
@@ -28,10 +30,10 @@ flotta till ett mål. Planeter är platser; spelaren äger dem inte
   flottan inte har råd med nästa steg, agerar fienderna. Bara aktiverade
   pirater handlar (`piratens-aktivering`); övriga står still och tar ingen
   tid.
-  Därefter börjar nästa runda med fulla AP. Rundans händelser annonseras
-  när rundan tar slut, inte efter en förflyttning som lämnar AP kvar. Det finns ingen väntan: tiden går
+  Därefter börjar nästa runda med fulla AP. Utan en pirat i sikte märks
+  rundorna inte (`somlos-forflyttning`). Det finns ingen väntan: tiden går
   bara när flottan flyttar. End turn är borttaget från alla skärmar, vilket
-  ersätter `end-turn-vid-kartval` och End turn i `gemensam-events-panel`.
+  ersätter `end-turn-vid-kartval`.
 
 - **Resa utan synliga pirater:** `resa-utan-synliga-pirater` (2026-11-22) är
   **Fullständigt implementerat**. En resa längre än flottans AP fortsätter

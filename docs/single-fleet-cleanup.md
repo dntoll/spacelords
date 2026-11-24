@@ -259,3 +259,13 @@ Kontroller: typkontroll, ESLint och Prettier passerar; Vitest utan
 HTTP-integrationen 904 tester passerar; Playwright `desktop-chromium` och
 `phone-chromium`: 157 passerar och 11 hoppas över. WebKit går inte att starta
 i sandlådan.
+
+Läge 2026-11-23, senare: ett nytt spel börjar med en ensam Raptor
+(`startflotta-med-raptor`). Den ser en hex som Telescope I och utforskar
+planeter vid ankomst. Upptäckter visas en gång som toppnotis utan
+kamerarörelse (`upptackt-som-toppnotis`), och spelet visar inga
+hex-koordinater (`inga-hexkoordinater`). Tester som gäller teleskop, fart 3
+eller två skepp använder fixturen `withScoutFleet` med Exploration ship och
+Fighter. Kartans stridshjälpare låter inte Raptor docka, eftersom den inte
+spelar bordning. Vitest 915 och Playwright `desktop-chromium` och
+`phone-chromium` 157 passerar.

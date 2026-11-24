@@ -1,5 +1,4 @@
 import {
-  gameText,
   discoveryControls,
   renderProduction,
   bindMapSelectionScroll,
@@ -13,10 +12,6 @@ import {
   renderResearchSelection,
   updateResearchCamera,
   planetIllustration,
-  renderTurnActions,
-  renderEvents,
-  renderCombatLog,
-  renderEventContent,
 } from '../../space-map/views/index.js';
 import {
   BattleView,
@@ -37,7 +32,6 @@ import {
 import type { AppReadModel, Screen } from '../models/AppModel.js';
 import { playerNoticeText } from './playerNoticeText.js';
 import { buildLabelText, currentBuild } from './buildLabel.js';
-import { HexGeometry, HexCoordinate } from '../../common/HexCoordinate.js';
 import type {
   AppPort,
   IntentHandler,
@@ -80,12 +74,7 @@ export class AppView implements AppPort {
   #viewportKey = '';
   #mapFocusRevision = 0;
   #resizeFrame = 0;
-  #eventsExpanded = false;
   #playingEvents = false;
-  #turnActions: HTMLElement | null = null;
-  #consoleObserver: ResizeObserver | null = null;
-  #announcementObserver: ResizeObserver | null = null;
-  #announcementModel: AppReadModel | null = null;
   #presentationFrame = 0;
   #finishPresentation: (() => void) | null = null;
   #disposed = false;
@@ -114,9 +103,10 @@ export class AppView implements AppPort {
   render(model: AppReadModel): void {
     // ap-pa-starmap: without End turn, this marks when the map awaits the player.
     this.#root.dataset.turnIdle = String(
-      model.phase === 'planning' &&
+      (model.phase === 'planning' ||
+        // upptackt-stannar-resan: after the notices the map awaits a hex.
+        (model.discoveryPause && model.notice?.kind !== 'discovery')) &&
         !model.enemyTurnPending &&
-        !model.eventPlayback &&
         !model.turnMovement,
     );
     if (model.editor) {
@@ -168,11 +158,6 @@ export class AppView implements AppPort {
     }
     this.#battleView?.dispose();
     this.#battleView = null;
-    const currentEvent = model.eventPlayback?.events[model.eventPlayback.index];
-    this.#root.classList.toggle(
-      'has-interactive-event',
-      !!currentEvent?.decision,
-    );
     if (model.screen === 'saves') this.#fleetOrderScroll.clear();
     for (const toolbar of this.#root.querySelectorAll<HTMLElement>(
       '.fleet-order-toolbar',
@@ -181,15 +166,7 @@ export class AppView implements AppPort {
         toolbar.closest<HTMLElement>('[data-fleet-id]')?.dataset.fleetId;
       if (id) this.#fleetOrderScroll.set(id, toolbar.scrollLeft);
     }
-    const previousActions = this.#turnActions;
-    const previousConsole =
-      previousActions?.querySelector<HTMLDetailsElement>('.turn-console');
-    if (previousConsole && !previousConsole.hidden && !this.#playingEvents)
-      this.#eventsExpanded = previousConsole.open;
-    this.#playingEvents = !!(model.eventPlayback || model.turnMovement);
-    const previousEventScroll =
-      previousActions?.querySelector<HTMLElement>('[role="log"]')?.scrollTop ??
-      0;
+    this.#playingEvents = !!model.turnMovement;
     if (model.screen !== 'research') {
       this.#researchObserver?.disconnect();
       this.#researchObserver = null;
@@ -199,11 +176,6 @@ export class AppView implements AppPort {
     this.#decisionDialog?.remove();
     this.#decisionDialog = null;
     if (model.screen === 'saves') {
-      this.#root.classList.remove('has-game-footer');
-      this.#turnActions = null;
-      this.#eventsExpanded = false;
-      this.#consoleObserver?.disconnect();
-      this.#consoleObserver = null;
       const key = JSON.stringify(model.saveSlots);
       if (this.#screen !== 'saves' || this.#saveKey !== key) {
         this.#mapObserver?.disconnect();
@@ -460,12 +432,8 @@ export class AppView implements AppPort {
         }
       }
     }
-    this.#attachTurnActions(previousActions, previousEventScroll);
     this.#syncLocalEditorNav(model);
     if (isMapScreen(model.screen)) {
-      this.#root
-        .querySelector('.map-page')
-        ?.classList.toggle('is-event-playback', !!model.eventPlayback);
       this.#root
         .querySelector('.map-page')
         ?.classList.toggle('is-turn-movement', !!model.turnMovement);
@@ -476,7 +444,6 @@ export class AppView implements AppPort {
       if (this.#coordinates)
         this.#coordinates.textContent = `X ${model.camera.center.x.toFixed(0)} · Y ${model.camera.center.y.toFixed(0)}`;
       const key = JSON.stringify({
-        eventPlayback: !!model.eventPlayback,
         turnMovement: !!model.turnMovement,
         screen: model.screen,
         pirates: model.pirates,
@@ -526,13 +493,11 @@ export class AppView implements AppPort {
         .querySelector('.map-page')
         ?.classList.toggle('has-selection', selected);
     }
-    this.#renderTurnConsole(model);
     if (isMapScreen(model.screen)) this.#measureMap();
     for (const control of this.#root.querySelectorAll<HTMLButtonElement>(
       'header button',
     ))
       control.disabled = this.#playingEvents;
-    this.#renderEventAnnouncement(model);
     const nameInput =
       this.#root.querySelector<HTMLInputElement>('.fleet-name-input');
     if (nameInput && model.fleetNameEdit) {
@@ -577,11 +542,7 @@ export class AppView implements AppPort {
     if (editingName) delete active.dataset.rendering;
     this.#root.querySelector('.discovery-controls')?.remove();
     if (model.phase === 'interrupted' && model.interruption) {
-      if (
-        model.interruption.handling &&
-        !model.eventPlayback &&
-        !model.turnMovement
-      )
+      if (model.interruption.handling && !model.turnMovement)
         this.#root.append(discoveryControls(model, this.#emit));
     } else if (model.pendingResearchRemoval) {
       const dialog = element('dialog', 'decision-dialog');
@@ -618,239 +579,6 @@ export class AppView implements AppPort {
   }
   async animateBattleManeuver(maneuver: BattleManeuver): Promise<void> {
     await this.#battleView?.animateManeuver(maneuver);
-  }
-
-  #renderTurnConsole(model: AppReadModel): void {
-    const log = this.#root.querySelector<HTMLElement>(
-      '.turn-console [role="log"]',
-    );
-    if (!log) return;
-    const console = log.closest<HTMLDetailsElement>('.turn-console')!;
-    const playback = model.eventPlayback;
-    console.dataset.playing = String(!!playback);
-    const open = !!playback || this.#eventsExpanded;
-    if (console.open !== open) console.open = open;
-    if (console.hidden) return;
-    const layout = () => {
-      const maximum = window.innerHeight * 0.4;
-      console.style.setProperty(
-        '--events-max-height',
-        `${Math.max(80, maximum || 260)}px`,
-      );
-    };
-    layout();
-    if (!console.dataset.bound) {
-      console.dataset.bound = 'true';
-      console.addEventListener('toggle', () => {
-        if (!console.isConnected) return;
-        if (!this.#playingEvents) this.#eventsExpanded = console.open;
-        layout();
-        if (console.open) log.scrollTop = log.scrollHeight;
-      });
-      if (typeof ResizeObserver !== 'undefined') {
-        this.#consoleObserver?.disconnect();
-        this.#consoleObserver = new ResizeObserver(layout);
-        this.#consoleObserver.observe(this.#root);
-      }
-    }
-    const history =
-      model.phase === 'planning'
-        ? model.events
-        : model.events.filter(
-            (event) =>
-              event.round < model.round ||
-              model.presentedEventIds.includes(event.id),
-          );
-    const latestYear = Math.max(model.round - 1, history.at(-1)?.round ?? 0);
-    const events = playback
-      ? [
-          ...(playback.history ?? []),
-          ...playback.events.slice(0, playback.index),
-        ]
-      : history.filter((event) => event.round === latestYear);
-    const activeId = playback?.events[playback.index]?.id;
-    const key = `${events.at(-1)?.id ?? 'empty'}:${model.round}:${activeId ?? ''}`;
-    if (log.dataset.lastEvent === key) return;
-    const list = log.querySelector('ol')!;
-    if (events.length) log.querySelector('.console-empty')?.remove();
-    else if (!log.querySelector('.console-empty'))
-      log.prepend(element('p', 'console-empty', 'No events yet.'));
-    list.replaceChildren(
-      ...renderEvents(events, playback?.events[playback.index]),
-    );
-    if (playback) {
-      log.querySelector('.console-empty')?.remove();
-    }
-    log.dataset.lastEvent = key;
-    log.dataset.round = String(model.round);
-    log.scrollTop = log.scrollHeight;
-  }
-
-  #renderEventAnnouncement(model: AppReadModel): void {
-    this.#announcementModel = model.eventPlayback ? model : null;
-    const playback = model.eventPlayback;
-    const current = playback?.events[playback.index];
-    let announcement = this.#root.querySelector<HTMLElement>(
-      '.event-announcement',
-    );
-    if (!playback || !current || playback.stage === 'framing') {
-      announcement?.remove();
-      this.#announcementObserver?.disconnect();
-      this.#announcementObserver = null;
-      return;
-    }
-    if (announcement?.dataset.announcementId !== current.id) {
-      announcement?.remove();
-      this.#announcementObserver?.disconnect();
-      announcement = element('div', 'event-announcement');
-      announcement.append(renderEventContent(current));
-      if (current.planetId) {
-        announcement.classList.add('event-announcement-planet');
-        announcement.tabIndex = 0;
-      }
-      if (current.decision) {
-        announcement.classList.add('event-announcement-interactive');
-        announcement.setAttribute('role', 'dialog');
-        announcement.setAttribute('aria-label', current.decision.title);
-        const details = element('div', 'event-details');
-        details.append(announcement.querySelector('.event-text')!);
-        details.tabIndex = 0;
-        details.setAttribute('aria-label', 'Event details');
-        for (const text of current.decision.details)
-          details.append(element('p', '', gameText(text)));
-        if (current.combatLog) {
-          const lastRoll = current.combatLog.findLast((line) =>
-            line.includes('D6 ['),
-          );
-          if (lastRoll)
-            details.append(element('p', 'battle-latest-roll', lastRoll));
-          details.append(renderCombatLog(current.combatLog));
-        }
-        const actions = element('div', 'event-actions');
-        actions.append(
-          button('Handle', () => this.#emit({ type: 'handle-discoveries' })),
-          button('Ignore', () => this.#emit({ type: 'ignore-discoveries' })),
-        );
-        announcement.append(details, actions);
-      } else announcement.setAttribute('role', 'status');
-      announcement.dataset.announcementId = current.id;
-      this.#root.append(announcement);
-      if (current.decision && !model.turnMovement)
-        announcement
-          .querySelector<HTMLButtonElement>('button')
-          ?.focus({ preventScroll: true });
-      if (typeof ResizeObserver !== 'undefined') {
-        this.#announcementObserver = new ResizeObserver(() =>
-          this.#positionAnnouncement(),
-        );
-        this.#announcementObserver.observe(this.#root);
-        this.#announcementObserver.observe(announcement);
-        if (this.#container)
-          this.#announcementObserver.observe(this.#container);
-        const log = this.#root.querySelector('[role="log"]');
-        if (log) this.#announcementObserver.observe(log);
-      }
-    }
-    this.#positionAnnouncement();
-    announcement.dataset.stage = playback.stage;
-    for (const action of announcement.querySelectorAll<HTMLButtonElement>(
-      'button',
-    ))
-      action.disabled =
-        playback.stage !== 'awaiting-choice' ||
-        action.dataset.blocked === 'true';
-  }
-
-  #positionAnnouncement(): void {
-    const announcement = this.#root.querySelector<HTMLElement>(
-      '.event-announcement',
-    );
-    const target = this.#root.querySelector<HTMLElement>('.event-destination');
-    const log = target?.closest('[role="log"]');
-    if (!announcement || !target || !log) return;
-    log.scrollTop = log.scrollHeight;
-    const model = this.#announcementModel;
-    const event = model?.eventPlayback?.events[model.eventPlayback.index];
-    // handelseannonsering / handelser-pa-kartan: measure the hex on the canvas
-    // the player sees. The canvas can sit inside the map container.
-    const drawn = this.#container
-      ?.querySelector('canvas')
-      ?.getBoundingClientRect();
-    const map =
-      drawn && drawn.width > 0 && drawn.height > 0
-        ? drawn
-        : this.#container?.getBoundingClientRect();
-    let originX = window.innerWidth / 2;
-    let originY = window.innerHeight / 2;
-    if (event?.position && model && map && map.width > 0 && map.height > 0) {
-      const point = HexGeometry.toPoint(
-        new HexCoordinate(event.position.q, event.position.r),
-      );
-      announcement.style.setProperty(
-        '--event-width',
-        `${Math.min(620, map.width - 32)}px`,
-      );
-      originX =
-        map.left +
-        map.width / 2 +
-        (point.x - model.camera.center.x) * model.camera.zoom;
-      const markerGap =
-        Number.parseFloat(
-          window
-            .getComputedStyle(announcement)
-            .getPropertyValue('--event-marker-gap'),
-        ) || 82;
-      const markerY =
-        map.top +
-        map.height / 2 +
-        (point.y - model.camera.center.y) * model.camera.zoom;
-      const placedHeight = announcement.offsetHeight;
-      if (event.decision || event.planetId) {
-        const footer = this.#root
-          .querySelector('.turn-actions')
-          ?.getBoundingClientRect();
-        const bottom = Math.min(
-          window.innerHeight - 8,
-          (footer?.top ?? window.innerHeight) - 8,
-        );
-        const available = Math.max(80, bottom - markerY - markerGap);
-        announcement.style.maxHeight = `${available}px`;
-        // gemensamt-handelseflode: keep the footer clear when marker spacing cannot fit.
-        // --event-origin-y is the top edge, so a later height change grows downward.
-        originY = Math.min(markerY + markerGap, bottom - placedHeight);
-      } else originY = markerY + markerGap;
-      announcement.style.setProperty('--event-origin-x', `${originX}px`);
-      announcement.style.setProperty('--event-origin-y', `${originY}px`);
-    } else {
-      for (const property of [
-        '--event-width',
-        '--event-origin-x',
-        '--event-origin-y',
-      ])
-        announcement.style.removeProperty(property);
-    }
-    const row = target.getBoundingClientRect(),
-      bounds = log.getBoundingClientRect();
-    const top = Math.max(row.top, bounds.top),
-      bottom = Math.min(row.bottom, bounds.bottom);
-    announcement.style.setProperty(
-      '--event-target-x',
-      `${row.left + row.width / 2 - originX}px`,
-    );
-    announcement.style.setProperty(
-      '--event-target-y',
-      `${(top + bottom) / 2 - originY - (announcement.offsetHeight || 0) / 2}px`,
-    );
-    announcement.style.setProperty(
-      '--event-target-scale',
-      String(
-        Math.min(
-          1,
-          row.width / (announcement.offsetWidth || 1),
-          Math.max(1, bottom - top) / (announcement.offsetHeight || 1),
-        ),
-      ),
-    );
   }
 
   #renderNotice(model: AppReadModel): void {
@@ -907,8 +635,6 @@ export class AppView implements AppPort {
     if (typeof cancelAnimationFrame !== 'undefined')
       cancelAnimationFrame(this.#resizeFrame);
     this.#mapObserver?.disconnect();
-    this.#consoleObserver?.disconnect();
-    this.#announcementObserver?.disconnect();
     this.#researchObserver?.disconnect();
     this.#researchViewport = null;
     this.#decisionDialog?.close();
@@ -1016,23 +742,6 @@ export class AppView implements AppPort {
     // helskarm-fran-sparade-spel: fullscreen is chosen on Saved games only.
     header.append(brand, navigation);
     return header;
-  }
-
-  // gemensam-events-panel: retain one log and its reading position across screens.
-  #attachTurnActions(
-    previousActions: HTMLElement | null,
-    previousEventScroll: number,
-  ): void {
-    this.#turnActions ??= renderTurnActions();
-    this.#turnActions.classList.add('game-turn-actions');
-    this.#root.classList.add('has-game-footer');
-    if (this.#turnActions.parentElement !== this.#root) {
-      this.#root.append(this.#turnActions);
-      if (previousActions)
-        this.#turnActions.querySelector<HTMLElement>(
-          '[role="log"]',
-        )!.scrollTop = previousEventScroll;
-    }
   }
 
   #mapPage(screen: MapScreen): HTMLElement {
@@ -1147,7 +856,7 @@ export class AppView implements AppPort {
           : cell?.terrain === 'dense-asteroids'
             ? 'Impassable asteroid field.'
             : cell?.terrain === 'sparse-asteroids'
-              ? 'Entering or leaving this hex uses a full round of movement, regardless of engine.'
+              ? 'Ships slow to a crawl when entering or leaving this hex.'
               : cell?.terrain === 'nebula'
                 ? 'Ships inside can only be detected from the same hex. Observers inside see only their own hex. The cloud blocks sight beyond it.'
                 : '';
@@ -1253,8 +962,6 @@ export class AppView implements AppPort {
 
   renderCamera(model: AppReadModel): void {
     this.#map?.render(model);
-    this.#announcementModel = model.eventPlayback ? model : null;
-    this.#positionAnnouncement();
     if (this.#zoom)
       this.#zoom.value = `${Math.round(model.camera.zoom * 100)}%`;
     if (this.#coordinates)
@@ -1304,6 +1011,13 @@ function travelNote(model: AppReadModel): HTMLElement | null {
       'p',
       'travel-route',
       `${fleetName} is on its way · ${route.steps.length} hex left.`,
+    );
+  // somlos-forflyttning: without an active enemy rounds and AP stay hidden.
+  if (!route.contested)
+    return element(
+      'p',
+      'travel-route',
+      `${route.steps.length} hex. Select the hex again to travel.`,
     );
   // ap-pa-starmap: the remaining AP cover the first part of the route.
   const later = Math.max(0, route.steps.length - route.available);

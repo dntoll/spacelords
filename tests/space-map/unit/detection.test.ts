@@ -1,3 +1,4 @@
+import { withScoutFleet } from '../../fixtures/scout-fleet.js';
 import { completeTacticalBattles } from '../../fixtures/tactical-combat.js';
 import { describe, expect, it } from 'vitest';
 import { Game } from '../../../src/client/space-map/models/Game.js';
@@ -8,7 +9,9 @@ import { renderDetectionBoundary } from '../../../src/client/space-map/views/sta
 import type p5 from 'p5';
 
 function equipped(level: 1 | 2 | 3) {
-  const state = new Game(createExampleGalaxy()).exportState();
+  const state = Game.restore(
+    withScoutFleet(new Game(createExampleGalaxy()).exportState()),
+  ).exportState();
   const fleet = state.fleets[0]!;
   return Game.restore({
     ...state,

@@ -7,6 +7,7 @@ export function playerNoticeText(notice: PlayerNotice): string | null {
     case 'action-failed':
       return notice.reason;
     case 'discovery': {
+      if (notice.flash.kind === 'event') return notice.flash.name;
       const label =
         notice.flash.kind === 'pirate'
           ? 'Pirate ship in sight'
@@ -17,7 +18,7 @@ export function playerNoticeText(notice: PlayerNotice): string | null {
               : notice.flash.kind === 'wreck'
                 ? 'Wreck discovered'
                 : 'Planet discovered';
-      return `${label}: ${notice.flash.name} at HEX ${notice.flash.hex}.`;
+      return `${label}: ${notice.flash.name}.`;
     }
   }
 }

@@ -46,7 +46,12 @@ for (const screen of ['Star map', 'Fleets']) {
           ...fleet,
           position: { q: start.q, r: start.r },
           // Armed ships only, so the pirate has nothing unarmed to board.
-          ships: { ...fleet.ships, Fighter: 3, 'Exploration ship': 0 },
+          ships: {
+            ...fleet.ships,
+            Raptor: 0,
+            Fighter: 3,
+            'Exploration ship': 0,
+          },
           shipUnits: [1, 2, 3].map((copy) => ({
             ...fleet.shipUnits!.find((unit) => unit.type === 'Fighter')!,
             id: `escort-${copy}`,
@@ -101,15 +106,10 @@ for (const screen of ['Star map', 'Fleets']) {
     expect(fighters).toBeLessThanOrEqual(3);
     // stridsresultat-utan-upprepning: one report, with each part once.
     const combats = saved.state.events.filter((event) =>
-      event.text.startsWith(`Combat at HEX ${lair.q},${lair.r}:`),
+      event.text.startsWith('Combat:'),
     );
     expect(combats).toHaveLength(1);
     expect(combats[0]!.text.match(/Survivors:/g)).toHaveLength(1);
-    await page.locator('.turn-console > summary').click();
-    await expect(page.locator('[role="log"]')).toContainText(
-      'versus Space pirate',
-    );
-    await expect(page.locator('[role="log"] .combat-event-log')).toHaveCount(1);
     await finishRound(page);
     await page.reload();
     await startFirstSlot(page);

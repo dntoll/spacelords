@@ -97,37 +97,51 @@ export async function finishRound(page: Page): Promise<void> {
       )
     ).state;
   const state = await saved();
-  const game = Game.restore(state);
-  const fleet = game.fleetSnapshot();
-  if (!fleet?.position) throw new Error('No fleet can travel.');
-  const reach = (fleet.actionPoints ?? fleet.speed) + 1;
-  const target = HexCoordinate.disk(reach + 3)
-    .map(
-      (offset) =>
-        new HexCoordinate(
-          fleet.position!.q + offset.q,
-          fleet.position!.r + offset.r,
-        ),
-    )
-    .filter(
-      (hex) =>
-        fleet.position!.distanceTo(hex) >= reach &&
-        game.routePreview(fleet.id, hex).length >= reach,
-    )
-    // The nearest such hex stays in view on small screens. Among those,
-    // heading inward keeps repeated rounds away from the galaxy's edge.
-    .sort(
-      (a, b) =>
-        fleet.position!.distanceTo(a) - fleet.position!.distanceTo(b) ||
-        a.distanceTo(new HexCoordinate(0, 0)) -
-          b.distanceTo(new HexCoordinate(0, 0)),
-    )[0];
-  if (!target) throw new Error('No hex beyond the fleet’s AP.');
-  await selectMapHex(page, target);
-  await selectMapHex(page, target);
-  for (let wait = 0; wait < 200; wait++) {
-    if ((await saved()).round > state.round) break;
-    await ignoreEventsUntil(page);
+  // upptackt-stannar-resan: a discovery on the way ends the journey, so
+  // pick a new hex until the AP are spent.
+  for (let attempt = 0; attempt < 6; attempt++) {
+    const current = await saved();
+    if (current.round > state.round) break;
+    const game = Game.restore(current);
+    const fleet = game.fleetSnapshot();
+    if (!fleet?.position) throw new Error('No fleet can travel.');
+    const reach = (fleet.actionPoints ?? fleet.speed) + 1;
+    const target = HexCoordinate.disk(reach + 3)
+      .map(
+        (offset) =>
+          new HexCoordinate(
+            fleet.position!.q + offset.q,
+            fleet.position!.r + offset.r,
+          ),
+      )
+      .filter(
+        (hex) =>
+          fleet.position!.distanceTo(hex) >= reach &&
+          game.routePreview(fleet.id, hex).length >= reach,
+      )
+      // The nearest such hex stays in view on small screens. Among those,
+      // heading inward keeps repeated rounds away from the galaxy's edge.
+      .sort(
+        (a, b) =>
+          fleet.position!.distanceTo(a) - fleet.position!.distanceTo(b) ||
+          a.distanceTo(new HexCoordinate(0, 0)) -
+            b.distanceTo(new HexCoordinate(0, 0)),
+      )[0];
+    if (!target) throw new Error('No hex beyond the fleet’s AP.');
+    await selectMapHex(page, target);
+    await selectMapHex(page, target);
+    for (let wait = 0; wait < 50; wait++) {
+      const now = await saved();
+      if (now.round > state.round) break;
+      await ignoreEventsUntil(page);
+      const after = await saved();
+      // The map awaits a new hex: the journey ended or a discovery paused it.
+      if (
+        after.round === state.round &&
+        (await page.locator('[data-turn-idle="true"]').count())
+      )
+        break;
+    }
   }
   await expect
     .poll(async () => (await saved()).round)

@@ -1922,7 +1922,7 @@ export class TacticalBattle {
     for (const asteroid of preview.asteroids ?? []) {
       const index = this.#asteroids.findIndex((rock) => same(rock, asteroid));
       if (index >= 0) this.#asteroids.splice(index, 1);
-      notes.push(`Asteroid at ${asteroid.q},${asteroid.r} breaks.`);
+      notes.push('An asteroid breaks.');
     }
     const broken = preview.asteroids ?? [];
     this.#lastShot = {
@@ -1944,8 +1944,8 @@ export class TacticalBattle {
       : '';
     this.#log.push(
       command.weapon === 'Missiles'
-        ? `${battlePieceLabel(p, this.#pieces)}: Missiles → ${command.at.q},${command.at.r}. ${notes.join(' ') || 'No ships in the area.'} Area: ${total} damage.`
-        : `${battlePieceLabel(p, this.#pieces)}: ${command.weapon} → ${command.at.q},${command.at.r}${shipNote ? ` ${shipNote}` : ''}. ${notes.join(' ')}`,
+        ? `${battlePieceLabel(p, this.#pieces)}: Missiles. ${notes.join(' ') || 'No ships in the area.'} Area: ${total} damage.`
+        : `${battlePieceLabel(p, this.#pieces)}: ${command.weapon}${shipNote ? ` → ${shipNote}` : ''}. ${notes.join(' ')}`,
     );
     p.firedRound = this.#round;
   }

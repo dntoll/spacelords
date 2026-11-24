@@ -194,11 +194,8 @@ it('stridsrapport-i-dialog / synligt-stridsslut: shows the completed board befor
   ).toBe(true);
   model.finishBattleFeedback();
   expect(model.snapshot.battleFeedback).toBeNull();
-  expect(
-    model.snapshot.eventPlayback?.events.some(
-      (event) => event.decision?.title === 'Battle report',
-    ),
-  ).not.toBe(true);
+  // handelser-som-toppnotis: the board showed the outcome; no report follows.
+  expect(model.snapshot.notice).toBeNull();
   controller.dispose();
 });
 

@@ -167,7 +167,8 @@ export async function finishTacticalCombat(page: Page): Promise<void> {
         )!);
     if (!state.activation) battle.command({ type: 'activate', id: piece.id });
     if (battleWeapons(piece.type, piece.hasMissiles).length)
-      battle.actAutomatically();
+      // A Raptor could dock and start a boarding that this pilot does not play.
+      battle.actAutomatically(false, { allowDock: false });
     // An unarmed ship may finish its own activation, for example by escaping.
     else if (battle.snapshot.activation)
       battle.command({ type: 'end-activation' });

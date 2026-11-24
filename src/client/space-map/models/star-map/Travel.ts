@@ -11,6 +11,12 @@ export interface TravelRoute {
   readonly perRound: number;
   /** ap-pa-starmap: hexes the fleet can still move this round. */
   readonly available: number;
+  /**
+   * somlos-forflyttning: rounds only matter while a pirate is in sight, as
+   * that is when the enemies act between the player's moves.
+   * Without one the journey is shown and played as one seamless move.
+   */
+  readonly contested: boolean;
 }
 
 /** enda-spelarflottan: the player's fleet when it can travel. */

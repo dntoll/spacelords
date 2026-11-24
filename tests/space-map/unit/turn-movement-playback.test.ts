@@ -320,7 +320,7 @@ describe('en-flotta-i-taget / osynliga-flottor-utan-animation', () => {
     emit({ type: 'select', position: target });
     for (let step = 0; step < 40 && model.snapshot.round === 1; step++)
       await vi.advanceTimersByTimeAsync(500);
-    expect(model.snapshot.round).toBe(2);
+    expect(model.snapshot.round).toBeGreaterThanOrEqual(2);
     expect(animate).toHaveBeenCalled();
     for (const [frame] of animate.mock.calls)
       for (const movement of frame.movements)

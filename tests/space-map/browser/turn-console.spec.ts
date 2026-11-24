@@ -34,16 +34,16 @@ for (const size of [
   { width: 844, height: 390 },
   { width: 667, height: 320 },
 ]) {
-  test(`gemensam-events-panel / ap-pa-starmap: selection leaves room for Events and rounds pass without End turn at ${size.width}x${size.height}`, async ({
+  test(`handelser-som-toppnotis / ap-pa-starmap: the selection fits without an Events list and rounds pass without End turn at ${size.width}x${size.height}`, async ({
     page,
   }, testInfo) => {
     await page.setViewportSize(size);
     await page.goto('./');
     await startFirstSlot(page);
-    const console = page.getByRole('region', { name: 'Turn console' });
     const panel = page.locator('.selection-panel');
     await expect(panel).toBeVisible();
-    await expect(console).toBeVisible();
+    // handelser-som-toppnotis: events show as top notices, not in a list.
+    await expect(page.locator('.turn-console')).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'End turn' })).toHaveCount(0);
     await expect(
       page.getByRole('combobox', { name: 'Known objects' }),
@@ -63,8 +63,9 @@ for (const size of [
       expect(selected.height).toBeGreaterThan(map.height * 0.3);
     }
     expect(selected.y).toBeGreaterThan(map.y);
-    const footer = (await console.boundingBox())!;
-    expect(selected.y + selected.height).toBeLessThanOrEqual(footer.y + 1);
+    expect(selected.y + selected.height).toBeLessThanOrEqual(
+      map.y + map.height + 1,
+    );
     await page.screenshot({
       path: testInfo.outputPath('selection-lower-area.png'),
     });
@@ -72,7 +73,6 @@ for (const size of [
     await selectMapHex(page, new HexCoordinate(-2, 0));
     // hexval-med-vag: an empty hex shows the route there instead of nothing.
     await expect(panel).toContainText('Select the hex again to travel.');
-    await expect(console).toBeVisible();
     await expect(page.getByText('Empty space', { exact: true })).toHaveCount(0);
     await finishRound(page);
     await expect(page.getByRole('dialog')).toHaveCount(0);
@@ -88,30 +88,3 @@ for (const size of [
     ).toBe(true);
   });
 }
-
-test('handelser: Events adapts to available screen space without a selection', async ({
-  page,
-}, testInfo) => {
-  await page.setViewportSize({ width: 1440, height: 1000 });
-  await page.goto('./');
-  await startFirstSlot(page);
-  await selectMapHex(page, new HexCoordinate(-2, 0));
-  for (let year = 0; year < 8; year++) await finishRound(page);
-  const panel = page.getByRole('region', { name: 'Turn console' });
-  await panel.locator('summary').click();
-  const large = (await panel.boundingBox())!;
-  expect(large.height).toBeLessThan(180);
-  expect(large.width).toBeGreaterThan(320);
-  await page.screenshot({ path: testInfo.outputPath('events-desktop.png') });
-  for (const size of [
-    { width: 1024, height: 768 },
-    { width: 320, height: 568 },
-    { width: 844, height: 390 },
-  ]) {
-    await page.setViewportSize(size);
-    const bounds = (await panel.boundingBox())!;
-    expect(bounds.x).toBeGreaterThanOrEqual(0);
-    expect(bounds.x + bounds.width).toBeLessThanOrEqual(size.width);
-    expect(bounds.y).toBeGreaterThanOrEqual(0);
-  }
-});

@@ -8,7 +8,8 @@ export function discoveryControls(
 ): HTMLElement {
   const bar = element('section', 'discovery-controls');
   bar.setAttribute('aria-label', 'Interrupted round');
-  bar.append(element('strong', '', `Round ${model.round} paused`));
+  // somlos-forflyttning: the journey pauses; rounds stay in the background.
+  bar.append(element('strong', '', 'Journey paused'));
   const selected = model.fleet.id === model.mapFleetId ? model.fleet : null;
   if (selected)
     bar.append(

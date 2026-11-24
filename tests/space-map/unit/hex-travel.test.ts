@@ -86,9 +86,6 @@ describe('hexval-med-vag / resa-utan-synliga-pirater', () => {
     // The route crosses asteroids, which take a whole round without ending it.
     for (let step = 0; step < 200; step++) {
       await vi.advanceTimersByTimeAsync(500);
-      if (app.snapshot.eventPlayback?.stage === 'awaiting-choice') {
-        emit({ type: 'ignore-discoveries' });
-      }
     }
     expect(app.snapshot.fleet.position?.key).toBe(target.key);
     // ap-pa-starmap: a round ends only when the AP are spent, so the round

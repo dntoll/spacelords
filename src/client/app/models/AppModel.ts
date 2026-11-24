@@ -5,9 +5,6 @@ import {
   ProductionFacade,
   StarMapFacade,
   TurnFacade,
-  type EventPlayback,
-  type EventPlaybackSnapshot,
-  type EventDecision,
   type TurnMovementPlayback,
   type TurnMovement,
   type SavedTurnSimulation,
@@ -20,7 +17,6 @@ import {
   type ResearchCameraSnapshot,
   Camera,
   type CameraSnapshot,
-  CameraFraming,
   createExampleGalaxy,
   Game,
   type FleetSnapshot,
@@ -51,11 +47,7 @@ import {
   type BattleState,
   type BattleCommand,
 } from '../../space-battle/models/index.js';
-import {
-  HexCoordinate,
-  HexGeometry,
-  type Point,
-} from '../../common/HexCoordinate.js';
+import { HexCoordinate, type Point } from '../../common/HexCoordinate.js';
 import {
   actionFailed,
   type DiscoveryFlash,
@@ -80,8 +72,6 @@ export interface AppReadModel {
   readonly battleFeedback: BattleState | null;
   readonly turnMovement: TurnMovement | null;
   readonly turnMovements: readonly TurnMovement[];
-  readonly eventPlayback: EventPlaybackSnapshot | null;
-  readonly presentedEventIds: readonly string[];
   readonly mapFocusRevision: number;
   readonly pendingResearchRemoval: Technology | null;
   readonly saveSlots: readonly SaveSlotSnapshot[];
@@ -119,6 +109,8 @@ export interface AppReadModel {
   readonly travelling: boolean;
   /** ap-pa-starmap: the player's AP are spent and the enemies act next. */
   readonly enemyTurnPending: boolean;
+  /** upptackt-stannar-resan: a discovery stopped the journey for a new hex. */
+  readonly discoveryPause: boolean;
   readonly events: readonly GameEvent[];
   readonly notice: PlayerNotice;
   readonly editorAvailable: boolean;
@@ -140,11 +132,6 @@ export class AppModel {
 
   #movementPlayback: TurnMovementPlayback | null = null;
   #movementOrigin: AppReadModel | null = null;
-  #eventPlayback: EventPlayback | null = null;
-  readonly #presentedEventIds = new Set<string>();
-  #eventCamera: Camera | null = null;
-  #cameraFraming: CameraFraming | null = null;
-  #playbackPositions: readonly Point[] = [];
   #turnContext: {
     readonly screen: Screen;
     readonly selected: HexCoordinate;
@@ -175,7 +162,7 @@ export class AppModel {
   #voyage = false;
   #notice: PlayerNotice = null;
   #discoveryQueue: DiscoveryFlash[] = [];
-  readonly #flashedDiscoveryIds = new Set<string>();
+  readonly #shownEventIds = new Set<string>();
 
   #activeSlot: number | null = null;
   #pendingClearSlot: number | null = null;
@@ -272,7 +259,7 @@ export class AppModel {
         phase: 'simulating',
         turnMovement: this.#movementPlayback.current,
         turnMovements: this.#movementPlayback.currents,
-        camera: this.#eventCamera!.snapshot,
+        camera: this.#camera.snapshot,
         selected: null,
         mapFleetId: this.#movementPlayback.current?.fleetId ?? null,
         fleet: this.#movementPlayback.fleet,
@@ -280,8 +267,7 @@ export class AppModel {
         cells: this.#movementPlayback.cells,
         destinationFleetId: null,
         defeated: this.#game.defeated,
-        // handelser-vid-ankomst: arrival events show during movement.
-        eventPlayback: this.#eventPlayback?.snapshot ?? null,
+        notice: this.#notice,
       });
     }
     return Object.freeze({
@@ -297,13 +283,6 @@ export class AppModel {
       tacticalBattle:
         this.#testBattle?.visibleSnapshot ?? this.#game.tacticalBattle,
       battleFeedback: this.#battleFeedback,
-      eventPlayback: this.#eventPlayback?.snapshot ?? null,
-      presentedEventIds: Object.freeze([
-        ...new Set([
-          ...this.#presentedEventIds,
-          ...(this.#game.interruption?.presentedEventIds ?? []),
-        ]),
-      ]),
       mapFocusRevision: this.#mapFocusRevision,
       pendingResearchRemoval: this.#pendingResearchRemoval,
       saveSlots: this.#saveSlots,
@@ -311,14 +290,14 @@ export class AppModel {
       research: this.#game.research,
       researchCamera: this.#researchCamera.snapshot,
       inspectedResearch: this.#inspectedResearch,
-      screen: this.#eventCamera ? 'map' : this.#screen,
+      screen: this.#screen,
       radius: this.#game.galaxy.radius,
       cells: this.#game.mapSnapshot(),
       selected:
         this.#game
           .mapSnapshot()
           .find((cell) => cell.position.key === this.#selected.key) ?? null,
-      camera: this.#eventCamera?.snapshot ?? this.#camera.snapshot,
+      camera: this.#camera.snapshot,
       selectedPlanetInfo: this.#game.planetIntel(this.#selected),
       round: this.#game.round,
       phase: this.#game.phase,
@@ -339,6 +318,7 @@ export class AppModel {
       travelRoute: this.#travelRoute(),
       travelling: this.#voyage,
       enemyTurnPending: this.#game.enemyTurnPending,
+      discoveryPause: this.#game.discoveryPause(),
       events: this.#game.events,
       notice: this.#notice,
       editorAvailable: this.editorCase.available,
@@ -351,7 +331,6 @@ export class AppModel {
   #travelRoute(): TravelRoute | null {
     if (
       !this.#isMapScreen() ||
-      this.#eventCamera ||
       (this.#game.phase !== 'planning' && !this.#game.discoveryPause())
     )
       return null;
@@ -366,6 +345,7 @@ export class AppModel {
           steps,
           perRound: fleet.speed,
           available: fleet.actionPoints ?? fleet.speed,
+          contested: this.#game.pirateSnapshots().length > 0,
         })
       : null;
   }
@@ -395,29 +375,41 @@ export class AppModel {
   noteDiscoveries(
     flashes: readonly (DiscoveryFlash & { readonly eventId?: string })[],
   ): void {
-    const pending = flashes.filter(
-      (flash) =>
-        !flash.eventId || !this.#flashedDiscoveryIds.has(flash.eventId),
-    );
-    if (!pending.length) return;
-    for (const flash of pending) {
-      if (!flash.eventId) continue;
-      this.#flashedDiscoveryIds.add(flash.eventId);
-      this.#presentedEventIds.add(flash.eventId);
-      this.#game.presentEvent(flash.eventId);
-    }
     this.#voyage = false;
-    if (this.#notice?.kind === 'discovery') return;
-    this.#discoveryQueue = pending.map((flash) =>
-      Object.freeze({
-        kind: flash.kind,
-        name: flash.name,
-        hex: flash.hex,
-      }),
-    );
-    const first = this.#discoveryQueue[0];
-    if (first)
-      this.#notice = Object.freeze({ kind: 'discovery', flash: first });
+    for (const flash of flashes) {
+      if (flash.eventId) {
+        if (this.#shownEventIds.has(flash.eventId)) continue;
+        this.#shownEventIds.add(flash.eventId);
+        this.#game.presentEvent(flash.eventId);
+      }
+      this.#queueNotice(Object.freeze({ kind: flash.kind, name: flash.name }));
+    }
+  }
+  /**
+   * handelser-som-toppnotis: every event shows once, when it happens, as a
+   * short notice at the top. Combat reports already show on the battle board.
+   */
+  noteEvents(): void {
+    for (const event of this.#game.events) {
+      if (this.#shownEventIds.has(event.id)) continue;
+      this.#shownEventIds.add(event.id);
+      this.#game.presentEvent(event.id);
+      if (event.combatLog) continue;
+      this.#queueNotice(Object.freeze({ kind: 'event', name: event.text }));
+    }
+  }
+  /** Events already in a loaded game were shown when they happened. */
+  markEventsShown(): void {
+    this.#shownEventIds.clear();
+    for (const event of this.#game.events) this.#shownEventIds.add(event.id);
+  }
+  #queueNotice(flash: DiscoveryFlash): void {
+    this.#discoveryQueue.push(flash);
+    if (this.#notice?.kind !== 'discovery')
+      this.#notice = Object.freeze({
+        kind: 'discovery',
+        flash: this.#discoveryQueue[0]!,
+      });
   }
   advanceDiscoveryFlash(): void {
     if (this.#notice?.kind !== 'discovery') return;
@@ -428,7 +420,6 @@ export class AppModel {
       : null;
   }
   resetDiscoveryFlashes(): void {
-    this.#flashedDiscoveryIds.clear();
     this.#discoveryQueue = [];
     if (this.#notice?.kind === 'discovery') this.#notice = null;
   }
@@ -659,12 +650,6 @@ export class AppModel {
   #afterBattleAction(result: BattleState): void {
     if (result.phase === 'complete') this.#battleFeedback = result;
     this.save();
-    if (
-      !this.#game.tacticalBattle &&
-      !this.#battleFeedback &&
-      !this.#testBattle
-    )
-      this.beginEventPlayback();
   }
   playBattleActivation(
     singleStep = false,
@@ -682,114 +667,8 @@ export class AppModel {
     return this.turn.finishTurn();
   }
 
-  beginEventPlayback(): void {
-    return this.turn.beginEventPlayback();
-  }
-
-  #eventDecision(id: string): EventDecision | undefined {
-    // upptackt-stannar-resan: discoveries are top flashes, not Handle or Ignore.
-    return id ? undefined : undefined;
-  }
-
-  chooseEvent(choice: 'handle' | 'ignore'): void {
-    return this.turn.chooseEvent(choice);
-  }
-
-  continueEventHandling(): void {
-    return this.turn.continueEventHandling();
-  }
-
-  advanceEventPlayback(): void {
-    return this.turn.advanceEventPlayback();
-  }
-
-  #focusEvent(): void {
-    const position = this.#eventPlayback?.current?.position;
-    this.#cameraFraming = null;
-    this.#playbackPositions = [];
-    if (
-      !position ||
-      !this.#eventCamera ||
-      !Number.isSafeInteger(position.q) ||
-      !Number.isSafeInteger(position.r)
-    )
-      return;
-    const hex = new HexCoordinate(position.q, position.r);
-    if (!this.#game.galaxy.contains(hex)) return;
-    this.#playbackPositions = [HexGeometry.toPoint(hex)];
-    this.#eventPlayback?.beginFraming();
-    this.#prepareCameraFraming();
-  }
-
-  get cameraFraming(): CameraFraming | null {
-    return this.#cameraFraming;
-  }
-
-  #prepareCameraFraming(): void {
-    if (!this.#eventCamera || !this.#playbackPositions.length) return;
-    const viewport = this.#mapViewport ?? {
-      width: 800,
-      height: 600,
-      availableWidth: 800,
-      availableHeight: 600,
-    };
-    const width = Math.max(
-      1,
-      Math.min(viewport.width, viewport.availableWidth),
-    );
-    const height = Math.max(
-      1,
-      Math.min(viewport.height, viewport.availableHeight),
-    );
-    const marginX = Math.min(24, width / 4);
-    const marginY = Math.min(24, height / 4);
-    const bounds = {
-      left: -viewport.width / 2 + marginX,
-      right: width - viewport.width / 2 - marginX,
-      top: -viewport.height / 2 + marginY,
-      bottom: height - viewport.height / 2 - marginY,
-    };
-    const isEvent = !!this.#eventPlayback;
-    const clearance = marginY + Math.min(36, (height - marginY * 2) / 2);
-    const markerY = Math.max(
-      clearance,
-      Math.min(height - clearance, Math.max(60, height / 2 - 120)),
-    );
-    const framing = new CameraFraming(
-      this.#eventCamera.snapshot,
-      this.#playbackPositions,
-      bounds,
-      isEvent
-        ? {
-            x: (bounds.left + bounds.right) / 2,
-            y: markerY - viewport.height / 2,
-          }
-        : undefined,
-      {
-        left: -viewport.width / 2 + Math.min(24, viewport.width / 4),
-        right: viewport.width / 2 - Math.min(24, viewport.width / 4),
-        top: -viewport.height / 2 + Math.min(24, viewport.height / 4),
-        bottom: viewport.height / 2 - Math.min(24, viewport.height / 4),
-      },
-    );
-    this.#cameraFraming = framing;
-    if (!framing.transitions.length) this.finishCameraFraming();
-  }
-
-  advanceCameraFraming(
-    framing: CameraFraming,
-    index: number,
-    progress: number,
-  ): boolean {
-    return this.turn.advanceCameraFraming(framing, index, progress);
-  }
-
-  finishCameraFraming(): void {
-    return this.turn.finishCameraFraming();
-  }
-
-  finishEventPlayback(): void {
-    return this.turn.finishEventPlayback();
+  restoreTurnContext(): void {
+    return this.turn.restoreTurnContext();
   }
 
   beginMovementPlayback(
@@ -797,10 +676,6 @@ export class AppModel {
     origin: AppReadModel,
   ): void {
     return this.turn.beginMovementPlayback(playback, origin);
-  }
-
-  frameTurnTrack(track: readonly TurnMovement[]): void {
-    return this.turn.frameTurnTrack(track);
   }
 
   focusTurnMovement(movement: TurnMovement | readonly TurnMovement[]): void {
@@ -818,8 +693,8 @@ export class AppModel {
     return this.turn.advanceTurnMovement(progress);
   }
 
-  endMovementPlayback(preserveCamera = false): void {
-    return this.turn.endMovementPlayback(preserveCamera);
+  endMovementPlayback(): void {
+    return this.turn.endMovementPlayback();
   }
 
   #createHost(): AppHost {
@@ -832,21 +707,6 @@ export class AppModel {
       },
       get movementOrigin() {
         return model.#movementOrigin;
-      },
-      get eventPlayback() {
-        return model.#eventPlayback;
-      },
-      get presentedEventIds() {
-        return model.#presentedEventIds;
-      },
-      get eventCamera() {
-        return model.#eventCamera;
-      },
-      get cameraFraming() {
-        return model.#cameraFraming;
-      },
-      get playbackPositions() {
-        return model.#playbackPositions;
       },
       get turnContext() {
         return model.#turnContext;
@@ -934,18 +794,6 @@ export class AppModel {
       },
       set movementOrigin(value) {
         model.#movementOrigin = value;
-      },
-      set eventPlayback(value) {
-        model.#eventPlayback = value;
-      },
-      set eventCamera(value) {
-        model.#eventCamera = value;
-      },
-      set cameraFraming(value) {
-        model.#cameraFraming = value;
-      },
-      set playbackPositions(value) {
-        model.#playbackPositions = value;
       },
       set turnContext(value) {
         model.#turnContext = value;
@@ -1043,6 +891,8 @@ export class AppModel {
       noteDiscoveries: (
         flashes: readonly (DiscoveryFlash & { readonly eventId?: string })[],
       ) => model.noteDiscoveries(flashes),
+      noteEvents: () => model.noteEvents(),
+      markEventsShown: () => model.markEventsShown(),
       advanceDiscoveryFlash: () => model.advanceDiscoveryFlash(),
       resetDiscoveryFlashes: () => model.resetDiscoveryFlashes(),
       fleetAtPoint: (point: Point) => model.fleetAtPoint(point),
@@ -1117,26 +967,11 @@ export class AppModel {
       finishBattleFeedback: () => model.finishBattleFeedback(),
       applyTurnFrame: (frame: TurnFrame) => model.applyTurnFrame(frame),
       finishTurn: () => model.finishTurn(),
-      beginEventPlayback: () => model.beginEventPlayback(),
-      eventDecision: (id: string) => model.#eventDecision(id),
-      chooseEvent: (choice: 'handle' | 'ignore') => model.chooseEvent(choice),
-      continueEventHandling: () => model.continueEventHandling(),
-      advanceEventPlayback: () => model.advanceEventPlayback(),
-      focusEvent: () => model.#focusEvent(),
-      prepareCameraFraming: () => model.#prepareCameraFraming(),
-      advanceCameraFraming: (
-        framing: CameraFraming,
-        index: number,
-        progress: number,
-      ) => model.advanceCameraFraming(framing, index, progress),
-      finishCameraFraming: () => model.finishCameraFraming(),
-      finishEventPlayback: () => model.finishEventPlayback(),
+      restoreTurnContext: () => model.restoreTurnContext(),
       beginMovementPlayback: (
         playback: TurnMovementPlayback,
         origin: AppReadModel,
       ) => model.beginMovementPlayback(playback, origin),
-      frameTurnTrack: (track: readonly TurnMovement[]) =>
-        model.frameTurnTrack(track),
       focusTurnMovement: (movement: TurnMovement | readonly TurnMovement[]) =>
         model.focusTurnMovement(movement),
       followTurnMovement: (progress: number) =>
@@ -1144,8 +979,7 @@ export class AppModel {
       completeTurnMovement: () => model.completeTurnMovement(),
       advanceTurnMovement: (progress: number) =>
         model.advanceTurnMovement(progress),
-      endMovementPlayback: (preserveCamera = false) =>
-        model.endMovementPlayback(preserveCamera),
+      endMovementPlayback: () => model.endMovementPlayback(),
     };
   }
 }
@@ -1153,11 +987,6 @@ export class AppModel {
 export interface AppHost {
   movementPlayback: TurnMovementPlayback | null;
   movementOrigin: AppReadModel | null;
-  eventPlayback: EventPlayback | null;
-  presentedEventIds: Set<string>;
-  eventCamera: Camera | null;
-  cameraFraming: CameraFraming | null;
-  playbackPositions: readonly Point[];
   turnContext: {
     readonly screen: Screen;
     readonly selected: HexCoordinate;
@@ -1208,6 +1037,8 @@ export interface AppHost {
   noteDiscoveries(
     flashes: readonly (DiscoveryFlash & { readonly eventId?: string })[],
   ): void;
+  noteEvents(): void;
+  markEventsShown(): void;
   advanceDiscoveryFlash(): void;
   resetDiscoveryFlashes(): void;
   fleetAtPoint(point: Point): string | null;
@@ -1270,28 +1101,14 @@ export interface AppHost {
   finishBattleFeedback(): void;
   applyTurnFrame(frame: TurnFrame): void;
   finishTurn(): void;
-  beginEventPlayback(): void;
-  eventDecision(id: string): EventDecision | undefined;
-  chooseEvent(choice: 'handle' | 'ignore'): void;
-  continueEventHandling(): void;
-  advanceEventPlayback(): void;
-  focusEvent(): void;
-  prepareCameraFraming(): void;
-  advanceCameraFraming(
-    framing: CameraFraming,
-    index: number,
-    progress: number,
-  ): boolean;
-  finishCameraFraming(): void;
-  finishEventPlayback(): void;
+  restoreTurnContext(): void;
   beginMovementPlayback(
     playback: TurnMovementPlayback,
     origin: AppReadModel,
   ): void;
-  frameTurnTrack(track: readonly TurnMovement[]): void;
   focusTurnMovement(movement: TurnMovement | readonly TurnMovement[]): void;
   followTurnMovement(progress: number): void;
   completeTurnMovement(): void;
   advanceTurnMovement(progress: number): boolean;
-  endMovementPlayback(preserveCamera?: boolean): void;
+  endMovementPlayback(): void;
 }

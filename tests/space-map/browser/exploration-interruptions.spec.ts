@@ -101,8 +101,10 @@ test('gemensamt-handelseflode / upptacktsavbrott / spara-avbrutet-ar / strid-i-s
   const destination = new HexCoordinate(lair.q, lair.r);
   await selectMapHex(page, destination);
   await selectMapHex(page, destination);
+  // Earlier discoveries are queued as notices before the pirate's.
   await expect(page.locator('.game-notice')).toContainText(
     'Pirate ship in sight',
+    { timeout: 20_000 },
   );
   await expect(
     page.getByRole('button', { name: 'Handle', exact: true }),
@@ -119,14 +121,18 @@ test('gemensamt-handelseflode / upptacktsavbrott / spara-avbrutet-ar / strid-i-s
           ) as SavedGame,
       )
     ).state;
+  // One read: the paused round may resume right after its notices.
   await expect
-    .poll(async () =>
-      (await saved()).simulation?.discoveries?.some(
-        (discovery) => discovery.kind === 'pirate',
-      ),
-    )
+    .poll(async () => {
+      const state = await saved();
+      return (
+        state.phase === 'interrupted' &&
+        !!state.simulation?.discoveries?.some(
+          (discovery) => discovery.kind === 'pirate',
+        )
+      );
+    })
     .toBe(true);
-  expect((await saved()).phase).toBe('interrupted');
   // spara-avbrutet-ar: the paused round survives a reload and goes on to
   // the combat in the pirate's hex (boarding outcomes are not part of this).
   await page.reload();

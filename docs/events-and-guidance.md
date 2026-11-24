@@ -1,5 +1,11 @@
 # Events
 
+**Ersatt 2026-11-24:** Events-listan, annonseringarna och uppspelningen i
+slutet av rundan är borttagna. Händelser visas i stället direkt som korta
+notiser högst upp (`handelser-som-toppnotis`, se
+[rundan och händelser](areas/turn-and-decisions.md)). Beskrivningarna nedan
+av lista, annonsering och kamera är historik och gäller inte längre.
+
 ## Bilder i händelser
 
 `bilder-i-events` är **Fullständigt implementerat**. Events-listan och

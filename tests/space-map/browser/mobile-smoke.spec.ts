@@ -65,7 +65,7 @@ test('snabb-mobilpublicering / viewport-game-layout / sparat-spel: touch navigat
   expect(errors).toEqual([]);
 });
 
-test('responsiv-stjarnkarta / rumsligt-kartindex: camera updates preserve the turn console and reach the canvas', async ({
+test('responsiv-stjarnkarta / rumsligt-kartindex: camera updates preserve the header and reach the canvas', async ({
   page,
 }) => {
   await page.goto('./');
@@ -73,7 +73,7 @@ test('responsiv-stjarnkarta / rumsligt-kartindex: camera updates preserve the tu
   const canvas = page.locator('canvas[data-rendered="true"]');
   await expect(canvas).toBeVisible();
   const result = await canvas.evaluate((canvas) => {
-    const footer = document.querySelector('.game-turn-actions')!;
+    const footer = document.querySelector('.app-header')!;
     const observer = new MutationObserver(() => {});
     observer.observe(footer, { subtree: true, childList: true });
     const started = performance.now();
@@ -106,7 +106,7 @@ test('responsiv-stjarnkarta / rumsligt-kartindex: camera updates preserve the tu
   const start = { x: box.x + 25, y: box.y + 25 };
   await page.mouse.move(start.x, start.y);
   const audit = await page.evaluateHandle(() => {
-    const footer = document.querySelector('.game-turn-actions')!;
+    const footer = document.querySelector('.app-header')!;
     const records: MutationRecord[] = [];
     const observer = new MutationObserver((mutations) =>
       records.push(...mutations),

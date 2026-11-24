@@ -6,7 +6,7 @@ import {
   type Point,
 } from '../../../src/client/common/HexCoordinate.js';
 
-// viewport-game-layout / gemensam-events-panel: use every pixel between shared controls.
+// viewport-game-layout: the map uses every pixel below the header.
 export async function expectMapFillsGameArea(page: Page): Promise<void> {
   await expect
     .poll(() =>
@@ -15,12 +15,9 @@ export async function expectMapFillsGameArea(page: Page): Promise<void> {
         const header = document
           .querySelector('.app-header')!
           .getBoundingClientRect();
-        const footer = document
-          .querySelector('.game-turn-actions')!
-          .getBoundingClientRect();
         return Math.max(
           Math.abs(map.top - header.bottom),
-          Math.abs(map.bottom - footer.top),
+          Math.abs(map.bottom - innerHeight),
           Math.abs(map.width - innerWidth),
         );
       }),

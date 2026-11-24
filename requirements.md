@@ -9,7 +9,7 @@ Spelet ska fungera på mobil, surfplatta och dator.
 
 Utforskningen bygger vidare på `simple_production`. Den nya riktningen och
 kraven finns i [Single fleet](docs/single-fleet.md). De nya speländringarna
-är **Ej implementerat**. Den tidigare planetekonomin är borttagen;
+är till största delen **Ej implementerat**. Den tidigare planetekonomin är borttagen;
 områdesfilerna beskriver det som finns kvar. [Den tidigare visionen](docs/game-vision.md)
 behålls som bakgrund.
 
@@ -31,7 +31,8 @@ kraven med stabila namn och status. Statusen nedan sammanfattar området.
   produktionskö, ändliga förbrukningsresurser och personer med flera roller
   och lika startegenskaper. `enda-spelarflottan` och
   `flottstyrning-med-ap-pa-starmap` är **Fullständigt implementerat** (en
-  flotta, AP, turordning och piraternas aktivering);
+  flotta, AP, turordning och piraternas aktivering), liksom
+  `startflotta-med-raptor` (en ensam Raptor vid start);
   övriga nya beteendekrav är **Ej implementerat**.
   Planen anger vilka delar som måste diskuteras och låsas med användaren
   före implementation (`single-fleet-beslut-fore-implementation`).
@@ -45,8 +46,10 @@ kraven med stabila namn och status. Statusen nedan sammanfattar området.
   terräng, kamera, kartobjekt och genererade bilder, samt styrningen med
   hexval och väg (`hexval-med-vag`), AP och turordning utan End turn
   (`ap-pa-starmap`), glidande hexsteg
-  (`glidande-hexsteg`), kamera som följer skeppet
-  (`kamera-foljer-skepp`), upptäckter som stannar resan
+  (`glidande-hexsteg`), kamera med död zon och fri panorering
+  (`kamera-med-dod-zon`), sömlös förflyttning utan synliga rundor
+  (`somlos-forflyttning`), händelser som toppnotiser
+  (`handelser-som-toppnotis`), upptäckter som stannar resan
   (`upptackt-stannar-resan`) och resor som fortsätter när ingen pirat syns
   (`resa-utan-synliga-pirater`). **Fullständigt implementerat** utom
   `stjarnsystem-och-asteroidbalten`, som är **Delvis implementerat**.
@@ -62,9 +65,9 @@ kraven med stabila namn och status. Statusen nedan sammanfattar området.
   skeppsteknikerna, kön och forskningstiden. Trädet och kön är **Fullständigt
   implementerat**; forskningen går inte framåt förrän
   `flottforskning-av-tekniker` är beslutad (**Ej implementerat**).
-- **[Rundan och händelser](docs/areas/turn-and-decisions.md):** uppspelningen
-  av rundan, händelser och avbrott. Allt kvarvarande är **Fullständigt
-  implementerat**.
+- **[Rundan och händelser](docs/areas/turn-and-decisions.md):** rundor i
+  bakgrunden, händelser som toppnotiser, kamera med död zon och avbrott.
+  Allt kvarvarande är **Fullständigt implementerat**.
 - **[Space pirates](docs/areas/pirates-and-salvage.md):** pirater,
   patrullering och strid per hex; strid när spelarens flotta och en pirat
   delar hex (`strid-i-samma-hex`). Allt kvarvarande är **Fullständigt

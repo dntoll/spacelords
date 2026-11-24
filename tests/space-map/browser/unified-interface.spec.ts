@@ -94,36 +94,16 @@ test('dragbara-koer: research dependencies reject invalid reordering without par
     'Armored Fighter',
   ]);
 });
-test('gemensam-events-panel / planetinformation-pa-kartan: persistent footer, reading position and known facts across all views', async ({
+test('planetinformation-pa-kartan / handelser-som-toppnotis: known facts across views without an Events list', async ({
   page,
 }, testInfo) => {
-  const state = {
-    ...researchStationState(),
-    round: 8,
-    events: Array.from({ length: 60 }, (_, i) => ({
-      id: `log-${i}`,
-      round: 7,
-      text: `Historical event ${i}`,
-    })),
-  };
-  await seed(page, state);
-  const panel = page.locator('.turn-console');
-  await expect(panel).not.toHaveAttribute('open', '');
-  const identity = await panel.elementHandle();
-  await panel.locator('summary').click();
-  const log = panel.locator('[role="log"]');
-  await log.evaluate((node) => (node.scrollTop = 40));
-  const position = await log.evaluate((node) => node.scrollTop);
+  await seed(page, researchStationState());
   for (const label of ['Research', 'Fleets', 'Production', 'Star map']) {
     await page
       .getByRole('navigation', { name: 'Main navigation' })
       .getByRole('button', { name: label, exact: true })
       .click();
-    await expect(panel).toBeVisible();
-    expect(
-      await panel.evaluate((node, original) => node === original, identity),
-    ).toBe(true);
-    expect(await log.evaluate((node) => node.scrollTop)).toBe(position);
+    await expect(page.locator('.turn-console')).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'End turn' })).toHaveCount(0);
   }
   await expect(page.locator('.planet-map-info')).toContainText('Habitability:');
@@ -137,7 +117,7 @@ test('gemensam-events-panel / planetinformation-pa-kartan: persistent footer, re
     'data-ship-images-ready',
     '8',
   );
-  await page.screenshot({ path: testInfo.outputPath('shared-footer.png') });
+  await page.screenshot({ path: testInfo.outputPath('views.png') });
 });
 
 test('forskningskamerans-granser: Fit stops zoom and pan at content, including after resize', async ({

@@ -168,7 +168,13 @@ describe('kompakt-spelgranssnitt', () => {
 
   it('inga-hexkoordinater: legacy event coordinates stay readable without changing saved text', () => {
     expect(gameText('Home Fleet arrived at HEX -3,12.')).toBe(
-      'Home Fleet arrived at selected location.',
+      'Home Fleet arrived.',
+    );
+    expect(
+      gameText('Combat at HEX 8,-3: Home Fleet versus Space pirate.'),
+    ).toBe('Combat: Home Fleet versus Space pirate.');
+    expect(gameText('Planet discovered: Brontes at selected location.')).toBe(
+      'Planet discovered: Brontes.',
     );
     expect(gameText('Tellus · 2 wrecks')).toBe('Tellus · 2 wrecks');
   });

@@ -12,8 +12,15 @@ Den visuella riktningen beskrivs i [grafisk profil](single-fleet-visual-profile.
 
 ## Krav — utforskning
 
-Alla krav nedan är **Ej implementerat**. Befintliga skärmar och mekaniker är
-utgångspunkter, men uppfyller ännu inte dessa nya beteendekrav.
+Kraven nedan är **Ej implementerat** utom där annat anges. Befintliga
+skärmar och mekaniker är utgångspunkter, men uppfyller ännu inte dessa nya
+beteendekrav. `enda-spelarflottan` och `flottstyrning-med-ap-pa-starmap` är
+**Fullständigt implementerat** (se [flottor](areas/fleets.md)).
+`startflotta-med-raptor` är **Fullständigt implementerat** (2026-11-23): ett
+nytt spel börjar med en ensam Raptor vid Tellus. Raptor ser en hex åt alla
+håll, som Telescope I, och utforskar planeter vid ankomst. Den har fart 2,
+Light cannon och kan docka för bordning. Flykt från fångenskap och besättning,
+utrustning och last från start är inte bestämda.
 
 | Stabilt kravnamn                          | Önskat beteende                                                                                                                                                                                          |
 | ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

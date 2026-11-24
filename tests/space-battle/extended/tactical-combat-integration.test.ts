@@ -34,7 +34,7 @@ describe('tactical combat integration', () => {
     expect(() => game.continueTurn()).toThrow('tactical combat');
     expect(game.fleet('fleet-home')!.ships.Fighter).toBe(2);
     expect(
-      game.events.filter((e) => e.text.startsWith('Combat at')),
+      game.events.filter((e) => e.text.startsWith('Combat:')),
     ).toHaveLength(0);
     const restored = Game.restore(
       JSON.parse(JSON.stringify(state)) as GameState,
@@ -117,7 +117,7 @@ describe('tactical combat integration', () => {
     expect(game.fleet('fleet-home')!.shipUnits).toContainEqual(fighters[0]);
     expect(game.interruption!.battles![0]!.fleetIds).toEqual(['fleet-home']);
     const combatEvent = game.events.find((event) =>
-      event.text.startsWith('Combat at HEX'),
+      event.text.startsWith('Combat:'),
     )!;
     expect(
       combatEvent.combatLog!.findLast((line) => line.includes('D6 [')),

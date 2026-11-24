@@ -19,8 +19,8 @@ function expectSelection(active: boolean) {
   expect(root.querySelector<HTMLElement>('.selection-panel')!.hidden).toBe(
     !active,
   );
-  expect(root.querySelector<HTMLElement>('.turn-console')!.hidden).toBe(false);
-  // ap-pa-starmap: the footer holds only Events; there is no End turn.
+  // handelser-som-toppnotis: there is no Events list and no End turn.
+  expect(root.querySelector('.turn-console')).toBeNull();
   expect(root.querySelector('.end-turn')).toBeNull();
 }
 
@@ -32,7 +32,7 @@ describe('fokuserat-kartval', () => {
     ).toBeNull();
   });
 
-  it('gemensam-events-panel / hexval-med-vag: keeps turn controls available while selecting planets and empty hexes', () => {
+  it('hexval-med-vag: keeps the map usable available while selecting planets and empty hexes', () => {
     view.render(model.snapshot);
     expectSelection(true);
     for (const explored of [true, false]) {
@@ -59,32 +59,6 @@ describe('fokuserat-kartval', () => {
     model.home();
     view.render(model.snapshot);
     expectSelection(true);
-  });
-
-  it('gemensam-events-panel: preserves the open Events log and its reading position when the map selection changes', () => {
-    const events = Array.from({ length: 120 }, (_, index) => ({
-      id: `event-${index}`,
-      round: 1,
-      text: `Event ${index}`,
-    }));
-    view.render({ ...model.snapshot, events });
-    const console = root.querySelector<HTMLDetailsElement>('.turn-console')!;
-    console.open = true;
-    const log = root.querySelector<HTMLElement>('[role="log"]')!;
-    Object.defineProperties(log, {
-      scrollHeight: {
-        get: () => log.querySelectorAll('[data-event-id]').length * 10,
-      },
-      clientHeight: { value: 60 },
-    });
-    log.scrollTop = 40;
-    model.select(new HexCoordinate(-2, 0));
-    view.render({ ...model.snapshot, events });
-    expect(root.querySelector('[role="log"]')).toBe(log);
-    expect(log.querySelectorAll('[data-event-id]')).toHaveLength(120);
-    expect(console.hidden).toBe(false);
-    expect(console.open).toBe(true);
-    expect(log.scrollTop).toBe(40);
   });
 
   it('retains fleet orders in empty space without empty-space descriptions', () => {

@@ -26,15 +26,8 @@ export class SaveFacade {
     this.host.testBoarding = null;
     this.host.battleFeedback = null;
     this.host.inspectedResearch = null;
-    this.host.eventPlayback = null;
-    this.host.presentedEventIds.clear();
-    for (const eventId of game.interruption?.presentedEventIds ?? [])
-      this.host.presentedEventIds.add(eventId);
     this.host.movementPlayback = null;
     this.host.movementOrigin = null;
-    this.host.eventCamera = null;
-    this.host.cameraFraming = null;
-    this.host.playbackPositions = [];
     this.host.turnContext = null;
     this.host.pendingResearchRemoval = null;
     this.host.activeSlot = id;
@@ -54,18 +47,18 @@ export class SaveFacade {
     this.host.resetDiscoveryFlashes();
     this.host.cancelMapPointer();
     if (game.interruption?.handling) this.host.focusInterruptedFleet();
-    else if (game.phase === 'interrupted') this.host.beginEventPlayback();
     if (game.discoveryPause())
       this.host.noteDiscoveries(
         game.interruption!.discoveries.map((discovery) =>
           Object.freeze({
             kind: discovery.kind,
             name: discovery.name,
-            hex: `${discovery.position.q},${discovery.position.r}`,
             ...(discovery.eventId ? { eventId: discovery.eventId } : {}),
           }),
         ),
       );
+    // handelser-som-toppnotis: earlier events are not shown again.
+    this.host.markEventsShown();
   }
 
   openSaves(): void {
