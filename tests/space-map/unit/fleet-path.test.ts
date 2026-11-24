@@ -1,4 +1,4 @@
-import { collectTurnFrames, turnFrames } from '../../fixtures/turn-steps.js';
+import { collectTurnFrames } from '../../fixtures/turn-steps.js';
 import { describe, expect, it } from 'vitest';
 import { AppModel } from '../../../src/client/app/models/AppModel.js';
 import { Galaxy } from '../../../src/client/space-map/models/Galaxy.js';
@@ -40,34 +40,6 @@ describe('rakare-hexforflyttning', () => {
     });
   });
 
-  it('keeps alternating across turn boundaries', () => {
-    const model = new AppModel();
-    const fleet = model.snapshot.fleet;
-    model.setDestination(
-      fleet.id,
-      fleet.position!.q + 3,
-      fleet.position!.r + 3,
-    );
-    const directions: string[] = [];
-    // ap-pa-starmap: player and enemy stages alternate; follow the fleet.
-    for (let stage = 0; stage < 8 && directions.length < 6; stage += 1) {
-      for (const frame of turnFrames(model)) {
-        const movement = frame.movements.find(
-          (candidate) => candidate.fleetId === fleet.id,
-        );
-        if (movement)
-          directions.push(
-            `${movement.to.q - movement.from.q},${movement.to.r - movement.from.r}`,
-          );
-        model.applyTurnFrame(frame);
-      }
-      model.finishTurn();
-    }
-    expect(directions).toHaveLength(6);
-    for (let index = 1; index < directions.length; index += 1)
-      expect(directions[index]).not.toBe(directions[index - 1]);
-  });
-
   // startflotta-med-raptor: the Raptor's speed 2 is one round's reach.
   it.each([
     [2, 0],
@@ -92,5 +64,48 @@ describe('rakare-hexforflyttning', () => {
       `${fleet.position!.q + q},${fleet.position!.r + r}`,
     );
     expect(model.snapshot.fleet.destination).toBeNull();
+  });
+});
+
+describe('rakare-vag', () => {
+  it('chooses the closest route to the straight line among equal shortest routes', async () => {
+    const { HexNavigation } =
+      await import('../../../src/client/space-map/models/HexNavigation.js');
+    const { HexCoordinate, HexGeometry } =
+      await import('../../../src/client/common/HexCoordinate.js');
+    const galaxy = createExampleGalaxy();
+    const start = galaxy.homePlanet.position;
+    const target = new HexCoordinate(start.q - 7, start.r + 2);
+    const path = new HexNavigation(galaxy).path(start, target, 2, new Set());
+    const a = HexGeometry.toPoint(start);
+    const b = HexGeometry.toPoint(target);
+    const deviation = (hex: InstanceType<typeof HexCoordinate>) => {
+      const point = HexGeometry.toPoint(hex);
+      return (
+        ((b.x - a.x) * (point.y - a.y) - (b.y - a.y) * (point.x - a.x)) ** 2
+      );
+    };
+    const score = (route: readonly InstanceType<typeof HexCoordinate>[]) =>
+      route.reduce((sum, hex) => sum + deviation(hex), 0);
+    const candidates: number[] = [];
+    const visit = (
+      point: InstanceType<typeof HexCoordinate>,
+      route: InstanceType<typeof HexCoordinate>[],
+    ) => {
+      if (point.key === target.key) {
+        candidates.push(score(route));
+        return;
+      }
+      for (const next of point.neighbors())
+        if (
+          galaxy.contains(next) &&
+          !galaxy.isStar(next) &&
+          next.distanceTo(target) === point.distanceTo(target) - 1
+        )
+          visit(next, [...route, next]);
+    };
+    visit(start, []);
+    expect(path).toHaveLength(start.distanceTo(target));
+    expect(score(path)).toBeCloseTo(Math.min(...candidates), 3);
   });
 });

@@ -38,6 +38,7 @@ export class MasterController {
   readonly #gesture = new MapGesture();
   #presented: AppReadModel | null = null;
   #runningTurn = false;
+  #lastVoyageMovement: { position: string; destination: string } | null = null;
   #disposed = false;
   #battleAnimating = false;
   #playbackTimer: ReturnType<typeof setTimeout> | undefined;
@@ -764,6 +765,7 @@ export class MasterController {
       if (this.#disposed) return;
       if (this.#model.snapshot.phase !== 'interrupted') this.#turn.finishTurn();
       this.#model.save();
+      const result = this.#model.snapshot;
       const batches = movementPlayback.batches;
       if (batches.length) {
         this.#turn.beginMovementPlayback(movementPlayback, origin);
@@ -781,6 +783,21 @@ export class MasterController {
             );
             this.#turn.focusTurnMovement(movements);
             this.#render();
+            const own = movements.find(
+              (movement) => movement.fleetId === origin.fleet.id,
+            );
+            const destination = origin.fleet.destination?.key;
+            const start =
+              !own ||
+              !destination ||
+              this.#lastVoyageMovement?.position !== own.from.key ||
+              this.#lastVoyageMovement.destination !== destination;
+            const end =
+              !own ||
+              !destination ||
+              own.to.key === destination ||
+              (index === steps - 1 &&
+                (result.phase === 'interrupted' || result.pirates.length > 0));
             await (this.#view.animateTurnStep?.(
               { movements },
               (progress) => {
@@ -790,8 +807,14 @@ export class MasterController {
                 else this.#view.renderCamera?.(this.#model.snapshot);
               },
               stepDuration,
+              { start, end },
             ) ?? Promise.resolve());
             if (this.#disposed) return;
+            if (own)
+              this.#lastVoyageMovement =
+                !end && destination
+                  ? { position: own.to.key, destination }
+                  : null;
             this.#turn.completeTurnMovement();
           }
         }

@@ -17,9 +17,21 @@ utan en pirat i sikte märks de inte, och en resa går i ett svep
   sikte visas AP och rundslut som tidigare (`ap-pa-starmap`). Forskning och
   produktion räknar fortsatt i rundor i bakgrunden.
 
-- **Beställt, ej implementerat:** `flytande-forflyttning`, `rakare-vag`,
-  `pirat-minne-efter-sikt` och `animerade-piratsteg` är **Ej implementerat**.
-  Se plan i [rensningsplanen](../single-fleet-cleanup.md#nästa-steg-beställt-2026-11-24-ej-implementerat).
+- **Flytande förflyttning:** `flytande-forflyttning` är **Fullständigt
+  implementerat**. Flottan glider genom flera steg och rundor med jämn
+  hastighet, och mjukar upp rörelsen vid resans början och slut. Upptäckter
+  och strider får fortfarande avbryta resan.
+
+- **Rakare väg:** `rakare-vag` är **Fullständigt implementerat**. Bland vägar
+  med lika kort restid väljs den som ligger närmast den räta linjen till
+  målet. Kända hinder och långsammare terräng tas fortfarande med i vägvalet.
+  Det ersätter kravet på växlande riktning i `rakare-hexforflyttning`.
+
+- **Piratminne och animerade piratsteg:** `pirat-minne-efter-sikt` och
+  `animerade-piratsteg` är **Fullständigt implementerat**. En pirat som lämnar
+  sikten visas nedtonad på sin senast kända plats. Om den rör sig ersätts
+  den av ett frågetecken tills den upptäcks igen. Synliga piratsteg glider;
+  dolda steg animeras inte. Minnet följer med sparade spel.
 
 - **Färdväg som orderpil:** `fardvag-som-orderpil`, `fardvag-fran-flottan`
   och `fardvag-under-resan` (2026-11-24) är **Fullständigt implementerat**.

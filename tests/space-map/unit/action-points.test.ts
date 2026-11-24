@@ -204,3 +204,52 @@ describe('ap-pa-starmap / handelseannonsering', () => {
     }
   });
 });
+
+describe('pirat-minne-efter-sikt', () => {
+  it('keeps the last observation, marks a hidden move, and restores both states', () => {
+    const original = new Game(createExampleGalaxy()).exportState();
+    const pirate = original.pirates![0]!;
+    const visible = Game.restore({
+      ...original,
+      pirates: [pirate],
+      fleets: [
+        {
+          ...original.fleets[0]!,
+          position: { q: pirate.position.q - 1, r: pirate.position.r },
+        },
+      ],
+    });
+    expect(visible.pirateMemories()).toEqual([]);
+    const observed = visible.exportState();
+    const hidden = Game.restore({ ...observed, fleets: original.fleets });
+    expect(
+      hidden
+        .pirateMemories()
+        .map((memory) => [memory.position.key, memory.moved]),
+    ).toEqual([[`${pirate.position.q},${pirate.position.r}`, false]]);
+    const fleet = hidden.fleetSnapshot();
+    hidden.setDestination(
+      fleet.id,
+      new HexCoordinate(fleet.position!.q + fleet.speed + 1, fleet.position!.r),
+    );
+    stage(hidden);
+    stage(hidden);
+    const after = hidden.pirateMemories();
+    expect(after.map((memory) => [memory.position.key, memory.moved])).toEqual([
+      [`${pirate.position.q},${pirate.position.r}`, true],
+    ]);
+    const loaded = Game.restore(
+      JSON.parse(JSON.stringify(hidden.exportState())) as GameState,
+    );
+    expect(loaded.pirateMemories()).toEqual(after);
+    const state = loaded.exportState();
+    const position = state.pirates![0]!.position;
+    const rediscovered = Game.restore({
+      ...state,
+      fleets: [
+        { ...state.fleets[0]!, position: { q: position.q - 1, r: position.r } },
+      ],
+    });
+    expect(rediscovered.pirateMemories()).toEqual([]);
+  });
+});

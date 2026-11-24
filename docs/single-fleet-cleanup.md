@@ -270,34 +270,9 @@ Fighter. Kartans stridshjälpare låter inte Raptor docka, eftersom den inte
 spelar bordning. Vitest 915 och Playwright `desktop-chromium` och
 `phone-chromium` 157 passerar.
 
-## Nästa steg (beställt 2026-11-24, **Ej implementerat**)
+## Rörelse och piratsikt (beställt 2026-11-24)
 
-Användaren har beställt följande. Skriv regressionstest först, gör små
-commits med push och avsluta med `npm run work:merge` (mergar till
-`single_fleet` och publicerar). Arbetsbranch: `claude/raptor-start`, eller
-en ny via `npm run work:start -- claude/<ämne> --from single_fleet`.
-
-- `flytande-forflyttning`: flytande övergång mellan hexsteg när flottan rör
-  sig flera hexar, utan stopp mellan stegen eller rundorna. Startpunkt:
-  `MasterController.#runTurn` animerar varje steg separat med
-  `animateTurnStep` (480 ms) och easing `t*t*(3-2t)` i
-  `TurnFacade.followTurnMovement` och `GalaxyMapView`/`FleetGlide`. Byt till
-  linjär hastighet inom en resa (easing bara vid start och slut) och låt
-  nästa runda fortsätta utan omstart av animationen.
-- `rakare-vag`: vägen ska rätas ut så att skeppet inte sicksackar när inget
-  hinder undviks. Startpunkt: `HexNavigation`/`Game.routePreview` och
-  ruttvalet i `FleetPursuit`. Välj bland lika korta vägar den som ligger
-  närmast den raka linjen mellan start och mål (jämför hexmitternas avstånd
-  till linjen). Testet `rakare-hexforflyttning` i
-  `tests/space-map/unit/fleet-path.test.ts` kräver i dag växlande riktning;
-  det ska ersättas.
-- `pirat-minne-efter-sikt`: en pirat som går ur sikte ritas mörkare kvar på
-  sin senast kända plats tills den rör sig. Då försvinner den och hexen får
-  ett frågetecken som ligger kvar tills piraten upptäcks igen. Startpunkt:
-  `Game.pirateSnapshots` (bara synliga) och `chartedPirates`. Spara senast
-  kända position och om piraten har rört sig sedan dess som valfria fält i
-  sparformatet (additivt, version 18). Rita i `MapOverlayView`/`FleetMapView`.
-- `animerade-piratsteg`: pirater glider mellan hexar i stället för att hoppa.
-  Startpunkt: `TurnMovementPlayback.record` hoppar över steg där en ände inte
-  syns (`osynliga-flottor-utan-animation`); synliga piratsteg ska spelas med
-  samma glidning som spelarens flotta i `GalaxyMapView.animateTurnStep`.
+`flytande-forflyttning`, `rakare-vag`, `pirat-minne-efter-sikt` och
+`animerade-piratsteg` är **Fullständigt implementerat**. Beskrivning och
+status finns under [Rundan och händelser](areas/turn-and-decisions.md).
+Piraternas minne lagras med valfria fält i sparformat version 18.

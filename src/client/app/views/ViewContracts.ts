@@ -145,6 +145,7 @@ export interface AppPort {
     frame: TurnFrame,
     onProgress?: (progress: number) => void,
     duration?: number,
+    ends?: { readonly start: boolean; readonly end: boolean },
   ): Promise<void>;
   dispose(): void;
 }
@@ -155,6 +156,7 @@ export interface MapPort {
     frame: TurnFrame,
     onProgress?: (progress: number) => void,
     duration?: number,
+    ends?: { readonly start: boolean; readonly end: boolean },
   ): Promise<void>;
   dispose(): void;
 }

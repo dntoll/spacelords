@@ -1,6 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
 import type p5 from 'p5';
-import type { FleetSnapshot } from '../../../src/client/space-map/models/Game.js';
+import {
+  Game,
+  type FleetSnapshot,
+} from '../../../src/client/space-map/models/Game.js';
 import {
   HexCoordinate,
   HexGeometry,
@@ -8,6 +11,7 @@ import {
 import { AppModel } from '../../../src/client/app/models/AppModel.js';
 import { renderMapOverlays } from '../../../src/client/space-map/views/star-map/MapOverlayView.js';
 import { renderMapFleets } from '../../../src/client/space-map/views/star-map/FleetMapView.js';
+import { createExampleGalaxy } from '../../../src/client/space-map/models/exampleGalaxy.js';
 import { FleetMapLayout } from '../../../src/client/space-map/models/star-map/FleetMapLayout.js';
 
 function fleet(id: string, count = 3): FleetSnapshot {
@@ -429,4 +433,41 @@ it('genererade-skeppssprites: pirates use their own sprite at close and medium z
     );
     expect(image).toHaveBeenCalledTimes(2);
   }
+});
+
+describe('pirat-minne-efter-sikt', () => {
+  it('draws a dim remembered pirate and a question mark after a hidden move', () => {
+    const model = new AppModel().snapshot;
+    const source = new Game(createExampleGalaxy()).exportState().pirates![0]!;
+    const position = new HexCoordinate(source.position.q, source.position.r);
+    const pirate = { ...source, position };
+    const { sketch } = drawing();
+    const context = { globalAlpha: 1, setLineDash: vi.fn() };
+    const canvas = Object.assign(sketch, {
+      drawingContext: context,
+      rect: vi.fn(),
+      push: vi.fn(),
+      pop: vi.fn(),
+      TOP: 'top',
+      CENTER: 'center',
+    });
+    renderMapOverlays(canvas as unknown as p5, {
+      ...model,
+      pirates: [],
+      pirateMemories: [{ pirate, position, moved: false }],
+    });
+    expect(canvas.push).toHaveBeenCalled();
+    expect(context.globalAlpha).toBeLessThan(1);
+    canvas.text.mockClear();
+    renderMapOverlays(canvas as unknown as p5, {
+      ...model,
+      pirates: [],
+      pirateMemories: [{ pirate, position, moved: true }],
+    });
+    expect(canvas.text).toHaveBeenCalledWith(
+      '?',
+      expect.any(Number),
+      expect.any(Number),
+    );
+  });
 });

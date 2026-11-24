@@ -77,3 +77,46 @@ describe('somlos-forflyttning / fardvag-under-resan', () => {
     }
   });
 });
+
+describe('flytande-forflyttning', () => {
+  it('keeps the same glide across steps and round boundaries', async () => {
+    const { vi } = await import('vitest');
+    const { MasterController } =
+      await import('../../../src/client/app/controllers/MasterController.js');
+    vi.useFakeTimers();
+    try {
+      const app = new AppModel();
+      const home = app.snapshot.fleet.position!;
+      const target = new HexCoordinate(home.q + 5, home.r);
+      const ends: { start: boolean; end: boolean }[] = [];
+      let emit!: (intent: { type: 'select'; position: HexCoordinate }) => void;
+      const controller = new MasterController(app, {
+        bind(handler) {
+          emit = handler;
+        },
+        render() {},
+        dispose() {},
+        animateTurnStep(_frame, _progress, _duration, timing) {
+          if (timing) ends.push(timing);
+          return Promise.resolve();
+        },
+      });
+      controller.start();
+      emit({ type: 'select', position: target });
+      emit({ type: 'select', position: target });
+      await vi.advanceTimersByTimeAsync(30000);
+      expect(app.snapshot.fleet.position?.key).toBe(target.key);
+      expect(ends).toHaveLength(5);
+      expect(ends).toEqual([
+        { start: true, end: false },
+        { start: false, end: false },
+        { start: false, end: false },
+        { start: false, end: false },
+        { start: false, end: true },
+      ]);
+      controller.dispose();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+});

@@ -460,8 +460,8 @@ describe('bordningsbeloning-last-teknik-karta', () => {
         ?.side,
     ).toBe('player');
     const charted = game
-      .pirateSnapshots()
-      .find((pirate) => pirate.id === aster.id);
+      .pirateMemories()
+      .find((memory) => memory.pirate.id === aster.id);
     expect(charted).toBeDefined();
     const origin = new HexCoordinate(charted!.position.q, charted!.position.r);
     for (const offset of HexCoordinate.disk(4)) {

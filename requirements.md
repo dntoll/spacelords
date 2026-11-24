@@ -46,7 +46,8 @@ kraven med stabila namn och status. Statusen nedan sammanfattar området.
   terräng, kamera, kartobjekt och genererade bilder, samt styrningen med
   hexval och väg (`hexval-med-vag`), AP och turordning utan End turn
   (`ap-pa-starmap`), glidande hexsteg
-  (`glidande-hexsteg`), kamera med död zon och fri panorering
+  (`glidande-hexsteg`, `flytande-forflyttning`) och rakare vägval
+  (`rakare-vag`), kamera med död zon och fri panorering
   (`kamera-med-dod-zon`), sömlös förflyttning utan synliga rundor
   (`somlos-forflyttning`), händelser som toppnotiser
   (`handelser-som-toppnotis`), upptäckter som stannar resan
@@ -70,7 +71,9 @@ kraven med stabila namn och status. Statusen nedan sammanfattar området.
   Allt kvarvarande är **Fullständigt implementerat**.
 - **[Space pirates](docs/areas/pirates-and-salvage.md):** pirater,
   patrullering och strid per hex; strid när spelarens flotta och en pirat
-  delar hex (`strid-i-samma-hex`). Allt kvarvarande är **Fullständigt
+  delar hex (`strid-i-samma-hex`), med minne av senast känd position
+  (`pirat-minne-efter-sikt`) och synliga animerade steg
+  (`animerade-piratsteg`). Allt kvarvarande är **Fullständigt
   implementerat**.
 - **[Rymdstrid](docs/areas/space-battle.md):** taktisk strid och testläget.
   **Fullständigt implementerat** utom `utforskade-stridsuppgraderingar`, som

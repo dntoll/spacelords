@@ -5,6 +5,7 @@ interface Node {
   point: HexCoordinate;
   cost: number;
   estimate: number;
+  deviation: number;
   previous: Node | null;
 }
 
@@ -28,13 +29,19 @@ export class HexNavigation {
       return [];
     const base = 60 / Math.max(1, speed);
     const open: Node[] = [];
-    const best = new Map<string, number>([[start.key, 0]]);
+    const best = new Map<string, { cost: number; deviation: number }>([
+      [start.key, { cost: 0, deviation: 0 }],
+    ]);
+    const compare = (a: Node, b: Node) =>
+      Math.abs(a.estimate - b.estimate) > 1e-8
+        ? a.estimate - b.estimate
+        : a.deviation - b.deviation;
     const push = (node: Node) => {
       open.push(node);
       let index = open.length - 1;
       while (index > 0) {
         const parent = (index - 1) >> 1;
-        if (open[parent]!.estimate <= node.estimate) break;
+        if (compare(open[parent]!, node) <= 0) break;
         open[index] = open[parent]!;
         index = parent;
       }
@@ -49,10 +56,10 @@ export class HexNavigation {
           let child = index * 2 + 1;
           if (
             child + 1 < open.length &&
-            open[child + 1]!.estimate < open[child]!.estimate
+            compare(open[child + 1]!, open[child]!) < 0
           )
             child++;
-          if (open[child]!.estimate >= last.estimate) break;
+          if (compare(open[child]!, last) >= 0) break;
           open[index] = open[child]!;
           index = child;
         }
@@ -64,11 +71,18 @@ export class HexNavigation {
       point: start,
       cost: 0,
       estimate: start.distanceTo(target) * base,
+      deviation: 0,
       previous: null,
     });
     while (open.length) {
       const node = pop();
-      if (node.cost !== best.get(node.point.key)) continue;
+      const knownBest = best.get(node.point.key);
+      if (
+        !knownBest ||
+        node.cost !== knownBest.cost ||
+        node.deviation !== knownBest.deviation
+      )
+        continue;
       if (node.point.key === target.key) {
         const result: HexCoordinate[] = [];
         for (
@@ -79,22 +93,7 @@ export class HexNavigation {
           result.push(current.point);
         return result.reverse();
       }
-      const progress =
-        (origin.distanceTo(node.point) + 1) /
-        Math.max(1, origin.distanceTo(target));
-      const idealQ = origin.q + (target.q - origin.q) * progress;
-      const idealR = origin.r + (target.r - origin.r) * progress;
-      const deviation = (point: HexCoordinate) => {
-        const q = point.q - idealQ,
-          r = point.r - idealR;
-        return q * q + r * r + (q + r) * (q + r);
-      };
-      const neighbors = [...node.point.neighbors()].sort(
-        (a, b) =>
-          a.distanceTo(target) - b.distanceTo(target) ||
-          deviation(a) - deviation(b),
-      );
-      for (const next of neighbors) {
+      for (const next of node.point.neighbors()) {
         if (
           !this.galaxy.contains(next) ||
           this.galaxy.isStar(next) ||
@@ -107,12 +106,26 @@ export class HexNavigation {
             this.galaxy.terrainAt(point) === 'sparse-asteroids',
         );
         const cost = node.cost + (slow ? 60 : base);
-        if (cost >= (best.get(next.key) ?? Infinity) - 1e-8) continue;
-        best.set(next.key, cost);
+        // rakare-vag: the squared cross product is proportional to the
+        // squared distance from the line in the hex grid's physical geometry.
+        const cross =
+          (target.q - origin.q) * (next.r - origin.r) -
+          (target.r - origin.r) * (next.q - origin.q);
+        const deviation = node.deviation + cross * cross;
+        const previousBest = best.get(next.key);
+        if (
+          previousBest &&
+          (cost > previousBest.cost + 1e-8 ||
+            (Math.abs(cost - previousBest.cost) <= 1e-8 &&
+              deviation >= previousBest.deviation))
+        )
+          continue;
+        best.set(next.key, { cost, deviation });
         push({
           point: next,
           cost,
           estimate: cost + next.distanceTo(target) * base,
+          deviation,
           previous: node,
         });
       }

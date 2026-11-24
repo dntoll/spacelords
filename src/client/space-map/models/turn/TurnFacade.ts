@@ -169,10 +169,9 @@ export class TurnFacade {
     const from = HexGeometry.toPoint(step.from);
     const to = HexGeometry.toPoint(step.to);
     const t = Math.max(0, Math.min(1, progress));
-    const eased = t * t * (3 - 2 * t);
     const point = {
-      x: from.x + (to.x - from.x) * eased,
-      y: from.y + (to.y - from.y) * eased,
+      x: from.x + (to.x - from.x) * t,
+      y: from.y + (to.y - from.y) * t,
     };
     const viewport = this.host.mapViewport ?? {
       width: 800,

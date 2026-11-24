@@ -34,10 +34,9 @@ function setup(onStep?: (model: AppModel, ship: Point) => void) {
         if (!move) continue;
         const from = HexGeometry.toPoint(move.from);
         const to = HexGeometry.toPoint(move.to);
-        const eased = progress * progress * (3 - 2 * progress);
         onStep?.(model, {
-          x: from.x + (to.x - from.x) * eased,
-          y: from.y + (to.y - from.y) * eased,
+          x: from.x + (to.x - from.x) * progress,
+          y: from.y + (to.y - from.y) * progress,
         });
       }
       return Promise.resolve();
