@@ -240,8 +240,11 @@ describe('flottstrid-per-hex / motorbehov-for-alla-skepp', () => {
     for (const frame of frames) game.applyFrame(frame);
     game.finishTurn();
     expect(game.fleet('fleet-home')!.position?.key).toBe('9,-4');
-    for (const unit of game.fleet('fleet-home')!.shipUnits!)
+    // permanenta-skador: survivors keep their equipment and may carry damage.
+    for (const { damage, ...unit } of game.fleet('fleet-home')!.shipUnits!) {
+      expect(damage ?? 0).toBeGreaterThanOrEqual(0);
       expect(before.fleets[0]!.shipUnits).toContainEqual(unit);
+    }
   });
 });
 

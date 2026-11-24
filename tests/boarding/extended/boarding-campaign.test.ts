@@ -369,7 +369,7 @@ describe('avbryt-bordning-i-egna-skepp', () => {
 describe('bordningsbeloning-last-teknik-karta', () => {
   it('gives a Raptor light cannon stats', () => {
     expect(SHIPS.Raptor).toEqual({ crew: 50, speed: 2 });
-    expect(SHIP_PROFILES.Raptor).toEqual({ size: 1, hull: 3, movement: 3 });
+    expect(SHIP_PROFILES.Raptor).toEqual({ size: 1, hull: 7, movement: 3 });
     expect(battleWeapons('Raptor')).toEqual(['Light cannon']);
   });
 

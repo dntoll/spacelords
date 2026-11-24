@@ -15,6 +15,7 @@ import {
 import type { CombatResult } from './FleetCombat.js';
 import {
   TacticalBattle,
+  maxHull,
   type BattleState,
   type BattleCommand,
   type BattleFleet,
@@ -1095,6 +1096,7 @@ export class Game {
             towing: false,
             missiles: unit.type === 'Fighter' ? (unit.missiles ?? 2) : 0,
             armored: unit.armored === true,
+            ...(unit.damage ? { damage: unit.damage } : {}),
           })),
         };
       });
@@ -1190,7 +1192,17 @@ export class Game {
       const fleet = this.#fleetState(participant.id);
       const lostUnits = fleet.shipUnits!.filter((unit) => killed.has(unit.id));
       for (const unit of lostUnits) fleet.ships[unit.type]--;
-      fleet.shipUnits = fleet.shipUnits!.filter((unit) => !killed.has(unit.id));
+      // permanenta-skador: survivors keep the hull they lost.
+      fleet.shipUnits = fleet
+        .shipUnits!.filter((unit) => !killed.has(unit.id))
+        .map((unit) => {
+          const piece = pieces.find((p) => p.id === unit.id);
+          if (!piece) return unit;
+          const damage = maxHull(piece) - piece.hull;
+          const { damage: _previous, ...rest } = unit;
+          void _previous;
+          return damage > 0 ? { ...rest, damage } : rest;
+        });
       if (escaped && participant.retreat && this.#shipCount(fleet.ships)) {
         fleet.position = new HexCoordinate(
           participant.retreat.q,
@@ -1906,6 +1918,8 @@ export class Game {
                 ? unit.missiles !== 0 && unit.missiles !== 2
                 : unit.missiles !== 0))) ||
           (unit.armored !== undefined && typeof unit.armored !== 'boolean') ||
+          (unit.damage !== undefined &&
+            (!Number.isSafeInteger(unit.damage) || unit.damage < 0)) ||
           (unit.armored === true &&
             unit.type !== 'Fighter' &&
             unit.type !== 'Transport ship')

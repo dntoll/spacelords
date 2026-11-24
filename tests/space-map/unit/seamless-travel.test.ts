@@ -52,7 +52,7 @@ describe('somlos-forflyttning / fardvag-under-resan', () => {
       let emit!: (intent: { type: 'select'; position: HexCoordinate }) => void;
       const controller = new MasterController(app, {
         bind(handler) {
-          emit = handler as typeof emit;
+          emit = handler;
         },
         render(snapshot) {
           if (snapshot.fleet.position?.key === target.key) return;

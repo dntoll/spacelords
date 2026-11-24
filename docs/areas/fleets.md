@@ -26,6 +26,13 @@ skeppsöversikt (`fleet-som-skeppsoversikt`) väntar på beslut.
   återupptas med bevarad förflyttning, även efter omladdning. Se
   [utforskning och upptäckter](../exploration-interruptions.md).
 
+- **Tålig Raptor och permanenta skador:** `raptor-talig-mot-pirater` och
+  `permanenta-skador` (2026-11-24) är **Fullständigt implementerat**. Raptor
+  har 7 i skrov och klarar tre träffar med Raider cannons maximala skada (2
+  per träff). Piratens skada är oförändrad. Skada som ett skepp får i strid
+  ligger kvar efter striden, sparas och gäller i nästa strid. Reparationer
+  saknas ännu och ska ordnas i en annan skärm.
+
 - **Skeppsmotorer:** `motorbehov-for-alla-skepp` och `ion-pulse-engine` är
   **Fullständigt implementerat**. Alla skepp har motorer och minst en Ion
   pulse engine ger +1 fart.
