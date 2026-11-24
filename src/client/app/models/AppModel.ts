@@ -136,7 +136,6 @@ export class AppModel {
   #movementOrigin: AppReadModel | null = null;
   #turnContext: {
     readonly screen: Screen;
-    readonly selected: HexCoordinate;
     readonly mapFleetId: string | null;
     readonly selectedFleetId: string | null;
     readonly camera: CameraSnapshot;
@@ -148,6 +147,8 @@ export class AppModel {
   #battleFeedback: BattleState | null = null;
   #camera: Camera;
   #selected: HexCoordinate;
+  #playbackIntelCell: MapCell | null | undefined;
+  #playbackIntel: ReturnType<Game['planetIntel']> = null;
   #screen: Screen = 'map';
   readonly #researchCamera = new ResearchTreeCamera();
   #inspectedResearch: Technology | null = null;
@@ -255,6 +256,22 @@ export class AppModel {
   // mvc-arkitektur: no write operations or hidden world data cross into views.
   get snapshot(): AppReadModel {
     if (this.#movementPlayback && this.#movementOrigin) {
+      const selected = this.#movementPlayback.cellAt(this.#selected.key);
+      if (selected !== this.#playbackIntelCell) {
+        const intel =
+          selected?.object?.kind === 'planet'
+            ? this.#game.planetIntel(this.#selected)
+            : null;
+        this.#playbackIntel =
+          intel && !selected?.object?.surveyed
+            ? Object.freeze({
+                id: intel.id,
+                name: intel.name,
+                surveyed: false as const,
+              })
+            : intel;
+        this.#playbackIntelCell = selected;
+      }
       return Object.freeze({
         ...this.#movementOrigin,
         screen: 'map',
@@ -267,6 +284,8 @@ export class AppModel {
         pirates: this.#movementPlayback.pirates,
         pirateMemories: this.#movementPlayback.pirateMemories,
         cells: this.#movementPlayback.cells,
+        selected,
+        selectedPlanetInfo: this.#playbackIntel,
         destinationFleetId: null,
         defeated: this.#game.defeated,
         notice: this.#notice,
@@ -299,10 +318,7 @@ export class AppModel {
       screen: this.#screen,
       radius: this.#game.galaxy.radius,
       cells: this.#game.mapSnapshot(),
-      selected:
-        this.#game
-          .mapSnapshot()
-          .find((cell) => cell.position.key === this.#selected.key) ?? null,
+      selected: this.#game.mapCellAt(this.#selected),
       camera: this.#camera.snapshot,
       selectedPlanetInfo: this.#game.planetIntel(this.#selected),
       round: this.#game.round,
@@ -633,14 +649,13 @@ export class AppModel {
     this.#mapFleetId = null;
     this.#selectedFleetId = null;
     if (!fleet?.position && discovery) {
-      this.#selected = new HexCoordinate(
+      const position = new HexCoordinate(
         discovery.position.q,
         discovery.position.r,
       );
-      this.#camera.focus(this.#selected);
+      this.#camera.focus(position);
     }
     if (fleet?.position) {
-      this.#selected = fleet.position;
       this.#mapFleetId = fleet.id;
       this.#camera.focus(fleet.position);
     }
@@ -1017,7 +1032,6 @@ export interface AppHost {
   movementOrigin: AppReadModel | null;
   turnContext: {
     readonly screen: Screen;
-    readonly selected: HexCoordinate;
     readonly mapFleetId: string | null;
     readonly selectedFleetId: string | null;
     readonly camera: CameraSnapshot;

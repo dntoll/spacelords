@@ -22,6 +22,17 @@ utan en pirat i sikte märks de inte, och en resa går i ett svep
   hastighet, och mjukar upp rörelsen vid resans början och slut. Upptäckter
   och strider får fortfarande avbryta resan.
 
+- **Obruten resa:** `obruten-resa` är **Fullständigt implementerat**. När
+  en längre resa inte avbryts av upptäckter, strid eller annat som kräver
+  spelarens uppmärksamhet fortsätter animationen utan stopp vid rundslut.
+  Rörelsen mjukas bara upp vid resans start och slut. Det förtydligar
+  `somlos-forflyttning` och `flytande-forflyttning`.
+
+- **Vald ruta:** `val-andras-bara-av-spelaren` är **Fullständigt
+  implementerat**. Den valda hexen ändras bara när spelaren själv väljer en
+  annan. Förflyttning, rundslut och upptäckter flyttar inte valet. Det
+  förtydligar `fardvag-under-resan`.
+
 - **Rakare väg:** `rakare-vag` är **Fullständigt implementerat**. Bland vägar
   med lika kort restid väljs den som ligger närmast den räta linjen till
   målet. Kända hinder och långsammare terräng tas fortfarande med i vägvalet.

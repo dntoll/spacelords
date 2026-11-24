@@ -17,7 +17,6 @@ export class TurnFacade {
     if (this.host.movementPlayback) return;
     this.host.turnContext = {
       screen: this.host.screen,
-      selected: this.host.selected,
       mapFleetId: this.host.mapFleetId,
       selectedFleetId: this.host.selectedFleetId,
       camera: this.host.camera.snapshot,
@@ -127,13 +126,12 @@ export class TurnFacade {
     this.host.noteEvents();
   }
 
-  /** Restores the selections the player had before the journey began. */
+  /** Restores the screen and fleet context without changing the selected hex. */
   restoreTurnContext(): void {
     const context = this.host.turnContext;
     this.host.turnContext = null;
     if (!context) return;
     this.host.screen = context.screen;
-    this.host.selected = context.selected;
     this.host.mapFleetId =
       context.mapFleetId && this.host.game.fleet(context.mapFleetId)
         ? context.mapFleetId

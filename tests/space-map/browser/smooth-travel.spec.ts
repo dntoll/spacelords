@@ -1,7 +1,10 @@
 import { expect, test } from '@playwright/test';
 import { Game } from '../../../src/client/space-map/models/Game.js';
 import { Galaxy } from '../../../src/client/space-map/models/Galaxy.js';
-import { createExampleGalaxy } from '../../../src/client/space-map/models/exampleGalaxy.js';
+import {
+  createExampleGalaxy,
+  createExpandedGalaxy,
+} from '../../../src/client/space-map/models/exampleGalaxy.js';
 import {
   HexCoordinate,
   HexGeometry,
@@ -70,4 +73,77 @@ test('rak-och-jamn-resa: the marker follows one straight line across round bound
     expect(stationary).toBeLessThan(3);
   }
   expect(Math.abs(samples.at(-1)!.x - b.x)).toBeLessThan(1);
+});
+
+test('obruten-resa: real-time animation does not stall at round boundaries on a large map', async ({
+  page,
+}) => {
+  test.setTimeout(120_000);
+  const galaxy = createExpandedGalaxy();
+  const game = new Game(galaxy);
+  const state = game.exportState();
+  const start = game.fleetSnapshot().position!;
+  const target = new HexCoordinate(start.q + 10, start.r + 4);
+  await seedGame(page, {
+    ...state,
+    pirates: [],
+    chartedPirates: [],
+    knownObjects: galaxy.systems.flatMap((system) => [
+      system.star.id,
+      ...system.planets.map((planet) => planet.id),
+    ]),
+  });
+  const canvas = page.locator('canvas[data-rendered="true"]');
+  await expect(canvas).toBeVisible();
+  await selectMapHex(page, target);
+  await selectMapHex(page, target);
+  const result = await canvas.evaluate(async (node) => {
+    const canvas = node as HTMLCanvasElement;
+    return await new Promise<{ time: number; x: number; progress: number }[]>(
+      (resolve) => {
+        const points: { time: number; x: number; progress: number }[] = [];
+        const started = performance.now();
+        let last = started;
+        const tick = (now: number) => {
+          const value = canvas.dataset.movingX;
+          if (value !== undefined) {
+            points.push({
+              time: now,
+              x: Number(value),
+              progress: Number(canvas.dataset.movingProgress),
+            });
+            last = now;
+          }
+          if (
+            (points.length && value === undefined && now - last > 400) ||
+            now - started > 20000
+          )
+            resolve(points);
+          else requestAnimationFrame(tick);
+        };
+        requestAnimationFrame(tick);
+      },
+    );
+  });
+  const a = HexGeometry.toPoint(start),
+    b = HexGeometry.toPoint(target);
+  const middle = result.filter(
+    (p) => p.x > a.x + (b.x - a.x) * 0.15 && p.x < a.x + (b.x - a.x) * 0.85,
+  );
+  expect(middle.length).toBeGreaterThan(10);
+  let last = middle[0]!;
+  const gaps: { duration: number; progress: number; x: number }[] = [];
+  for (const point of middle.slice(1))
+    if (point.x > last.x + 0.01) {
+      gaps.push({
+        duration: point.time - last.time,
+        progress: last.progress,
+        x: last.x,
+      });
+      last = point;
+    }
+  expect(
+    Math.max(...gaps.map((gap) => gap.duration)),
+    JSON.stringify(gaps.filter((gap) => gap.duration >= 100)),
+  ).toBeLessThan(100);
 });

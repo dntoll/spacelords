@@ -23,11 +23,19 @@ interface MovementTrack {
 
 /** samtidig-automatisk-flottanimation: replay visible tracks without changing simulation order. */
 export class TurnMovementPlayback {
+  static readonly #indices = new WeakMap<
+    HexCoordinate,
+    {
+      positions: readonly HexCoordinate[];
+      indices: ReadonlyMap<string, number>;
+    }
+  >();
   readonly #tracks = new Map<string, MovementTrack>();
   readonly #positions = new Map<string, HexCoordinate>();
   #fleet: FleetSnapshot;
   readonly #pirates: Map<string, PirateSnapshot>;
-  readonly #catalog: Map<string, MapCell>;
+  readonly #cellIndices: ReadonlyMap<string, number>;
+  #visible = new Set<string>();
   readonly #observations = new Map<TurnMovement, readonly PirateSnapshot[]>();
   readonly #memoryObservations = new Map<
     TurnMovement,
@@ -36,20 +44,43 @@ export class TurnMovementPlayback {
   #memories: readonly PirateMemory[];
   readonly #destinations = new Map<TurnMovement, HexCoordinate>();
   #cells: readonly MapCell[];
+  #catalogCells: readonly MapCell[];
   #current: readonly TurnMovement[] = Object.freeze([]);
 
   constructor(origin: MovementScene) {
     this.#fleet = origin.fleet;
     this.#memories = origin.pirateMemories ?? [];
     this.#pirates = new Map(origin.pirates.map((fleet) => [fleet.id, fleet]));
-    this.#catalog = new Map(
-      origin.cells.map((cell) => [cell.position.key, cell]),
-    );
+    const first = origin.cells[0]?.position;
+    const cached = first ? TurnMovementPlayback.#indices.get(first) : undefined;
+    if (
+      cached &&
+      cached.positions.length === origin.cells.length &&
+      cached.positions.every(
+        (position, index) => position === origin.cells[index]!.position,
+      )
+    ) {
+      this.#cellIndices = cached.indices;
+    } else {
+      const indices = new Map<string, number>();
+      origin.cells.forEach((cell, index) =>
+        indices.set(cell.position.key, index),
+      );
+      this.#cellIndices = indices;
+      if (first)
+        TurnMovementPlayback.#indices.set(first, {
+          positions: origin.cells.map((cell) => cell.position),
+          indices,
+        });
+    }
+    for (const cell of origin.cells)
+      if (cell.visible) this.#visible.add(cell.position.key);
     this.#cells = origin.cells;
+    this.#catalogCells = origin.cells;
   }
 
   record(frame: TurnFrame, before: MovementScene, after: MovementScene): void {
-    for (const cell of after.cells) this.#catalog.set(cell.position.key, cell);
+    this.#catalogCells = after.cells;
     for (const movement of frame.movements) {
       const own =
         before.fleet.id === movement.fleetId ? before.fleet : undefined;
@@ -139,30 +170,44 @@ export class TurnMovementPlayback {
       fleet.position && Object.values(fleet.ships).some((count) => count > 0)
         ? [{ position: fleet.position, range: fleet.detectionRange ?? 0 }]
         : [];
-    const nebula = (point: HexCoordinate) =>
-      this.#catalog.get(point.key)?.terrain === 'nebula';
+    const nebula = (point: HexCoordinate) => {
+      const index = this.#cellIndices.get(point.key);
+      return (
+        index !== undefined && this.#catalogCells[index]?.terrain === 'nebula'
+      );
+    };
     const visible = Detection.coverage(sources, nebula);
     const surface = Detection.coverage(sources, nebula, true);
-    this.#cells = Object.freeze(
-      this.#cells.map((previous) => {
-        const key = previous.position.key;
-        const known = this.#catalog.get(key)!;
-        return Object.freeze({
-          ...previous,
-          visible: visible.has(key),
-          explored: previous.explored || visible.has(key),
-          object: previous.object ?? (visible.has(key) ? known.object : null),
-          ...(surface.has(key)
-            ? { terrain: known.terrain, passable: known.passable }
-            : {}),
-        });
-      }),
+    const cells = [...this.#cells];
+    for (const key of new Set([...this.#visible, ...visible, ...surface])) {
+      const index = this.#cellIndices.get(key);
+      if (index === undefined) continue;
+      const previous = cells[index]!;
+      const known = this.#catalogCells[index]!;
+      cells[index] = Object.freeze({
+        ...previous,
+        visible: visible.has(key),
+        explored: previous.explored || visible.has(key),
+        object: previous.object ?? (visible.has(key) ? known.object : null),
+        ...(surface.has(key)
+          ? { terrain: known.terrain, passable: known.passable }
+          : {}),
+      });
+    }
+    this.#visible = new Set(
+      [...visible].filter((key) => this.#cellIndices.has(key)),
     );
+    this.#cells = Object.freeze(cells);
     return true;
   }
 
   get cells(): readonly MapCell[] {
     return this.#cells;
+  }
+
+  cellAt(key: string): MapCell | null {
+    const index = this.#cellIndices.get(key);
+    return index === undefined ? null : this.#cells[index]!;
   }
 
   get fleet(): FleetSnapshot {
@@ -178,15 +223,12 @@ export class TurnMovementPlayback {
   }
 
   get pirates(): readonly PirateSnapshot[] {
-    const visible = new Set(
-      this.#cells
-        .filter((cell) => cell.visible)
-        .map((cell) => cell.position.key),
-    );
     return Object.freeze(
       [...this.#pirates.values()]
         .filter((fleet) =>
-          visible.has((this.#positions.get(fleet.id) ?? fleet.position).key),
+          this.#visible.has(
+            (this.#positions.get(fleet.id) ?? fleet.position).key,
+          ),
         )
         .map((fleet) =>
           Object.freeze({

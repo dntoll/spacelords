@@ -64,6 +64,7 @@ export class Galaxy {
   readonly #cells: readonly MapCell[];
   readonly terrain: readonly TerrainHex[];
   readonly #byPosition = new Map<string, MapCell>();
+  readonly #cellIndices = new Map<string, number>();
   readonly #stars = new Map<string, Star>();
   readonly #planets = new Map<string, Planet>();
   readonly #terrain = new Map<string, Terrain>();
@@ -120,7 +121,7 @@ export class Galaxy {
     );
     // lokal-sikt: remove hidden objects before handing data to any platform view.
     this.#cells = Object.freeze(
-      HexCoordinate.disk(radius).map((position) => {
+      HexCoordinate.disk(radius).map((position, index) => {
         const visible = position.distanceTo(home.position) <= 1;
         const star = this.#stars.get(position.key);
         const planet = visible ? this.#planets.get(position.key) : undefined;
@@ -147,6 +148,7 @@ export class Galaxy {
           passable: star ? false : visible ? this.isPassable(position) : null,
         });
         this.#byPosition.set(position.key, cell);
+        this.#cellIndices.set(position.key, index);
         return cell;
       }),
     );
@@ -162,55 +164,70 @@ export class Galaxy {
       PlanetEnvironmentType | 'Gas'
     > = new Map(),
     surveyedPlanetIds: ReadonlySet<string> = new Set(),
+    previous?: readonly MapCell[],
+    changed?: ReadonlySet<string>,
   ): readonly MapCell[] {
     if (!explored) return this.#cells;
-    return Object.freeze(
-      this.#cells.map((cell) => {
-        const star = this.#stars.get(cell.position.key);
-        const planet = explored.has(cell.position.key)
-          ? this.#planets.get(cell.position.key)
-          : undefined;
-        const object = star
+    const snapshot = (cell: MapCell): MapCell => {
+      const star = this.#stars.get(cell.position.key);
+      const planet = explored.has(cell.position.key)
+        ? this.#planets.get(cell.position.key)
+        : undefined;
+      const object = star
+        ? Object.freeze({
+            kind: 'star' as const,
+            type: 'star' as const,
+            name: star.name,
+          })
+        : planet
           ? Object.freeze({
-              kind: 'star' as const,
-              type: 'star' as const,
-              name: star.name,
+              kind: 'planet' as const,
+              type: planet.type,
+              surveyed: surveyedPlanetIds.has(planet.id),
+              ...(surveyedPlanetIds.has(planet.id)
+                ? {
+                    environment:
+                      planetEnvironments.get(planet.id) ??
+                      (planet.type === 'gas' ? 'Gas' : planet.environment),
+                  }
+                : {}),
+              name: planet.name,
             })
-          : planet
-            ? Object.freeze({
-                kind: 'planet' as const,
-                type: planet.type,
-                surveyed: surveyedPlanetIds.has(planet.id),
-                ...(surveyedPlanetIds.has(planet.id)
-                  ? {
-                      environment:
-                        planetEnvironments.get(planet.id) ??
-                        (planet.type === 'gas' ? 'Gas' : planet.environment),
-                    }
-                  : {}),
-                name: planet.name,
-              })
-            : null;
-        return Object.freeze({
-          position: cell.position,
-          explored: explored.has(cell.position.key),
-          visible: visible.has(cell.position.key),
-          object,
-          terrain: knownTerrain.has(cell.position.key)
-            ? this.terrainAt(cell.position)
+          : null;
+      return Object.freeze({
+        position: cell.position,
+        explored: explored.has(cell.position.key),
+        visible: visible.has(cell.position.key),
+        object,
+        terrain: knownTerrain.has(cell.position.key)
+          ? this.terrainAt(cell.position)
+          : null,
+        passable: star
+          ? false
+          : knownTerrain.has(cell.position.key)
+            ? this.isPassable(cell.position)
             : null,
-          passable: star
-            ? false
-            : knownTerrain.has(cell.position.key)
-              ? this.isPassable(cell.position)
-              : null,
-        });
-      }),
-    );
+      });
+    };
+    if (!previous || !changed) return Object.freeze(this.#cells.map(snapshot));
+    const cells = [...previous];
+    for (const key of changed) {
+      const index = this.#cellIndices.get(key);
+      if (index !== undefined) cells[index] = snapshot(this.#cells[index]!);
+    }
+    return Object.freeze(cells);
   }
 
   cellAt(position: HexCoordinate): MapCell | undefined {
     return this.#byPosition.get(position.key);
+  }
+
+  snapshotCell(
+    position: HexCoordinate,
+    snapshot: readonly MapCell[],
+  ): MapCell | null {
+    const index = this.#cellIndices.get(position.key);
+    return index === undefined ? null : (snapshot[index] ?? null);
   }
 
   contains(position: HexCoordinate): boolean {
