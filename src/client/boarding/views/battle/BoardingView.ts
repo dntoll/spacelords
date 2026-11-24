@@ -139,6 +139,12 @@ export class BoardingView {
   readonly #globalControls = element('section', 'boarding-global-controls');
   readonly #contextMenu = element('div', 'boarding-context-menu');
   readonly #details = element('details', 'boarding-details');
+  readonly #logActivity = element(
+    'p',
+    'boarding-activity',
+    'A defender is acting…',
+  );
+  readonly #logText = element('pre', 'boarding-log');
   readonly #logPreview = element('p', 'boarding-log-preview');
   readonly #canvas = element('div', 'boarding-canvas');
   /** motstandartur-i-mitten: shown in the middle of the board while opponents act. */
@@ -198,7 +204,12 @@ export class BoardingView {
     board.append(this.#canvas, this.#contextMenu);
     this.#team.setAttribute('aria-label', 'Boarding team');
     this.#controls.setAttribute('aria-label', 'Soldier actions');
-    this.#details.append(element('summary', '', 'Combat details'));
+    this.#details.append(
+      element('summary', '', 'Combat details'),
+      this.#logActivity,
+      element('p', '', 'D20 rolls and modifiers are shown openly.'),
+      this.#logText,
+    );
     const layout = element('div', 'boarding-layout');
     const header = element('div', 'boarding-header-actions');
     // helskarm-fran-sparade-spel: no fullscreen control outside Saved games.
@@ -1319,14 +1330,8 @@ export class BoardingView {
         this.#logTimer = undefined;
       }, 4000);
     }
-    this.#details.replaceChildren(
-      element('summary', '', 'Combat details'),
-      ...(defenderActing
-        ? [element('p', 'boarding-activity', 'A defender is acting…')]
-        : []),
-      element('p', '', 'D20 rolls and modifiers are shown openly.'),
-      element('pre', 'boarding-log', state.log.join('\n')),
-    );
+    this.#logActivity.hidden = !defenderActing;
+    this.#logText.textContent = state.log.join('\n');
     if (this.#details.open)
       this.#details.scrollTop = this.#details.scrollHeight;
     const overlayActor =

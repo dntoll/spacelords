@@ -32,7 +32,8 @@ fönster, utrustning och en lokal karteditor. Detaljerna står i
   och `kompakt-titel-for-vald-bordningsruta` är **Fullständigt implementerade**.
   Bordare börjar på en tio rutor lång landgång vända mot målskeppet;
   airlockens dörr i soldatens blickriktning är öppen. Loggen kan fällas ihop
-  även efter scrollning och rutmenyn beskriver valet och ligger högre upp.
+  även efter scrollning och kan öppnas medan försvararnas tur uppdateras;
+  rutmenyn beskriver valet och ligger högre upp.
 
 - **Bordningsfeedback november 2026:** `kantindikator-utanfor-granssnitt`,
   `bordare-vid-malskeppets-ande`, `eget-skepp-upptackt`, `tunnare-dorrar`,

@@ -90,7 +90,8 @@ kraven med stabila namn och status. Statusen nedan sammanfattar området.
 - **[Bordning](docs/areas/boarding.md):** bordningsstrid, grafik, ljus och
   fortsatt spel efter fel i försvararturen (`forsvarartur-fastnar-inte`),
   återställning av fastnade försvararturer (`sparad-forsvarartur-aterhamtas`),
-  skott på samma ruta (`forsvararskott-samma-ruta`), samt
+  skott på samma ruta (`forsvararskott-samma-ruta`), öppningsbar stridslogg
+  under försvararturen (`ihopfallbar-bordningslogg`), samt
   karteditor. **Delvis implementerat**: `skeppsbild-under-bordning`,
   `illustrerade-bordningshandlingar`, `ljuskarta-i-bordning` och
   `skuggor-fran-figurer-och-foremal` är delvis klara, och flera ljuskrav är
