@@ -503,6 +503,8 @@ export class Game {
     const recoveredBoarding = game.#simulation?.boarding;
     if (recoveredBoarding?.battle.snapshot.phase === 'complete')
       game.#resolveBoarding(recoveredBoarding);
+    else if (recoveredBoarding)
+      game.#simulation?.tacticalBattles[0]?.setShift('boarding', 2);
     game.#linkInterruptionEvents();
     // Recover older saves made after the last enemy ship was captured.
     const battle = game.#simulation?.tacticalBattles[0];
@@ -905,7 +907,6 @@ export class Game {
     const destroyed = battle.snapshot.pieces
       .filter((piece) => piece.dockedWith && piece.status === 'active')
       .map((piece) => piece.id);
-    const beforeRound = battle.snapshot.round;
     battle.command(command);
     for (const id of destroyed) {
       const piece = battle.snapshot.pieces.find((entry) => entry.id === id);
@@ -913,7 +914,6 @@ export class Game {
         this.#boardingShipDestroyed(id);
     }
     this.#syncBoarding(battle);
-    this.#tickSpaceShift(battle, beforeRound);
     const result = battle.snapshot;
     this.#finishTacticalBattle();
     return result;
@@ -934,7 +934,7 @@ export class Game {
     if (battle.shift?.kind === 'space')
       throw new Error('Finish the space combat rounds first.');
     engagement.battle.command(command);
-    return this.#afterBoarding(engagement, battle);
+    return this.#afterBoarding(engagement);
   }
   playBoardingActivation(singleStep = false): BoardingBattleState {
     const simulation = this.#simulation;
@@ -943,16 +943,12 @@ export class Game {
     if (this.#phase !== 'interrupted' || !engagement || !battle)
       throw new Error('No boarding is active.');
     engagement.battle.actAutomatically(singleStep);
-    return this.#afterBoarding(engagement, battle);
+    return this.#afterBoarding(engagement);
   }
-  #afterBoarding(
-    engagement: BoardingEngagement,
-    battle: TacticalBattle,
-  ): BoardingBattleState {
+  #afterBoarding(engagement: BoardingEngagement): BoardingBattleState {
     const state = engagement.battle.snapshot;
     if (state.round > engagement.seenRound) {
       engagement.seenRound = state.round;
-      if (battle.tickShiftRound() === 'space') battle.setShift('space', 2);
     }
     if (state.phase === 'complete') this.#resolveBoarding(engagement);
     return engagement.battle.visibleSnapshot;
@@ -966,22 +962,11 @@ export class Game {
       throw new Error('No tactical battle is active.');
     if (battle.shift?.kind === 'boarding')
       throw new Error('Finish the boarding rounds first.');
-    const beforeRound = battle.snapshot.round;
     battle.actAutomatically(singleStep, options);
     this.#syncBoarding(battle);
-    this.#tickSpaceShift(battle, beforeRound);
     const result = battle.snapshot;
     this.#finishTacticalBattle();
     return result;
-  }
-  #tickSpaceShift(battle: TacticalBattle, beforeRound: number): void {
-    if (
-      !this.#simulation?.boarding ||
-      battle.shift?.kind !== 'space' ||
-      battle.snapshot.round <= beforeRound
-    )
-      return;
-    if (battle.tickShiftRound() === 'boarding') battle.setShift('boarding', 2);
   }
   #syncBoarding(battle: TacticalBattle): void {
     const pending = battle.consumeBoardingReady();

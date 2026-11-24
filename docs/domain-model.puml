@@ -349,7 +349,7 @@ class Weapon {
 class BattleAsteroid
 TurnSimulation "1" *-- "0..*" TacticalBattle : ordered encounters
 TurnSimulation "1" *-- "0..1" BoardingEngagement
-TacticalBattle --> BoardingEngagement : dock then shift
+TacticalBattle --> BoardingEngagement : dock then boarding
 TacticalBattle "1" *-- "1..*" BattlePiece
 TacticalBattle "1" *-- "0..1" BattleActivation
 TacticalBattle "1" *-- "0..*" BattleAsteroid

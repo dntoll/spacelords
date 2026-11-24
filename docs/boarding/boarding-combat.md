@@ -2,8 +2,9 @@
 
 Bordning ingår i kampanjens taktiska rymdstrid. Pirater, infångade
 `Space pirate` och `Raptor` kan välja `Dock` längs babord eller styrbord.
-Efter den pågående rymdstridsrundan växlar spelet två bordningsrundor och två
-rymdstridsrundor. Anfallaren startar i motståndarens airlock. Avbrott är
+Efter den pågående rymdstridsrundan spelas bordningen färdigt innan
+rymdstriden fortsätter (`bordning-utan-avbrott`, som ersätter
+`bordning-tva-rundor-skift`). Anfallaren startar i motståndarens airlock. Avbrott är
 tillåtet när alla levande stridande är i eget skepp. Pirater lämnar en
 cockpit-soldat. Utslagen sida ger vinnaren båda skeppen i samma strid.
 
@@ -487,9 +488,10 @@ utförs stegvis. Vändning vänster och höger kan även göras separat.
 - `lassta-dockade-skepp` — **Fullständigt implementerat**. Dockade skepp ritas
   med en brygga, kan inte röra sig eller skjuta och låses tills bordningen
   slutar. Förstört låst skepp dödar alla ombord; det andra släpps.
-- `bordning-tva-rundor-skift` — **Fullständigt implementerat**. Efter den
-  pågående rymdstridsrundan: två bordningsrundor, två rymdstridsrundor,
-  upprepa. En aktiv bordning per rymdstrid.
+- `bordning-utan-avbrott` — **Fullständigt implementerat**. Bordningen spelas
+  färdigt efter den pågående rymdstridsrundan. Rymdstriden fortsätter först
+  därefter. Äldre sparningar med en pågående bordning återupptar bordningen.
+  Detta ersätter `bordning-tva-rundor-skift`. En bordning är aktiv åt gången.
 - `dockning-sida-vid-sida` — **Fullständigt implementerat**. Anfallaren ligger
   ovanför och försvararen under. Landgången är två rutor bred och tio rutor
   lång, med tunna väggar längs sidorna och en lampa i mitten. Ersätter att

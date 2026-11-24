@@ -8,6 +8,11 @@ fönster, utrustning och en lokal karteditor. Detaljerna står i
 
 ## Krav
 
+- **Bordningsgränssnitt inom skärmen:** `bordningshud-inom-skarmen`
+  (2026-11-24) är **Fullständigt implementerat**. Bordningsvyn anpassas till
+  den synliga ytan när mobilens visningsyta ändras eller förstoras, så att
+  kontrollerna längst ned är åtkomliga.
+
 - **Skott på samma ruta:** `forsvararskott-samma-ruta` (2026-11-24) är
   **Fullständigt implementerat**. Ett missat skott där skytt och mål står på
   samma ruta avslutas utan att striden eller gränssnittet låser sig.
@@ -331,14 +336,16 @@ sprite` ändras skeppsbildens storlek med hjulet eller `Sprite size`.
   [bordningsstrid](../boarding/boarding-combat.md).
 
 - **Kampanjbordning:** `piratflotta-med-lastfartyg`, `docka-babord-styrbord`,
-  `lassta-dockade-skepp`, `bordning-tva-rundor-skift`,
+  `lassta-dockade-skepp`, `bordning-utan-avbrott`,
   `tva-skepp-pa-bordningskartan`, `unika-startpositioner-vid-bordning`,
   `avbryt-bordning-i-egna-skepp`,
   `erovra-skepp-via-bordning` och `bordningsbeloning-last-teknik-karta` är
   **Fullständigt implementerat**. Pirater
   har ett lastfartyg med slumpad last. Docka är en stridsorder längs babord
   eller styrbord. Skeppen låses med en brygga, rymdstridsrundan körs färdigt
-  och bordning växlar sedan två rundor i taget mot rymdstrid. Vinst ger
+  och därefter spelas bordningen färdigt innan rymdstriden fortsätter.
+  `bordning-utan-avbrott` ersätter `bordning-tva-rundor-skift`; äldre
+  sparningar som pausats mitt i bordningen återupptar den. Vinst ger
   båda skeppen, last och en kartplaceholder. Den återvunna tekniken `Raptor
 factory` och `raptor-efter-dockningsteknik` är borttagna med fabrikerna
   (`single-fleet-rensning`).

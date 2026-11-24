@@ -958,18 +958,6 @@ export class TacticalBattle {
     return this.#shift;
   }
 
-  tickShiftRound(): 'boarding' | 'space' | null {
-    if (!this.#shift) return null;
-    this.#shift = {
-      kind: this.#shift.kind,
-      remaining: this.#shift.remaining - 1,
-    };
-    if (this.#shift.remaining > 0) return this.#shift.kind;
-    const next = this.#shift.kind === 'boarding' ? 'space' : 'boarding';
-    this.#shift = { kind: next, remaining: 2 };
-    return next;
-  }
-
   unlockDock(pieceId: string): void {
     const piece = this.#pieces.find((entry) => entry.id === pieceId);
     const partnerId = piece?.dockedWith;

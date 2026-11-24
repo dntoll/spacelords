@@ -1977,6 +1977,8 @@ body:has(.discovery-controls) .selection-panel {
 }
 
 .boarding-dialog {
+  position: fixed;
+  inset: 0;
   display: grid;
   grid-template-rows: 34px minmax(0, 1fr);
   gap: 4px;

@@ -1,5 +1,47 @@
 import { expect, test } from '@playwright/test';
 
+test('bordningshud-inom-skarmen: the boarding controls stay in the visible viewport when zoomed', async ({
+  page,
+}, testInfo) => {
+  test.skip(
+    testInfo.project.name !== 'phone-chromium',
+    'Uses Chromium mobile zoom emulation.',
+  );
+  await page.goto('./');
+  await page.locator('.save-tests summary').click();
+  await page
+    .getByRole('button', { name: 'Test boarding', exact: true })
+    .click();
+  const dialog = page.getByRole('dialog', { name: 'Boarding combat' });
+  await page.evaluate(async () => {
+    if (document.fullscreenElement) await document.exitFullscreen();
+  });
+  const session = await page.context().newCDPSession(page);
+  await session.send('Emulation.setPageScaleFactor', { pageScaleFactor: 1.5 });
+  const bounds = () =>
+    dialog.evaluate((element) => {
+      const rect = element.getBoundingClientRect();
+      const controls = element
+        .querySelector('.boarding-controls')!
+        .getBoundingClientRect();
+      const visual = window.visualViewport!;
+      return {
+        top: rect.top,
+        controlsBottom: controls.bottom,
+        visualTop: visual.offsetTop,
+        visualBottom: visual.offsetTop + visual.height,
+      };
+    });
+  await expect
+    .poll(async () => {
+      const current = await bounds();
+      return current.controlsBottom - current.visualBottom;
+    })
+    .toBeLessThanOrEqual(0);
+  const current = await bounds();
+  expect(current.top).toBeGreaterThanOrEqual(current.visualTop);
+});
+
 test('bordningshud-i-botten / ihopfallbar-bordningslogg: controls fit and a scrolled log can close on mobile', async ({
   page,
 }) => {
