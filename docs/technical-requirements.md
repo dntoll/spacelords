@@ -168,7 +168,8 @@ sparning och återupptagen tur. Mobiltester mäter att alla order ryms i
 
 Kampanjbordning ägs av `TurnSimulation` via `BoardingEngagement`, samma plats
 som `tacticalBattles`. `TacticalBattle` tar `dock`, låser paret och ritar
-bryggan; `Game.commandBattle` / `commandBoarding` växlar på två-rundersskiftet.
+bryggan; `Game.commandBoarding` behåller bordningen aktiv tills den avslutas
+(`bordning-utan-avbrott`), även vid laddning av äldre sparningar i rymdskiftet.
 `AppView` visar `BoardingView` när kampanjens `boardingBattle` finns och
 `BattleView` annars. Sparformatet är `GameState.version` 14; piratflottor får
 `transports` och `hold` additivt. Avbrutna rymdstrider utan boardingfält förblir

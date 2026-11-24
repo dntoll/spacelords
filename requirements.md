@@ -89,6 +89,8 @@ kraven med stabila namn och status. Statusen nedan sammanfattar området.
   är **Delvis implementerat** eftersom uppgraderingar inte kan monteras.
 - **[Bordning](docs/areas/boarding.md):** bordningsstrid, grafik, ljus och
   fortsatt spel efter fel i försvararturen (`forsvarartur-fastnar-inte`),
+  obruten bordning tills den avslutas (`bordning-utan-avbrott`),
+  bordningskontroller inom den synliga skärmen (`bordningshud-inom-skarmen`),
   återställning av fastnade försvararturer (`sparad-forsvarartur-aterhamtas`),
   skott på samma ruta (`forsvararskott-samma-ruta`), öppningsbar stridslogg
   under försvararturen (`ihopfallbar-bordningslogg`), samt

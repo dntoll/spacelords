@@ -378,7 +378,8 @@ implementerat**. `Dock` är en stridsorder i stället för skott när ett
 `Space pirate` eller `Raptor` har kontakt längs babord eller styrbord mot ett
 bordningsbart skepp. Nos mot nos och T-kollision är otillåtna. Dockade skepp
 är låsta, ritas med en brygga och den pågående rymdrundan körs färdigt innan
-bordning. Därefter växlar `bordning-tva-rundor-skift` två rundor i taget.
+bordning. `bordning-utan-avbrott` spelar sedan bordningen färdigt innan
+rymdstriden fortsätter och ersätter `bordning-tva-rundor-skift`.
 Se [bordningsstrid](../boarding/boarding-combat.md).
 
 ## Verifiering

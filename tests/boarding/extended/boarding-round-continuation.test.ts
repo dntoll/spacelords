@@ -91,6 +91,63 @@ function gameInBoarding(): Game {
 }
 
 describe('bordning under avbruten runda', () => {
+  it('bordning-utan-avbrott: resumes the space battle when boarding ends', () => {
+    const game = gameInBoarding();
+    game.finishBoarding('aborted');
+    expect(game.boardingBattle).toBeNull();
+    expect(game.tacticalBattle?.phase).toBe('fighting');
+  });
+  it('bordning-utan-avbrott: keeps boarding active after another round ends', () => {
+    const game = gameInBoarding();
+    const saved = game.exportState();
+    const engagement = saved.simulation!.boarding!;
+    const player = engagement.battle.people.find(
+      (person) => person.side === 'player' && person.status === 'active',
+    )!;
+    const battle = saved.simulation!.tacticalBattles![0]!;
+    const restored = Game.restore({
+      ...saved,
+      simulation: {
+        ...saved.simulation!,
+        tacticalBattles: [
+          { ...battle, shift: { kind: 'boarding', remaining: 1 } },
+        ],
+        boarding: {
+          ...engagement,
+          battle: {
+            ...engagement.battle,
+            currentActorId: player.id,
+            activation: { id: player.id, remaining: 12 },
+            initiativeOrder: [player.id],
+            initiativeIndex: 0,
+            finishedActors: [],
+            postponed: [],
+          },
+        },
+      },
+    });
+    const before = restored.boardingBattle!.round;
+    restored.commandBoarding({ type: 'end-activation' });
+    expect(restored.boardingBattle?.round).toBeGreaterThan(before);
+    expect(restored.tacticalBattle).toBeNull();
+  });
+
+  it('bordning-utan-avbrott: resumes boarding from an old save paused in space combat', () => {
+    const saved = gameInBoarding().exportState();
+    const battle = saved.simulation!.tacticalBattles![0]!;
+    const restored = Game.restore({
+      ...saved,
+      simulation: {
+        ...saved.simulation!,
+        tacticalBattles: [
+          { ...battle, shift: { kind: 'space', remaining: 2 } },
+        ],
+      },
+    });
+    expect(restored.boardingBattle).not.toBeNull();
+    expect(restored.tacticalBattle).toBeNull();
+    expect(Game.restore(restored.exportState()).boardingBattle).not.toBeNull();
+  });
   it('sparad-forsvarartur-aterhamtas: resolves a save when its last defender is already incapacitated', () => {
     const game = gameInBoarding();
     for (

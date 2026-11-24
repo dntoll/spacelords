@@ -234,12 +234,25 @@ export class BoardingView {
     this.#dialog.append(layout);
     root.append(this.#dialog);
     this.#dialog.showModal();
+    window.visualViewport?.addEventListener('resize', this.#syncVisualViewport);
+    window.visualViewport?.addEventListener('scroll', this.#syncVisualViewport);
+    this.#syncVisualViewport();
     this.#canvas.addEventListener('boarding-camera-change', () =>
       this.#positionContextMenu(),
     );
     document.addEventListener('fullscreenchange', this.#fullscreenChanged);
     void this.#enterFullscreen();
   }
+
+  /** bordningshud-inom-skarmen: fit the visible area even when the browser is zoomed. */
+  readonly #syncVisualViewport = (): void => {
+    const viewport = window.visualViewport;
+    if (!viewport) return;
+    this.#dialog.style.left = `${viewport.offsetLeft}px`;
+    this.#dialog.style.top = `${viewport.offsetTop}px`;
+    this.#dialog.style.width = `${viewport.width}px`;
+    this.#dialog.style.height = `${viewport.height}px`;
+  };
 
   readonly #fullscreenChanged = (): void => {
     if (document.fullscreenElement !== document.documentElement)
@@ -1351,6 +1364,14 @@ export class BoardingView {
 
   dispose(): void {
     this.#disposed = true;
+    window.visualViewport?.removeEventListener(
+      'resize',
+      this.#syncVisualViewport,
+    );
+    window.visualViewport?.removeEventListener(
+      'scroll',
+      this.#syncVisualViewport,
+    );
     clearTimeout(this.#logTimer);
     this.#playToken += 1;
     this.#busy = false;

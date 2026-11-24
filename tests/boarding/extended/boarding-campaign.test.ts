@@ -332,37 +332,6 @@ describe('lassta-dockade-skepp / docka-babord-styrbord', () => {
   });
 });
 
-describe('bordning-tva-rundor-skift', () => {
-  it('switches space and boarding every two finished rounds', () => {
-    const battle = TacticalBattle.create(
-      'shift-test',
-      { q: 0, r: 0 },
-      [
-        {
-          id: 'friendly',
-          side: 'player',
-          retreat: { q: -1, r: 0 },
-          ships: [{ id: 'hauler', type: 'Transport ship', ion: false }],
-        },
-        {
-          id: 'enemy',
-          side: 'enemy',
-          retreat: { q: 1, r: 0 },
-          ships: [{ id: 'raider', type: 'Space pirate', ion: false }],
-        },
-      ],
-      3,
-    );
-    battle.setShift('boarding', 2);
-    expect(battle.tickShiftRound()).toBe('boarding');
-    expect(battle.shift).toEqual({ kind: 'boarding', remaining: 1 });
-    expect(battle.tickShiftRound()).toBe('space');
-    expect(battle.shift).toEqual({ kind: 'space', remaining: 2 });
-    expect(battle.tickShiftRound()).toBe('space');
-    expect(battle.tickShiftRound()).toBe('boarding');
-  });
-});
-
 describe('erovra-skepp-via-bordning', () => {
   it('transfers a captured ship to the winner in the same battle', () => {
     const created = TacticalBattle.create(
