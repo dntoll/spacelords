@@ -47,7 +47,7 @@ kraven med stabila namn och status. Statusen nedan sammanfattar området.
   hexval och väg (`hexval-med-vag`), AP och turordning utan End turn
   (`ap-pa-starmap`), glidande hexsteg
   (`glidande-hexsteg`, `flytande-forflyttning`) och rakare vägval
-  (`rakare-vag`), kamera med död zon och fri panorering
+  (`rakare-vag`, `rak-och-jamn-resa`, `stabil-fardvag`), kamera med död zon och fri panorering
   (`kamera-med-dod-zon`), sömlös förflyttning utan synliga rundor
   (`somlos-forflyttning`), händelser som toppnotiser
   (`handelser-som-toppnotis`), upptäckter som stannar resan

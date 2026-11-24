@@ -45,8 +45,8 @@ flotta till ett mål. Planeter är platser; spelaren äger dem inte
   Ett nytt hexval avbryter resan. En synlig pirat väljs som sin hex:
   första trycket visar piraten och vägen, det andra skickar flottan dit,
   där striden börjar enligt `strid-i-samma-hex`. `glidande-hexsteg` är **Fullständigt
-  implementerat**: varje steg är en hex och markören glider mellan
-  hexcentrumen. `langsam-forflyttning-i-asteroidbalte` (2026-11-23) är
+  implementerat**: varje steg är en hex och markören glider genom
+  färdvägens hexar (`rak-och-jamn-resa`). `langsam-forflyttning-i-asteroidbalte` (2026-11-23) är
   **Fullständigt implementerat**: ett steg in i eller ut ur ett glest
   asteroidbälte, som kostar hela rundans AP, glider tre gånger långsammare än
   ett vanligt steg. `fiendeupptackt-utan-end-turn` är **Fullständigt

@@ -3,7 +3,7 @@ import type {
   TurnMovement,
 } from './TurnMovementPlayback.js';
 import { type TurnFrame } from '../Game.js';
-import { HexGeometry } from '../../../common/HexCoordinate.js';
+import { HexGeometry, type Point } from '../../../common/HexCoordinate.js';
 import { travelFleet } from '../star-map/Travel.js';
 import type { AppHost, AppReadModel } from '../../../app/models/AppModel.js';
 
@@ -161,7 +161,7 @@ export class TurnFacade {
    * kamera-med-dod-zon: the camera stays put while the ship moves inside a
    * rectangle in the middle of the visible map, and follows it at the edge.
    */
-  followTurnMovement(progress: number): void {
+  followTurnMovement(progress: number, location?: Point): void {
     const step = this.host.movementPlayback?.currents.find(
       (movement) => movement.fleetId === this.host.game.fleetSnapshot().id,
     );
@@ -169,7 +169,7 @@ export class TurnFacade {
     const from = HexGeometry.toPoint(step.from);
     const to = HexGeometry.toPoint(step.to);
     const t = Math.max(0, Math.min(1, progress));
-    const point = {
+    const point = location ?? {
       x: from.x + (to.x - from.x) * t,
       y: from.y + (to.y - from.y) * t,
     };

@@ -6,6 +6,7 @@ import type { FleetSnapshot } from '../GameSnapshots.js';
 export interface TravelRoute {
   readonly fleetId: string;
   readonly from: HexCoordinate;
+  readonly origin?: HexCoordinate;
   readonly steps: readonly HexCoordinate[];
   /** Hexes the slowest ship lets the fleet move each round. */
   readonly perRound: number;

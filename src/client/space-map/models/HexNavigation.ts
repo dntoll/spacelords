@@ -9,8 +9,15 @@ interface Node {
   previous: Node | null;
 }
 
+interface CachedRoute {
+  readonly points: readonly HexCoordinate[];
+  readonly costs: readonly string[];
+}
+
 /** asteroidbalten / ofarbara-stjarnhexar: shared knowledge-aware navigation. */
 export class HexNavigation {
+  readonly #routes = new Map<string, CachedRoute>();
+
   constructor(readonly galaxy: Galaxy) {}
 
   path(
@@ -20,6 +27,27 @@ export class HexNavigation {
     known: ReadonlySet<string>,
     origin = start,
   ): readonly HexCoordinate[] {
+    const key = `${origin.key}|${target.key}|${speed}`;
+    const costAt = (point: HexCoordinate): string => {
+      if (!known.has(point.key)) return '';
+      const terrain = this.galaxy.terrainAt(point);
+      return terrain === 'dense-asteroids' || terrain === 'sparse-asteroids'
+        ? terrain
+        : '';
+    };
+    const cached = this.#routes.get(key);
+    const index =
+      cached?.points.findIndex((point) => point.key === start.key) ?? -1;
+    if (
+      cached &&
+      index >= 0 &&
+      cached.points
+        .slice(index)
+        .every(
+          (point, offset) => costAt(point) === cached.costs[index + offset],
+        )
+    )
+      return cached.points.slice(index + 1);
     if (
       start.key === target.key ||
       !this.galaxy.contains(target) ||
@@ -91,7 +119,13 @@ export class HexNavigation {
           current = current.previous
         )
           result.push(current.point);
-        return result.reverse();
+        result.reverse();
+        const points = [start, ...result];
+        this.#routes.delete(key);
+        this.#routes.set(key, { points, costs: points.map(costAt) });
+        if (this.#routes.size > 16)
+          this.#routes.delete(this.#routes.keys().next().value!);
+        return result;
       }
       for (const next of node.point.neighbors()) {
         if (

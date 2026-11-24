@@ -772,7 +772,16 @@ export class MasterController {
         for (const batch of batches) {
           this.#turn.focusTurnMovement(batch.map((track) => track[0]!));
           // kamera-foljer-skepp: stay on the ship instead of framing the route.
-          this.#turn.followTurnMovement(0);
+          const first = batch
+            .flatMap((track) => (track[0] ? [track[0]] : []))
+            .find((movement) => movement.fleetId === origin.fleet.id);
+          if (
+            !first ||
+            this.#lastVoyageMovement?.position !== first.from.key ||
+            this.#lastVoyageMovement.destination !==
+              origin.fleet.destination?.key
+          )
+            this.#turn.followTurnMovement(0);
           this.#render();
           if (this.#disposed) return;
           const steps = Math.max(...batch.map((track) => track.length));
@@ -800,10 +809,15 @@ export class MasterController {
                 (result.phase === 'interrupted' || result.pirates.length > 0));
             await (this.#view.animateTurnStep?.(
               { movements },
-              (progress) => {
+              (progress, point, crossed) => {
                 if (this.#disposed) return;
-                this.#turn.followTurnMovement(progress);
-                if (this.#turn.advanceTurnMovement(progress)) this.#render();
+                this.#turn.followTurnMovement(progress, point);
+                if (
+                  this.#turn.advanceTurnMovement(
+                    crossed === undefined ? progress : crossed ? 1 : 0,
+                  )
+                )
+                  this.#render();
                 else this.#view.renderCamera?.(this.#model.snapshot);
               },
               stepDuration,

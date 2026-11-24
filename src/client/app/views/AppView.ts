@@ -39,6 +39,7 @@ import type {
   MapPort,
 } from './ViewContracts.js';
 import { button, element } from '../../common/dom.js';
+import type { Point } from '../../common/HexCoordinate.js';
 import type {
   BattleManeuver,
   BattleShot,
@@ -951,7 +952,7 @@ export class AppView implements AppPort {
 
   animateTurnStep(
     frame: TurnFrame,
-    onProgress?: (progress: number) => void,
+    onProgress?: (progress: number, point?: Point, crossed?: boolean) => void,
     duration?: number,
     ends?: { readonly start: boolean; readonly end: boolean },
   ): Promise<void> {

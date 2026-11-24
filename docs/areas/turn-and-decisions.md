@@ -27,6 +27,17 @@ utan en pirat i sikte märks de inte, och en resa går i ett svep
   målet. Kända hinder och långsammare terräng tas fortfarande med i vägvalet.
   Det ersätter kravet på växlande riktning i `rakare-hexforflyttning`.
 
+- **Rak och jämn resa:** `rak-och-jamn-resa` är **Fullständigt
+  implementerat**. Färdvägen och flottans rörelse går rakt genom hexarna där
+  det går utan att gena genom andra hexar. Rörelsen behåller hastigheten
+  över hex- och rundgränser; sikten ändras när flottan passerar hexkanten.
+  Det förtydligar `flytande-forflyttning` och ersätter kravet i
+  `fardvag-som-orderpil` på att linjen måste passera varje hexcentrum.
+
+- **Stabil färdväg:** `stabil-fardvag` är **Fullständigt implementerat**.
+  Förhandsvisning och resa använder samma väg, som behålls tills målet,
+  flottans fart eller relevant nyupptäckt terräng kräver ett nytt vägval.
+
 - **Piratminne och animerade piratsteg:** `pirat-minne-efter-sikt` och
   `animerade-piratsteg` är **Fullständigt implementerat**. En pirat som lämnar
   sikten visas nedtonad på sin senast kända plats. Om den rör sig ersätts
@@ -36,7 +47,7 @@ utan en pirat i sikte märks de inte, och en resa går i ett svep
 - **Färdväg som orderpil:** `fardvag-som-orderpil`, `fardvag-fran-flottan`
   och `fardvag-under-resan` (2026-11-24) är **Fullständigt implementerat**.
   Färdvägen är flottans enda pil. Den ritas tunt i orderpilens blå färg från
-  flottans ritade position genom hexarnas mitt och slutar i en pilspets. Den
+  flottans ritade position genom färdvägens hexar och slutar i en pilspets. Den
   ligger kvar under hela resan, även mellan rundorna, och visar bara den del
   som återstår. Den markerade hexen behålls under förflyttningen. Det ersätter
   den gula färdplanen och den blå orderpilen; bara en dragen destination och

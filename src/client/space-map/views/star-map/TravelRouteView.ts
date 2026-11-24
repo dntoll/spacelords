@@ -1,6 +1,7 @@
 import type p5 from 'p5';
 import { HexGeometry, type Point } from '../../../common/HexCoordinate.js';
 import type { TravelRoute } from '../../models/star-map/Travel.js';
+import { fleetGlideSegmentSafe, fleetGlideWaypoint } from './FleetGlide.js';
 
 /** fardvag-som-orderpil: the route uses the colour and weight of the order arrow. */
 const ROUTE_COLOR = '#72d8ca';
@@ -8,7 +9,7 @@ const LATER_COLOR = 'rgba(114, 216, 202, 0.45)';
 
 /**
  * hexval-med-vag / fardvag-som-orderpil: the route is the fleet's only arrow.
- * It runs from the fleet's drawn position through the hex centres and ends in
+ * It runs from the fleet's drawn position through the route hexes and ends in
  * an arrowhead. While a pirate is in sight, the part beyond the remaining AP
  * is dimmer and small dots mark where each round ends (ap-pa-starmap).
  */
@@ -19,10 +20,19 @@ export function renderTravelRoute(
   start?: Point,
 ): void {
   if (!route?.steps.length) return;
-  const points = [
-    start ?? HexGeometry.toPoint(route.from),
-    ...route.steps.map((hex) => HexGeometry.toPoint(hex)),
-  ];
+  const target = route.steps.at(-1)!;
+  const origin = route.origin ?? route.from;
+  const points = [start ?? HexGeometry.toPoint(route.from)];
+  let from = route.from;
+  for (const hex of route.steps) {
+    const center = HexGeometry.toPoint(hex);
+    let point =
+      hex.key === target.key ? center : fleetGlideWaypoint(origin, target, hex);
+    if (!fleetGlideSegmentSafe(from, hex, points.at(-1)!, point))
+      point = center;
+    points.push(point);
+    from = hex;
+  }
   const perRound = Math.max(1, route.perRound);
   const available = route.contested
     ? Math.max(0, route.available)

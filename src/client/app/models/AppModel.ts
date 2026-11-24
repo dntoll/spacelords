@@ -355,6 +355,7 @@ export class AppModel {
       ? Object.freeze({
           fleetId: fleet.id,
           from: fleet.position,
+          origin: this.#game.routeOrigin(fleet.id, target) ?? fleet.position,
           steps,
           perRound: fleet.speed,
           available: fleet.actionPoints ?? fleet.speed,
@@ -708,8 +709,8 @@ export class AppModel {
   focusTurnMovement(movement: TurnMovement | readonly TurnMovement[]): void {
     return this.turn.focusTurnMovement(movement);
   }
-  followTurnMovement(progress: number): void {
-    return this.turn.followTurnMovement(progress);
+  followTurnMovement(progress: number, location?: Point): void {
+    return this.turn.followTurnMovement(progress, location);
   }
 
   completeTurnMovement(): void {
@@ -1001,8 +1002,8 @@ export class AppModel {
       ) => model.beginMovementPlayback(playback, origin),
       focusTurnMovement: (movement: TurnMovement | readonly TurnMovement[]) =>
         model.focusTurnMovement(movement),
-      followTurnMovement: (progress: number) =>
-        model.followTurnMovement(progress),
+      followTurnMovement: (progress: number, location?: Point) =>
+        model.followTurnMovement(progress, location),
       completeTurnMovement: () => model.completeTurnMovement(),
       advanceTurnMovement: (progress: number) =>
         model.advanceTurnMovement(progress),
@@ -1134,7 +1135,7 @@ export interface AppHost {
     origin: AppReadModel,
   ): void;
   focusTurnMovement(movement: TurnMovement | readonly TurnMovement[]): void;
-  followTurnMovement(progress: number): void;
+  followTurnMovement(progress: number, location?: Point): void;
   completeTurnMovement(): void;
   advanceTurnMovement(progress: number): boolean;
   endMovementPlayback(): void;

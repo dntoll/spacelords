@@ -43,3 +43,30 @@ describe('fardvag-som-orderpil / fardvag-fran-flottan', () => {
     expect(drawn.circle).not.toHaveBeenCalled();
   });
 });
+
+it('rak-och-jamn-resa: draws a straight route through free hexes', () => {
+  const drawn = sketch();
+  const start = new HexCoordinate(0, 0);
+  const target = new HexCoordinate(3, 3);
+  const steps = [
+    new HexCoordinate(1, 0),
+    new HexCoordinate(1, 1),
+    new HexCoordinate(2, 1),
+    new HexCoordinate(2, 2),
+    new HexCoordinate(3, 2),
+    target,
+  ];
+  renderTravelRoute(
+    drawn as unknown as p5,
+    { ...route, from: start, steps },
+    1,
+  );
+  const a = HexGeometry.toPoint(start),
+    b = HexGeometry.toPoint(target);
+  for (const [, , x, y] of drawn.line.mock.calls as number[][]) {
+    expect((b.x - a.x) * (y! - a.y) - (b.y - a.y) * (x! - a.x)).toBeCloseTo(
+      0,
+      6,
+    );
+  }
+});
