@@ -37,3 +37,43 @@ describe('somlos-forflyttning', () => {
     expect(model(true).snapshot.travelRoute?.contested).toBe(true);
   });
 });
+
+describe('somlos-forflyttning / fardvag-under-resan', () => {
+  it('keeps the route and the selected hex through a journey of several rounds', async () => {
+    const { vi } = await import('vitest');
+    const { MasterController } =
+      await import('../../../src/client/app/controllers/MasterController.js');
+    vi.useFakeTimers();
+    try {
+      const app = new AppModel();
+      const home = app.snapshot.fleet.position!;
+      const target = new HexCoordinate(home.q + 7, home.r);
+      const gaps: string[] = [];
+      let emit!: (intent: { type: 'select'; position: HexCoordinate }) => void;
+      const controller = new MasterController(app, {
+        bind(handler) {
+          emit = handler as typeof emit;
+        },
+        render(snapshot) {
+          if (snapshot.fleet.position?.key === target.key) return;
+          if (!snapshot.travelRoute) gaps.push('route');
+          if (snapshot.selected?.position.key !== target.key)
+            gaps.push('selection');
+        },
+        animateTurnStep: () => Promise.resolve(),
+        dispose() {},
+      });
+      controller.start();
+      emit({ type: 'select', position: target });
+      gaps.length = 0;
+      emit({ type: 'select', position: target });
+      await vi.advanceTimersByTimeAsync(30_000);
+      expect(app.snapshot.fleet.position?.key).toBe(target.key);
+      expect(app.snapshot.round).toBeGreaterThan(2);
+      expect([...new Set(gaps)]).toEqual([]);
+      controller.dispose();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+});

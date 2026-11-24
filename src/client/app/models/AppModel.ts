@@ -260,7 +260,6 @@ export class AppModel {
         turnMovement: this.#movementPlayback.current,
         turnMovements: this.#movementPlayback.currents,
         camera: this.#camera.snapshot,
-        selected: null,
         mapFleetId: this.#movementPlayback.current?.fleetId ?? null,
         fleet: this.#movementPlayback.fleet,
         pirates: this.#movementPlayback.pirates,
@@ -268,6 +267,10 @@ export class AppModel {
         destinationFleetId: null,
         defeated: this.#game.defeated,
         notice: this.#notice,
+        travelRoute: this.#remainingRoute(
+          this.#movementOrigin.travelRoute,
+          this.#movementPlayback.fleet.position,
+        ),
       });
     }
     return Object.freeze({
@@ -328,16 +331,22 @@ export class AppModel {
     });
   }
 
+  /**
+   * hexval-med-vag / fardvag-under-resan: the route to the selected hex while
+   * planning, and to the destination for as long as the journey lasts.
+   */
   #travelRoute(): TravelRoute | null {
-    if (
-      !this.#isMapScreen() ||
-      (this.#game.phase !== 'planning' && !this.#game.discoveryPause())
-    )
-      return null;
+    if (!this.#isMapScreen()) return null;
     const fleet = travelFleet(this.#game);
-    if (!fleet?.position || fleet.position.key === this.#selected.key)
-      return null;
-    const steps = this.#game.routePreview(fleet.id, this.#selected);
+    if (!fleet?.position) return null;
+    const planning =
+      this.#game.phase === 'planning' || this.#game.discoveryPause();
+    const target =
+      planning && fleet.position.key !== this.#selected.key
+        ? this.#selected
+        : fleet.destination;
+    if (!target || target.key === fleet.position.key) return null;
+    const steps = this.#game.routePreview(fleet.id, target);
     return steps.length
       ? Object.freeze({
           fleetId: fleet.id,
@@ -347,6 +356,20 @@ export class AppModel {
           available: fleet.actionPoints ?? fleet.speed,
           contested: this.#game.pirateSnapshots().length > 0,
         })
+      : null;
+  }
+
+  /** fardvag-under-resan: the part of the route still ahead of the ship. */
+  #remainingRoute(
+    route: TravelRoute | null,
+    position: HexCoordinate | null,
+  ): TravelRoute | null {
+    if (!route || !position) return route;
+    const index = route.steps.findIndex((step) => step.key === position.key);
+    if (index < 0) return route;
+    const steps = route.steps.slice(index + 1);
+    return steps.length
+      ? Object.freeze({ ...route, from: position, steps })
       : null;
   }
 
