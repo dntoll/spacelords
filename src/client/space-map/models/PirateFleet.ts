@@ -101,7 +101,11 @@ export class PirateFleet {
       );
   }
 
-  static restore(saved: SavedPirateFleet, galaxy: Galaxy): PirateFleet {
+  static restore(
+    saved: SavedPirateFleet,
+    galaxy: Galaxy,
+    allowEmpty = false,
+  ): PirateFleet {
     const system = galaxy.systems.find(
       (system) => system.star.id === saved.systemId,
     );
@@ -116,7 +120,7 @@ export class PirateFleet {
       saved.count < 0 ||
       !Number.isSafeInteger(transports) ||
       transports < 0 ||
-      (saved.count < 1 && transports < 1) ||
+      (!allowEmpty && saved.count < 1 && transports < 1) ||
       !saved.id ||
       (known !== undefined &&
         (!Number.isInteger(known.q) ||

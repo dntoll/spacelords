@@ -52,6 +52,12 @@ att översättas.
   fält; version 18-sparningar utan dem laddas med fulla AP. Framtida
   inkompatibla ändringar stäms av enligt `avstamning-sparkompatibilitet`.
 
+- **Sparning efter bordning:** `sparbart-efter-sista-piratskeppet` (2026-11-24)
+  är **Fullständigt implementerat** i utforskningen. En avbruten strid kan
+  sparas och återupptas även när ett eller alla skepp i en piratflotta har
+  tagits över. Även tidigare sparningar i detta läge kan öppnas, och andra
+  sparplatser påverkas inte.
+
 - **Liggande layout:** `liggande-layout` (2026-11-23) är **Fullständigt
   implementerat**. På låga liggande skärmar ligger rubrik och meny på en rad,
   de tre sparplatserna står sida vid sida på `Saved games` och detaljerna på
