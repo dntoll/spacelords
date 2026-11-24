@@ -5,7 +5,7 @@ import {
 import { createExampleGalaxy } from '../../src/client/space-map/models/exampleGalaxy.js';
 import type { BattleState } from '../../src/client/space-battle/models/TacticalBattle.js';
 
-export function encounterGame(pirateCount = 1): Game {
+export function encounterGame(pirateCount = 1, withRaptor = false): Game {
   const state = new Game(createExampleGalaxy()).exportState();
   const first = state.fleets[0]!;
   const game = Game.restore({
@@ -18,9 +18,9 @@ export function encounterGame(pirateCount = 1): Game {
         shipUnits: [],
         ships: {
           ...first.ships,
-          Raptor: 0,
+          Raptor: withRaptor ? 1 : 0,
           'Exploration ship': 1,
-          Fighter: 2,
+          Fighter: withRaptor ? 1 : 2,
           'Transport ship': 1,
         },
       },

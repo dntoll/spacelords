@@ -41,7 +41,8 @@ kraven med stabila namn och status. Statusen nedan sammanfattar området.
   implementerat**: rensningen är klar och testerna är anpassade).
 - **[Start, sparade spel och navigering](docs/areas/start-and-saves.md):**
   `Saved games`, helskärm, huvudmenyn, liggande layout (`liggande-layout`) och sparformatet (`sparformat`,
-  version 18). Allt är **Fullständigt implementerat**.
+  version 18), inklusive återupptagning efter övertagna piratskepp
+  (`sparbart-efter-sista-piratskeppet`). Allt är **Fullständigt implementerat**.
 - **[Stjärnkartan och grafiken](docs/areas/star-map.md):** hexkartan, sikt,
   terräng, kamera, kartobjekt och genererade bilder, samt styrningen med
   hexval och väg (`hexval-med-vag`), AP och turordning utan End turn

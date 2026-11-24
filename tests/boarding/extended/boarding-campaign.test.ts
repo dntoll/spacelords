@@ -11,7 +11,67 @@ import { Game, SHIPS } from '../../../src/client/space-map/models/Game.js';
 import { createExampleGalaxy } from '../../../src/client/space-map/models/exampleGalaxy.js';
 import { emptyStock } from '../../../src/client/space-map/models/Economy.js';
 import { HexCoordinate } from '../../../src/client/common/HexCoordinate.js';
-import { arrangeBattle } from '../../fixtures/battle-checkpoint.js';
+import {
+  arrangeBattle,
+  encounterGame,
+} from '../../fixtures/battle-checkpoint.js';
+import { AppModel } from '../../../src/client/app/models/AppModel.js';
+import { BrowserSaveRepository } from '../../../src/client/space-map/storage/BrowserSaveRepository.js';
+
+describe('sparbart-efter-sista-piratskeppet', () => {
+  it('restores the battle after capturing one of several pirate ships', () => {
+    let game = encounterGame(2, true);
+    game.commandBattle({ type: 'auto-deploy' });
+    game.commandBattle({ type: 'start' });
+    const attacker = game.tacticalBattle!.pieces.find(
+      (piece) => piece.side === 'player' && piece.type === 'Raptor',
+    )!;
+    const defender = game.tacticalBattle!.pieces.find(
+      (piece) => piece.side === 'enemy',
+    )!;
+    game = arrangeBattle(game, (battle) => ({
+      ...battle,
+      turn: 'player',
+      activation: null,
+      pieces: battle.pieces.map((piece) => ({
+        ...piece,
+        activated: false,
+        facing:
+          piece.id === attacker.id || piece.id === defender.id
+            ? 0
+            : piece.facing,
+        position:
+          piece.id === attacker.id
+            ? { q: 3, r: 4 }
+            : piece.id === defender.id
+              ? { q: 4, r: 3 }
+              : piece.position,
+      })),
+    }));
+    game.commandBattle({ type: 'activate', id: attacker.id });
+    game.commandBattle({ type: 'dock', targetId: defender.id });
+    for (let step = 0; !game.boardingBattle && step < 12; step++) {
+      const battle = game.tacticalBattle!;
+      if (battle.turn === 'enemy')
+        game.playBattleActivation(false, { allowDock: false });
+      else if (battle.activation)
+        game.commandBattle({ type: 'end-activation' });
+      else {
+        const ship = battle.pieces.find(
+          (piece) =>
+            piece.side === 'player' &&
+            piece.status === 'active' &&
+            !piece.activated &&
+            !piece.dockedWith,
+        )!;
+        game.commandBattle({ type: 'activate', id: ship.id });
+      }
+    }
+    expect(game.boardingBattle).not.toBeNull();
+    game.finishBoarding('victory');
+    expect(() => Game.restore(game.exportState())).not.toThrow();
+  });
+});
 
 describe('tva-skepp-pa-bordningskartan', () => {
   it('advances a hidden cockpit defender so autoplay does not stall', () => {
@@ -454,6 +514,32 @@ describe('bordningsbeloning-last-teknik-karta', () => {
     expect(game.boardingBattle).not.toBeNull();
     const before = new Set(game.exportState().explored);
     game.finishBoarding('victory');
+    // sparbart-efter-sista-piratskeppet: an emptied pirate fleet can still be
+    // participating in the interrupted tactical battle.
+    expect(() => Game.restore(game.exportState())).not.toThrow();
+    const storage = new Map<string, string>();
+    const saves = new BrowserSaveRepository({
+      getItem: (key) => storage.get(key) ?? null,
+      setItem: (key, value) => void storage.set(key, value),
+      removeItem: (key) => void storage.delete(key),
+    });
+    saves.save(1, {
+      lastPlayed: new Date().toISOString(),
+      state: game.exportState(),
+    });
+    const app = new AppModel(galaxy, saves);
+    expect(app.snapshot.saveSlots.every((slot) => slot.error === null)).toBe(
+      true,
+    );
+    app.startSlot(1);
+    expect(
+      app.snapshot.tacticalBattle?.pieces.find(
+        (piece) => piece.id === defender.id,
+      )?.side,
+    ).toBe('player');
+    app.openSaves();
+    app.startSlot(2);
+    expect(app.snapshot.screen).toBe('map');
     expect(game.fleet(state.fleets[0]!.id)?.cargo?.Iron).toBe(7);
     expect(
       game.tacticalBattle!.pieces.find((piece) => piece.id === defender.id)

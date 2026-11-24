@@ -314,7 +314,16 @@ export class Game {
     if (!Array.isArray(state.pirates))
       throw new Error('Missing saved pirate fleets.');
     game.#pirates = copy.pirates!.map((pirate) =>
-      PirateFleet.restore(pirate, galaxy),
+      PirateFleet.restore(
+        pirate,
+        galaxy,
+        copy.phase === 'interrupted' &&
+          (copy.simulation?.tacticalBattles ?? []).some((battle) =>
+            battle.fleets.some(
+              (fleet) => fleet.id === pirate.id && fleet.side === 'enemy',
+            ),
+          ),
+      ),
     );
     const ids = [
       ...copy.fleets.map((fleet) => fleet.id),
@@ -844,15 +853,25 @@ export class Game {
             throw new Error('Battle ships do not match their fleet.');
         } else {
           const pirate = this.#pirates.find((f) => f.id === participant.id)!;
-          const roster = pirate.combatRoster();
           const remaining = pieces.filter((p) => p.side === 'enemy');
           if (
-            remaining.some(
-              (piece) =>
-                !roster.some(
-                  (ship) => ship.id === piece.id && ship.type === piece.type,
-                ),
-            )
+            remaining.filter((piece) => piece.type === 'Space pirate')
+              .length !== pirate.count ||
+            remaining.filter((piece) => piece.type === 'Transport ship')
+              .length !== pirate.transports ||
+            remaining.some((piece) => {
+              const prefix =
+                piece.type === 'Space pirate'
+                  ? `${pirate.id}:ship-`
+                  : piece.type === 'Transport ship'
+                    ? `${pirate.id}:transport-`
+                    : '';
+              return (
+                !prefix ||
+                !piece.id.startsWith(prefix) ||
+                !/^[1-9]\d*$/.test(piece.id.slice(prefix.length))
+              );
+            })
           )
             throw new Error('Invalid pirate participants.');
         }
