@@ -10,6 +10,12 @@ utan en pirat i sikte märks de inte, och en resa går i ett svep
 
 ## Krav
 
+- **Order vid kartupptäckt:** `order-vid-kartupptackt-utan-observator`
+  (2026-11-24) är **Fullständigt implementerat** i utforskningen. När en
+  upptäckt pausar resan kan spelaren alltid ge den egna flottan en ny order,
+  även om informationen kommer från erövrade kartor och inte har ett
+  observerande skepp. Det gäller också avbrott i befintliga sparningar.
+
 - **Order efter återupptagen strid:** `order-efter-aterupptagen-strid`
   (2026-11-24) är **Fullständigt implementerat**. När en sparad strid är
   avslutad fortsätter rundan automatiskt, även om en äldre sparning fortfarande

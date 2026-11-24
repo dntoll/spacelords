@@ -71,7 +71,9 @@ kraven med stabila namn och status. Statusen nedan sammanfattar området.
 - **[Rundan och händelser](docs/areas/turn-and-decisions.md):** rundor i
   bakgrunden, händelser som toppnotiser, kamera med död zon och avbrott.
   Återupptagna strider släpper fram nya order
-  (`order-efter-aterupptagen-strid`). Allt kvarvarande är **Fullständigt implementerat**.
+  (`order-efter-aterupptagen-strid`), och kartupptäckter utan observerande
+  skepp hindrar inte nya order (`order-vid-kartupptackt-utan-observator`).
+  Allt kvarvarande är **Fullständigt implementerat**.
 - **[Space pirates](docs/areas/pirates-and-salvage.md):** pirater,
   patrullering och strid per hex; strid när spelarens flotta och en pirat
   delar hex (`strid-i-samma-hex`), med minne av senast känd position

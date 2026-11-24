@@ -9,6 +9,7 @@ import {
 import type { SavedGame } from '../../../src/client/space-map/models/saves/SaveRepository.js';
 import type { IntentHandler } from '../../../src/client/app/views/ViewContracts.js';
 import { discoveryState } from '../../fixtures/exploration.js';
+import { HexCoordinate } from '../../../src/client/common/HexCoordinate.js';
 
 afterEach(() => vi.useRealTimers());
 
@@ -39,6 +40,37 @@ function session(initial: GameState = discoveryState()) {
 }
 
 describe('gemensamt-handelseflode', () => {
+  it('order-vid-kartupptackt-utan-observator: changes course after the saved discovery notices have cleared', async () => {
+    const game = Game.restore(discoveryState());
+    game.startTurn();
+    while (game.phase === 'simulating') game.applyFrame(game.nextTurnFrame()!);
+    const state = game.exportState();
+    const slot = session({
+      ...state,
+      simulation: {
+        ...state.simulation!,
+        discoveries: state.simulation!.discoveries.map((discovery) => ({
+          ...discovery,
+          kind: 'star' as const,
+          fleetId: null,
+        })),
+      },
+    });
+    const current = slot.open();
+    await vi.advanceTimersByTimeAsync(10000);
+    expect(current.model.snapshot.phase).toBe('interrupted');
+    const position = current.model.snapshot.fleet.position!;
+    const target = new HexCoordinate(position.q - 1, position.r);
+    current.emit({ type: 'select', position: target });
+    current.emit({ type: 'select', position: target });
+    await vi.advanceTimersByTimeAsync(0);
+    expect(current.model.snapshot.notice?.kind).not.toBe('error');
+    expect(
+      current.model.snapshot.fleet.destination?.key === target.key ||
+        current.model.snapshot.fleet.position?.key === target.key,
+    ).toBe(true);
+    current.controller.dispose();
+  });
   it.each([0, 1])(
     'stridsresultat-utan-upprepning: shows losses and survivors once while retaining wrecks and saved history (%s Fighters)',
     (fighters) => {
