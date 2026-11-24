@@ -63,7 +63,7 @@ describe('permanenta-skador', () => {
     const unit = game
       .fleetSnapshot()
       .shipUnits?.find((item) => item.id === raptor.id);
-    expect(unit).toBeDefined();
+    if (!unit) throw new Error('The Raptor should survive this battle.');
     expect(unit.damage ?? 0).toBeGreaterThanOrEqual(3);
     const reloaded = Game.restore(game.exportState());
     expect(
