@@ -5,6 +5,7 @@ import type {
 import { type TurnFrame } from '../../models/Game.js';
 import type { AppReadModel } from '../../../app/models/AppModel.js';
 import type { TurnFacade } from '../../models/turn/TurnFacade.js';
+import type { Point } from '../../../common/HexCoordinate.js';
 
 export class TurnController {
   constructor(private readonly facade: TurnFacade) {}
@@ -77,8 +78,8 @@ export class TurnController {
     return this.facade.focusTurnMovement(movement);
   }
 
-  followTurnMovement(progress: number): void {
-    return this.facade.followTurnMovement(progress);
+  followTurnMovement(progress: number, location?: Point): void {
+    return this.facade.followTurnMovement(progress, location);
   }
 
   completeTurnMovement(): void {

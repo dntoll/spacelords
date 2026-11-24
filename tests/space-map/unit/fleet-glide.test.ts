@@ -68,3 +68,73 @@ describe('flytande-forflyttning', () => {
     ).toBeCloseTo(1, 2);
   });
 });
+
+describe('rak-och-jamn-resa', () => {
+  it('places intermediate markers on the straight line when it touches the route hex', async () => {
+    const { fleetGlideWaypoint } =
+      await import('../../../src/client/space-map/views/star-map/FleetGlide.js');
+    const { HexGeometry } =
+      await import('../../../src/client/common/HexCoordinate.js');
+    const start = new HexCoordinate(0, 0);
+    const target = new HexCoordinate(3, 3);
+    const hex = new HexCoordinate(1, 0);
+    const point = fleetGlideWaypoint(start, target, hex);
+    const a = HexGeometry.toPoint(start),
+      b = HexGeometry.toPoint(target);
+    expect(
+      (b.x - a.x) * (point.y - a.y) - (b.y - a.y) * (point.x - a.x),
+    ).toBeCloseTo(0, 8);
+    expect(point).not.toEqual(HexGeometry.toPoint(hex));
+  });
+  it('stays in the detour hex when the direct line misses it', async () => {
+    const { fleetGlideWaypoint } =
+      await import('../../../src/client/space-map/views/star-map/FleetGlide.js');
+    const { HexGeometry } =
+      await import('../../../src/client/common/HexCoordinate.js');
+    const detour = new HexCoordinate(1, -1);
+    expect(
+      fleetGlideWaypoint(
+        new HexCoordinate(0, 0),
+        new HexCoordinate(3, 3),
+        detour,
+      ),
+    ).toEqual(HexGeometry.toPoint(detour));
+  });
+});
+
+it('rak-och-jamn-resa: rejects a shortcut through a third hex', async () => {
+  const { fleetGlideSegmentSafe } =
+    await import('../../../src/client/space-map/views/star-map/FleetGlide.js');
+  const { HexGeometry } =
+    await import('../../../src/client/common/HexCoordinate.js');
+  const from = new HexCoordinate(0, 0),
+    to = new HexCoordinate(1, 0);
+  const a = HexGeometry.toPoint(from),
+    b = HexGeometry.toPoint(to);
+  expect(fleetGlideSegmentSafe(from, to, a, b)).toBe(true);
+  expect(
+    fleetGlideSegmentSafe(
+      from,
+      to,
+      { x: a.x, y: a.y - 36 },
+      { x: b.x, y: b.y - 36 },
+    ),
+  ).toBe(false);
+});
+
+it('sikt-under-forflyttning: updates sight where the drawn path crosses the shared hex edge', async () => {
+  const { fleetGlideCrossed } =
+    await import('../../../src/client/space-map/views/star-map/FleetGlide.js');
+  const { HexGeometry } =
+    await import('../../../src/client/common/HexCoordinate.js');
+  const from = new HexCoordinate(0, 0),
+    to = new HexCoordinate(1, 0);
+  const a = HexGeometry.toPoint(from),
+    b = HexGeometry.toPoint(to);
+  expect(
+    fleetGlideCrossed(from, to, { x: a.x * 0.51 + b.x * 0.49, y: a.y }),
+  ).toBe(false);
+  expect(
+    fleetGlideCrossed(from, to, { x: a.x * 0.49 + b.x * 0.51, y: a.y }),
+  ).toBe(true);
+});

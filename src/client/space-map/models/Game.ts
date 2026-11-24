@@ -746,8 +746,17 @@ export class Game {
         target,
         this.#speed(fleet),
         this.#knownTerrain,
+        fleet.destination?.key === target.key
+          ? (fleet.courseOrigin ?? fleet.position)
+          : fleet.position,
       ),
     ]);
+  }
+  routeOrigin(id: string, target: HexCoordinate): HexCoordinate | null {
+    const fleet = this.#fleetState(id);
+    return fleet.destination?.key === target.key
+      ? (fleet.courseOrigin ?? fleet.position)
+      : fleet.position;
   }
   clearDestination(id: string): void {
     this.#requireFleetOrders(id);

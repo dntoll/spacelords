@@ -143,7 +143,7 @@ export interface AppPort {
   ): Promise<void>;
   animateTurnStep?(
     frame: TurnFrame,
-    onProgress?: (progress: number) => void,
+    onProgress?: (progress: number, point?: Point, crossed?: boolean) => void,
     duration?: number,
     ends?: { readonly start: boolean; readonly end: boolean },
   ): Promise<void>;
@@ -154,7 +154,7 @@ export interface MapPort {
   render(model: AppReadModel): void;
   animateTurnStep?(
     frame: TurnFrame,
-    onProgress?: (progress: number) => void,
+    onProgress?: (progress: number, point?: Point, crossed?: boolean) => void,
     duration?: number,
     ends?: { readonly start: boolean; readonly end: boolean },
   ): Promise<void>;

@@ -8,7 +8,11 @@ import { renderMapOverlays } from './MapOverlayView.js';
 import { renderTravelRoute } from './TravelRouteView.js';
 import p5 from 'p5';
 import type { AppReadModel } from '../../../app/models/AppModel.js';
-import { HexGeometry, type Point } from '../../../common/HexCoordinate.js';
+import {
+  HexGeometry,
+  type HexCoordinate,
+  type Point,
+} from '../../../common/HexCoordinate.js';
 import type { MapCell } from '../../models/Galaxy.js';
 import type {
   IntentHandler,
@@ -22,8 +26,11 @@ import { MapArtwork } from '../MapArtwork.js';
 import { renderPlanetGlyph } from '../PlanetGlyph.js';
 import {
   fleetGlideDuration,
+  fleetGlideCrossed,
   fleetGlidePoint,
   fleetGlideProgress,
+  fleetGlideSegmentSafe,
+  fleetGlideWaypoint,
 } from './FleetGlide.js';
 
 const STAR_MAP_LABEL =
@@ -48,6 +55,13 @@ export class GalaxyMapView implements MapPort {
   #movement: {
     movements: TurnFrame['movements'];
     progress: number;
+    points: ReadonlyMap<string, { from: Point; to: Point }>;
+  } | null = null;
+  #journey: {
+    start: HexCoordinate;
+    target: HexCoordinate;
+    position: string;
+    point: Point;
   } | null = null;
   #movementFrame = 0;
   #finishMovement: (() => void) | null = null;
@@ -126,7 +140,13 @@ export class GalaxyMapView implements MapPort {
           (movement, index) =>
             movement.fleetId !== model.turnMovements[index]?.fleetId ||
             movement.to.key !== model.turnMovements[index]?.to.key,
-        ))
+        )) &&
+      !(
+        this.#journey &&
+        model.fleet.destination &&
+        model.fleet.destination.key === this.#journey.target.key &&
+        model.fleet.position?.key === this.#journey.position
+      )
     )
       this.#movement = null;
     if (this.#viewport?.cells !== model.cells)
@@ -150,7 +170,7 @@ export class GalaxyMapView implements MapPort {
 
   animateTurnStep(
     frame: TurnFrame,
-    onProgress?: (progress: number) => void,
+    onProgress?: (progress: number, point?: Point, crossed?: boolean) => void,
     duration = 400,
     ends?: { readonly start: boolean; readonly end: boolean },
   ): Promise<void> {
@@ -159,17 +179,58 @@ export class GalaxyMapView implements MapPort {
       !frame.movements.length ||
       window.matchMedia('(prefers-reduced-motion: reduce)').matches
     ) {
+      this.#journey = null;
       onProgress?.(1);
       return Promise.resolve();
     }
-    const glide = fleetGlideDuration(
+    const own = frame.movements.find(
+      (movement) => movement.fleetId === this.#model?.fleet.id,
+    );
+    const destination = this.#model?.travelRoute?.steps.at(-1);
+    if (own && ends?.start) {
+      this.#journey =
+        destination && !ends.end
+          ? {
+              start: own.from,
+              target: destination,
+              position: own.from.key,
+              point: HexGeometry.toPoint(own.from),
+            }
+          : null;
+    }
+    const points = new Map<string, { from: Point; to: Point }>();
+    for (const movement of frame.movements) {
+      const centerFrom = HexGeometry.toPoint(movement.from);
+      const centerTo = HexGeometry.toPoint(movement.to);
+      const journey =
+        movement === own && this.#journey?.position === movement.from.key
+          ? this.#journey
+          : null;
+      const from = journey?.point ?? centerFrom;
+      let to =
+        journey && !ends?.end
+          ? fleetGlideWaypoint(journey.start, journey.target, movement.to)
+          : centerTo;
+      if (!fleetGlideSegmentSafe(movement.from, movement.to, from, to))
+        to = centerTo;
+      points.set(movement.fleetId, { from, to });
+    }
+    let glide = fleetGlideDuration(
       duration,
       frame.movements,
       this.#model?.cells ?? [],
     );
+    if (own && frame.movements.length === 1) {
+      const path = points.get(own.fleetId)!;
+      const a = HexGeometry.toPoint(own.from),
+        b = HexGeometry.toPoint(own.to);
+      glide *=
+        Math.hypot(path.to.x - path.from.x, path.to.y - path.from.y) /
+        Math.hypot(b.x - a.x, b.y - a.y);
+    }
     return new Promise((resolve) => {
       this.#finishMovement = resolve;
-      let started: number | null = null;
+      let started: number | null = this.#ready ? performance.now() : null;
       const draw = (now: number) => {
         if (this.#disposed) {
           resolve();
@@ -178,10 +239,27 @@ export class GalaxyMapView implements MapPort {
         if (this.#ready) {
           started ??= now;
           const progress = fleetGlideProgress((now - started) / glide, ends);
-          this.#movement = { movements: frame.movements, progress };
-          onProgress?.(progress);
+          this.#movement = { movements: frame.movements, progress, points };
+          const path = own ? points.get(own.fleetId) : undefined;
+          const point = path
+            ? fleetGlidePoint(path.from, path.to, progress)
+            : undefined;
+          let crossed: boolean | undefined;
+          if (own && point) {
+            crossed = fleetGlideCrossed(own.from, own.to, point);
+          }
+          onProgress?.(progress, point, crossed);
           this.#requestDraw();
           if (progress === 1) {
+            if (own && this.#journey) {
+              if (ends?.end) this.#journey = null;
+              else
+                this.#journey = {
+                  ...this.#journey,
+                  position: own.to.key,
+                  point: points.get(own.fleetId)!.to,
+                };
+            }
             this.#finishMovement = null;
             resolve();
             return;
@@ -214,8 +292,12 @@ export class GalaxyMapView implements MapPort {
         ...original.pirates.map(pirateAsFleet),
       ]);
       for (const movement of movements) {
-        const from = HexGeometry.toPoint(movement.from),
-          to = HexGeometry.toPoint(movement.to);
+        const from =
+            this.#movement.points.get(movement.fleetId)?.from ??
+            HexGeometry.toPoint(movement.from),
+          to =
+            this.#movement.points.get(movement.fleetId)?.to ??
+            HexGeometry.toPoint(movement.to);
         const center = fleetGlidePoint(from, to, progress);
         const marker = markers.find(
           (candidate) => candidate.fleet.id === movement.fleetId,
@@ -240,10 +322,24 @@ export class GalaxyMapView implements MapPort {
           this.#movement.movements.map((movement) => movement.fleetId),
         );
         this.#canvas.dataset.movingProgress = String(this.#movement.progress);
+        const path = this.#movement.points.get(
+          this.#movement.movements[0]!.fleetId,
+        );
+        if (path) {
+          const position = fleetGlidePoint(
+            path.from,
+            path.to,
+            this.#movement.progress,
+          );
+          this.#canvas.dataset.movingX = String(position.x);
+          this.#canvas.dataset.movingY = String(position.y);
+        }
       } else {
         delete this.#canvas.dataset.movingFleet;
         delete this.#canvas.dataset.movingFleets;
         delete this.#canvas.dataset.movingProgress;
+        delete this.#canvas.dataset.movingX;
+        delete this.#canvas.dataset.movingY;
       }
     }
     if (this.#descriptionScreen !== model.screen) {
