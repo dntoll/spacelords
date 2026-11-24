@@ -48,7 +48,8 @@ kraven med stabila namn och status. Statusen nedan sammanfattar området.
   hexval och väg (`hexval-med-vag`), mörk fyllning i vald outforskad hex
   (`markerad-outforskad-hex`), AP och turordning utan End turn
   (`ap-pa-starmap`), glidande hexsteg
-  (`glidande-hexsteg`, `flytande-forflyttning`) och rakare vägval
+  (`glidande-hexsteg`, `flytande-forflyttning`), animering oberoende av
+  systemets rörelseinställning (`stjarnkarta-alltid-animerad`) och rakare vägval
   (`rakare-vag`, `rak-och-jamn-resa`, `stabil-fardvag`), kamera med död zon och fri panorering
   (`kamera-med-dod-zon`), sömlös förflyttning utan synliga rundor
   (`somlos-forflyttning`, `obruten-resa`), spelarstyrt val av hex

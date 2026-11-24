@@ -175,11 +175,7 @@ export class GalaxyMapView implements MapPort {
     duration = 400,
     ends?: { readonly start: boolean; readonly end: boolean },
   ): Promise<void> {
-    if (
-      this.#disposed ||
-      !frame.movements.length ||
-      window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    ) {
+    if (this.#disposed || !frame.movements.length) {
       this.#journey = null;
       onProgress?.(1);
       return Promise.resolve();
