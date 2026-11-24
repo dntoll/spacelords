@@ -79,6 +79,7 @@ export interface BoardingMapPort {
   screenLift?(meters: number): number;
   beginPresentation?(): void;
   endPresentation?(): void;
+  cancelPresentation?(): void;
   focusActor?(id: string): Promise<void>;
   restorePlayView?(): Promise<void>;
   frameVisibleMovement?(
@@ -616,14 +617,14 @@ export class BoardingView {
     token: number,
   ): Promise<void> {
     this.#busy = true;
-    this.#map?.beginPresentation?.();
     this.#destination = null;
     let interrupted = false;
-    this.#paint(
-      previous,
-      shot?.kind === 'grenade' ? 'Throwing…' : shot ? 'Firing…' : 'Moving…',
-    );
     try {
+      this.#map?.beginPresentation?.();
+      this.#paint(
+        previous,
+        shot?.kind === 'grenade' ? 'Throwing…' : shot ? 'Firing…' : 'Moving…',
+      );
       let current = previous;
       const shotIndex = Math.min(shot?.presentationIndex ?? 0, frames.length);
       // vandning-under-forflyttning: a turn plays together with the next step.
@@ -644,19 +645,23 @@ export class BoardingView {
             shot.kind === 'grenade' ? 'Throwing…' : 'Firing…',
           );
           if (this.#map.frameShot) {
-            await this.#map.frameShot(shot.from, shot.to);
+            await this.#awaitPresentation(
+              this.#map.frameShot(shot.from, shot.to),
+            );
             if (token !== this.#playToken) {
               interrupted = true;
               return;
             }
           }
-          await this.#map.playShot(
-            shot.from,
-            shot.to,
-            shot.kind,
-            shot.grenade,
-            shot.aim,
-            shot.panes,
+          await this.#awaitPresentation(
+            this.#map.playShot(
+              shot.from,
+              shot.to,
+              shot.kind,
+              shot.grenade,
+              shot.aim,
+              shot.panes,
+            ),
           );
           this.#playedShot = shot;
         }
@@ -668,12 +673,15 @@ export class BoardingView {
           return;
         }
         if (this.#map?.frameVisibleMovement)
-          await this.#map.frameVisibleMovement(current, frame);
+          await this.#awaitPresentation(
+            this.#map.frameVisibleMovement(current, frame),
+          );
         if (token !== this.#playToken) {
           interrupted = true;
           return;
         }
-        await this.#map?.playMotion?.(current, frame);
+        const motion = this.#map?.playMotion?.(current, frame);
+        if (motion) await this.#awaitPresentation(motion);
         current = frame;
         this.#paint(frame, 'Moving…');
       }
@@ -687,8 +695,17 @@ export class BoardingView {
         final.currentActorId
       ) {
         this.#paint(final, 'Focusing…');
-        await this.#map.focusActor(final.currentActorId);
-      } else if (this.#map?.restorePlayView) await this.#map.restorePlayView();
+        await this.#awaitPresentation(
+          this.#map.focusActor(final.currentActorId),
+        );
+      } else if (this.#map?.restorePlayView)
+        await this.#awaitPresentation(this.#map.restorePlayView());
+    } catch (error) {
+      interrupted = token !== this.#playToken || this.#disposed;
+      if (!interrupted) {
+        console.warn('Boarding presentation failed.', error);
+        this.#map?.cancelPresentation?.();
+      }
     } finally {
       this.#busy = false;
       this.#map?.endPresentation?.();
@@ -700,6 +717,24 @@ export class BoardingView {
     this.#paint(final, notice);
     this.#drainPending();
     this.#releaseIdle();
+  }
+
+  /** forsvarartur-fastnar-inte: a stalled view must not block game turns. */
+  async #awaitPresentation(action: Promise<void>): Promise<void> {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    try {
+      await Promise.race([
+        action,
+        new Promise<never>((_resolve, reject) => {
+          timer = setTimeout(
+            () => reject(new Error('Boarding animation timed out.')),
+            5000,
+          );
+        }),
+      ]);
+    } finally {
+      clearTimeout(timer);
+    }
   }
 
   /** tydlig-bordningsstatus: the defender step waits until the shot is visible. */

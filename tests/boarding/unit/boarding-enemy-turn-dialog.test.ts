@@ -10,7 +10,11 @@ import transportFixture from '../../fixtures/boarding/transport-boarding-fixture
 
 const map = parseBoardingMap(transportFixture, 'Transport ship');
 
-afterEach(() => document.body.replaceChildren());
+afterEach(() => {
+  vi.useRealTimers();
+  vi.restoreAllMocks();
+  document.body.replaceChildren();
+});
 
 function turnOf(side: 'player' | 'defender'): BoardingBattleState {
   const created = BoardingBattle.create(map, 0x5a17).snapshot;
@@ -58,5 +62,95 @@ it('motstandartur-i-mitten: the dialog leaves when a soldier may act again', () 
   expect(
     document.querySelector('[aria-label="End soldier turn"]'),
   ).not.toBeNull();
+  boarding.dispose();
+});
+
+it('forsvarartur-fastnar-inte: a failed movement presentation releases the defender turn', async () => {
+  const warning = vi.spyOn(console, 'warn').mockImplementation(() => {});
+  const initial = turnOf('defender');
+  const final = turnOf('player');
+  const enemy = initial.people.find((person) => person.side === 'defender')!;
+  const moved = {
+    ...final,
+    people: final.people.map((person) =>
+      person.id === enemy.id
+        ? {
+            ...person,
+            position: { q: person.position.q + 1, r: person.position.r },
+          }
+        : person,
+    ),
+  };
+  const boarding = new BoardingView(
+    document.body,
+    vi.fn(),
+    () => ({
+      render() {},
+      zoom() {},
+      fit() {},
+      dispose() {},
+      playMotion: () => Promise.reject(new Error('Animation unavailable')),
+    }),
+    () => map,
+  );
+  boarding.render(initial);
+  boarding.render(moved, null, [moved]);
+  const idle = boarding.whenIdle();
+  expect(idle).not.toBeNull();
+  const completed = await Promise.race([
+    idle!.then(() => true),
+    new Promise<boolean>((resolve) => setTimeout(() => resolve(false), 50)),
+  ]);
+  expect(completed).toBe(true);
+  expect(
+    document.querySelector<HTMLElement>('.boarding-enemy-turn')!.hidden,
+  ).toBe(true);
+  boarding.dispose();
+  warning.mockRestore();
+});
+
+it('forsvarartur-fastnar-inte: a stalled movement presentation cannot block the next soldier', async () => {
+  vi.useFakeTimers();
+  vi.spyOn(console, 'warn').mockImplementation(() => {});
+  const initial = turnOf('defender');
+  const final = turnOf('player');
+  const enemy = initial.people.find((person) => person.side === 'defender')!;
+  const moved = {
+    ...final,
+    people: final.people.map((person) =>
+      person.id === enemy.id
+        ? {
+            ...person,
+            position: { q: person.position.q + 1, r: person.position.r },
+          }
+        : person,
+    ),
+  };
+  const cancel = vi.fn();
+  const boarding = new BoardingView(
+    document.body,
+    vi.fn(),
+    () => ({
+      render() {},
+      zoom() {},
+      fit() {},
+      dispose() {},
+      cancelPresentation: cancel,
+      playMotion: () => new Promise<void>(() => {}),
+    }),
+    () => map,
+  );
+  boarding.render(initial);
+  boarding.render(moved, null, [moved]);
+  let idle = false;
+  void boarding.whenIdle()!.then(() => {
+    idle = true;
+  });
+  await vi.advanceTimersByTimeAsync(6000);
+  expect(idle).toBe(true);
+  expect(cancel).toHaveBeenCalledOnce();
+  expect(
+    document.querySelector<HTMLElement>('.boarding-enemy-turn')!.hidden,
+  ).toBe(true);
   boarding.dispose();
 });

@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
   BoardingBattle,
   BOARDING_HEARING_RANGE,
@@ -98,6 +98,17 @@ describe('fiender-reagerar-pa-ljud', () => {
 });
 
 describe('fiender-soker-upp-bordare', () => {
+  it('forsvarartur-fastnar-inte: yields a defender turn when route planning fails', () => {
+    const { far, restore } = deck();
+    const battle = restore(far.id, (person) =>
+      person.id === far.id ? { ...person, heardAt: { q: 3, r: 1 } } : person,
+    );
+    vi.spyOn(battle, 'pathTo').mockImplementation(() => {
+      throw new Error('Route unavailable');
+    });
+    expect(() => battle.actAutomatically(true)).not.toThrow();
+    expect(battle.snapshot.currentActorId).not.toBe(far.id);
+  });
   it('heads for a heard sound even when it lies beyond this activation', () => {
     const { far, restore } = deck();
     const battle = restore(far.id, (person) =>

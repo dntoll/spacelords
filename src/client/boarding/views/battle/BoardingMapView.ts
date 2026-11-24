@@ -727,6 +727,11 @@ export class BoardingMapView implements BoardingMapPort {
     this.#cameraSuppressed = false;
   }
 
+  cancelPresentation(): void {
+    this.#cancelCamera();
+    this.#finishMotion();
+  }
+
   #cameraBounds(): BoardingCameraBounds {
     return (
       this.#viewportProvider?.() ?? {
