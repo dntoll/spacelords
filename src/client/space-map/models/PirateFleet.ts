@@ -15,9 +15,16 @@ export interface SavedPirateFleet {
   readonly hold?: Stock;
   /** piratens-aktivering: seen by the player and not yet left behind. */
   readonly active?: boolean;
+  readonly lastKnownPosition?: { readonly q: number; readonly r: number };
+  readonly movedSinceSeen?: boolean;
 }
 export interface PirateSnapshot extends SavedPirateFleet {
   readonly position: HexCoordinate;
+}
+export interface PirateMemory {
+  readonly position: HexCoordinate;
+  readonly moved: boolean;
+  readonly pirate: PirateSnapshot;
 }
 
 function mix(seed: string): number {
@@ -74,6 +81,8 @@ export class PirateFleet {
     public hold: Stock = pirateHoldFromSeed(id),
     /** piratens-aktivering: only active pirates act in the enemies' turn. */
     public active = false,
+    public lastKnownPosition: HexCoordinate | null = null,
+    public movedSinceSeen = false,
   ) {}
 
   static seed(galaxy: Galaxy): PirateFleet[] {
@@ -98,6 +107,7 @@ export class PirateFleet {
     );
     const position = new HexCoordinate(saved.position.q, saved.position.r);
     const transports = saved.transports ?? 0;
+    const known = saved.lastKnownPosition;
     if (
       !system ||
       position.distanceTo(system.star.position) !== 1 ||
@@ -107,7 +117,14 @@ export class PirateFleet {
       !Number.isSafeInteger(transports) ||
       transports < 0 ||
       (saved.count < 1 && transports < 1) ||
-      !saved.id
+      !saved.id ||
+      (known !== undefined &&
+        (!Number.isInteger(known.q) ||
+          !Number.isInteger(known.r) ||
+          !galaxy.cellAt(new HexCoordinate(known.q, known.r)))) ||
+      (saved.movedSinceSeen !== undefined &&
+        typeof saved.movedSinceSeen !== 'boolean') ||
+      (saved.movedSinceSeen === true && !known)
     )
       throw new Error('Invalid saved pirate fleet.');
     const hold =
@@ -121,11 +138,24 @@ export class PirateFleet {
       transports,
       { ...emptyStock(), ...hold },
       saved.active === true,
+      known ? new HexCoordinate(known.q, known.r) : null,
+      saved.movedSinceSeen === true,
     );
   }
 
   get hasShips(): boolean {
     return this.count > 0 || this.transports > 0;
+  }
+
+  observe(): void {
+    this.lastKnownPosition = this.position;
+    this.movedSinceSeen = false;
+  }
+
+  moveTo(position: HexCoordinate): void {
+    if (this.lastKnownPosition && position.key !== this.position.key)
+      this.movedSinceSeen = true;
+    this.position = position;
   }
 
   combatRoster(): readonly { readonly id: string; readonly type: ShipType }[] {
@@ -162,6 +192,10 @@ export class PirateFleet {
       transports: this.transports,
       hold: Object.freeze({ ...this.hold }),
       ...(this.active ? { active: true } : {}),
+      ...(this.lastKnownPosition
+        ? { lastKnownPosition: this.lastKnownPosition }
+        : {}),
+      ...(this.movedSinceSeen ? { movedSinceSeen: true } : {}),
     });
   }
 

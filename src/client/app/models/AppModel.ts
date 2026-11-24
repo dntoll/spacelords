@@ -9,6 +9,7 @@ import {
   type TurnMovement,
   type SavedTurnSimulation,
   type PirateSnapshot,
+  type PirateMemory,
   isMapScreen,
   type MapScreen,
   type MapViewport,
@@ -93,6 +94,7 @@ export interface AppReadModel {
   /** enda-spelarflottan: the player's only fleet. */
   readonly fleet: FleetSnapshot;
   readonly pirates: readonly PirateSnapshot[];
+  readonly pirateMemories: readonly PirateMemory[];
   readonly selectedFleet: FleetSnapshot | null;
   readonly fleetNameEdit: {
     readonly id: string;
@@ -263,6 +265,7 @@ export class AppModel {
         mapFleetId: this.#movementPlayback.current?.fleetId ?? null,
         fleet: this.#movementPlayback.fleet,
         pirates: this.#movementPlayback.pirates,
+        pirateMemories: this.#movementPlayback.pirateMemories,
         cells: this.#movementPlayback.cells,
         destinationFleetId: null,
         defeated: this.#game.defeated,
@@ -308,6 +311,7 @@ export class AppModel {
       interruption: this.#game.interruption,
       fleet: this.#game.fleetSnapshot(),
       pirates: this.#game.pirateSnapshots(),
+      pirateMemories: this.#game.pirateMemories(),
       selectedFleet: this.#selectedFleetId
         ? this.#game.fleet(this.#selectedFleetId)
         : null,

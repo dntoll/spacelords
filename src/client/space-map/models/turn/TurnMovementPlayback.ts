@@ -1,7 +1,7 @@
 import type { FleetSnapshot, TurnFrame } from '../Game.js';
 import { Detection, type DetectionSource } from '../Detection.js';
 import type { MapCell } from '../Galaxy.js';
-import type { PirateSnapshot } from '../PirateFleet.js';
+import type { PirateMemory, PirateSnapshot } from '../PirateFleet.js';
 import type { HexCoordinate } from '../../../common/HexCoordinate.js';
 import { comparePlaybackPositions } from './PlaybackOrder.js';
 
@@ -11,6 +11,7 @@ export interface MovementScene {
   /** enda-spelarflottan: the player's only fleet. */
   readonly fleet: FleetSnapshot;
   readonly pirates: readonly PirateSnapshot[];
+  readonly pirateMemories?: readonly PirateMemory[];
   readonly cells: readonly MapCell[];
 }
 
@@ -28,12 +29,18 @@ export class TurnMovementPlayback {
   readonly #pirates: Map<string, PirateSnapshot>;
   readonly #catalog: Map<string, MapCell>;
   readonly #observations = new Map<TurnMovement, readonly PirateSnapshot[]>();
+  readonly #memoryObservations = new Map<
+    TurnMovement,
+    readonly PirateMemory[]
+  >();
+  #memories: readonly PirateMemory[];
   readonly #destinations = new Map<TurnMovement, HexCoordinate>();
   #cells: readonly MapCell[];
   #current: readonly TurnMovement[] = Object.freeze([]);
 
   constructor(origin: MovementScene) {
     this.#fleet = origin.fleet;
+    this.#memories = origin.pirateMemories ?? [];
     this.#pirates = new Map(origin.pirates.map((fleet) => [fleet.id, fleet]));
     this.#catalog = new Map(
       origin.cells.map((cell) => [cell.position.key, cell]),
@@ -64,6 +71,7 @@ export class TurnMovementPlayback {
       const step = Object.freeze({ ...movement });
       track.movements.push(step);
       this.#observations.set(step, after.pirates);
+      this.#memoryObservations.set(step, after.pirateMemories ?? []);
       this.#destinations.set(step, own?.destination ?? movement.to);
       this.#tracks.set(movement.fleetId, track);
     }
@@ -122,6 +130,7 @@ export class TurnMovementPlayback {
     if (!changed.length) return false;
     for (const movement of changed) {
       this.#positions.set(movement.fleetId, movement.to);
+      this.#memories = this.#memoryObservations.get(movement) ?? this.#memories;
       for (const pirate of this.#observations.get(movement) ?? [])
         if (!this.#pirates.has(pirate.id)) this.#pirates.set(pirate.id, pirate);
     }
@@ -185,6 +194,13 @@ export class TurnMovementPlayback {
             position: this.#positions.get(fleet.id) ?? fleet.position,
           }),
         ),
+    );
+  }
+
+  get pirateMemories(): readonly PirateMemory[] {
+    const visibleIds = new Set(this.pirates.map((pirate) => pirate.id));
+    return Object.freeze(
+      this.#memories.filter((memory) => !visibleIds.has(memory.pirate.id)),
     );
   }
 }

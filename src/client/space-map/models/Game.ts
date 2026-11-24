@@ -10,6 +10,7 @@ import { Detection } from './Detection.js';
 import {
   PirateFleet,
   type PirateSnapshot,
+  type PirateMemory,
   type SavedPirateFleet,
 } from './PirateFleet.js';
 import type { CombatResult } from './FleetCombat.js';
@@ -485,6 +486,9 @@ export class Game {
     )
       throw new Error('Invalid charted pirate contacts.');
     game.#chartedPirates = new Set(chartedPirates);
+    for (const pirate of game.#pirates)
+      if (game.#chartedPirates.has(pirate.id) && !pirate.lastKnownPosition)
+        pirate.observe();
     game.#linkInterruptionEvents();
     // Exercise derived data before accepting a stored record.
     game.mapSnapshot();
@@ -631,12 +635,29 @@ export class Game {
   pirateSnapshots(): readonly PirateSnapshot[] {
     return Object.freeze(
       this.#pirates
+        .filter((pirate) => this.#visible.has(pirate.position.key))
+        .map((pirate) => pirate.snapshot()),
+    );
+  }
+
+  /** pirat-minne-efter-sikt: expose only a contact's last observed location. */
+  pirateMemories(): readonly PirateMemory[] {
+    return Object.freeze(
+      this.#pirates
         .filter(
           (pirate) =>
-            this.#visible.has(pirate.position.key) ||
-            this.#chartedPirates.has(pirate.id),
+            pirate.lastKnownPosition && !this.#visible.has(pirate.position.key),
         )
-        .map((pirate) => pirate.snapshot()),
+        .map((pirate) =>
+          Object.freeze({
+            position: pirate.lastKnownPosition!,
+            moved: pirate.movedSinceSeen,
+            pirate: Object.freeze({
+              ...pirate.snapshot(),
+              position: pirate.lastKnownPosition!,
+            }),
+          }),
+        ),
     );
   }
 
@@ -1071,6 +1092,7 @@ export class Game {
       if (this.galaxy.cellAt(hex)) this.#explored.add(hex.key);
     }
     this.#chartedPirates.add(other.id);
+    other.observe();
     this.#mapCells = null;
     this.#updateSight();
     this.#event('Captured charts reveal a pirate presence.');
@@ -1181,9 +1203,8 @@ export class Game {
         ).length;
         if (pirate.transports <= 0) pirate.hold = emptyStock();
         if (escaped && participant.retreat) {
-          pirate.position = new HexCoordinate(
-            participant.retreat.q,
-            participant.retreat.r,
+          pirate.moveTo(
+            new HexCoordinate(participant.retreat.q, participant.retreat.r),
           );
           simulation.remaining.set(pirate.id, 0);
         }
@@ -1579,7 +1600,7 @@ export class Game {
         (pirate) => pirate.id === movement.fleetId,
       );
       if (pirate) {
-        pirate.position = movement.to;
+        pirate.moveTo(movement.to);
         continue;
       }
       const fleet = this.#fleetState(movement.fleetId);
@@ -1849,6 +1870,8 @@ export class Game {
     const nebula = (point: HexCoordinate) =>
       this.galaxy.terrainAt(point) === 'nebula';
     this.#visible = Detection.coverage(sources, nebula);
+    for (const pirate of this.#pirates)
+      if (this.#visible.has(pirate.position.key)) pirate.observe();
     for (const key of Detection.coverage(sources, nebula, true)) {
       const point = new HexCoordinate(
         ...(key.split(',').map(Number) as [number, number]),

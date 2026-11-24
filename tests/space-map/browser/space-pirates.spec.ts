@@ -35,8 +35,6 @@ for (const screen of ['Star map', 'Fleets']) {
     const prepared = {
       ...state,
       pirates,
-      // Fighters have no telescope, so the pirate is already charted.
-      chartedPirates: ['pirate-nadir'],
       explored: [
         ...state.explored,
         ...system.star.position.neighbors().map((position) => position.key),
@@ -45,17 +43,14 @@ for (const screen of ['Star map', 'Fleets']) {
         {
           ...fleet,
           position: { q: start.q, r: start.r },
-          // Armed ships only, so the pirate has nothing unarmed to board.
+          // The Raptor spots the pirate; Fighters finish the tactical battle.
           ships: {
             ...fleet.ships,
-            Raptor: 0,
+            Raptor: 1,
             Fighter: 3,
             'Exploration ship': 0,
           },
-          shipUnits: [1, 2, 3].map((copy) => ({
-            ...fleet.shipUnits!.find((unit) => unit.type === 'Fighter')!,
-            id: `escort-${copy}`,
-          })),
+          shipUnits: [],
         },
       ],
     };
@@ -118,7 +113,7 @@ for (const screen of ['Star map', 'Fleets']) {
         JSON.parse(localStorage.getItem('spacelords.save.v2.1')!) as SavedGame,
     );
     expect(reloaded.state.pirates).toEqual([]);
-    expect(reloaded.state.round).toBe(2);
+    expect(reloaded.state.round).toBeGreaterThan(saved.state.round);
     expect(reloaded.state.fleets[0]?.ships.Fighter ?? 0).toBe(fighters);
     expect(errors).toEqual([]);
   });
@@ -132,12 +127,11 @@ test('piratflotta-med-lastfartyg: the pirate panel lists a transport and its car
   const prepared = {
     ...state,
     pirates: state.pirates!.filter((pirate) => pirate.systemId === 'nadir'),
-    chartedPirates: ['pirate-nadir'],
     explored: [
       ...state.explored,
       ...system.star.position.neighbors().map((position) => position.key),
     ],
-    fleets: [{ ...state.fleets[0]!, position: { q: 0, r: 0 } }],
+    fleets: [{ ...state.fleets[0]!, position: { q: 8, r: -4 } }],
   };
   await page.addInitScript((state) => {
     localStorage.setItem('spacelords.expanded-galaxy-v12-reset', 'done');

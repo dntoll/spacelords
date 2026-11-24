@@ -26,6 +26,7 @@ export function renderMapFleets(
   movementPoints: ReadonlyMap<string, Point> = new Map(),
   shipImages: ReadonlyMap<ShipSpriteType, p5.Image> = new Map(),
   showDestinationArrows = true,
+  rememberedIds: readonly string[] = [],
 ): void {
   const markers = FleetMapLayout.markers(fleets).map((marker) => ({
     ...marker,
@@ -71,6 +72,11 @@ export function renderMapFleets(
     );
   }
   for (const { fleet, point, scale } of markers) {
+    const remembered = rememberedIds.includes(fleet.id);
+    if (remembered) {
+      sketch.push();
+      (sketch.drawingContext as CanvasRenderingContext2D).globalAlpha *= 0.4;
+    }
     const hostile = pirateIds.includes(fleet.id);
     const selected = interaction.mapFleetId === fleet.id;
     const hovered = interaction.hoveredFleetId === fleet.id;
@@ -121,6 +127,7 @@ export function renderMapFleets(
     sketch.fill(color);
     if (zoom < 0.2) {
       sketch.circle(point.x, point.y, 4 / zoom);
+      if (remembered) sketch.pop();
       continue;
     }
     for (const glyph of FleetMapLayout.glyphs({ fleet, point, scale }, zoom)) {
@@ -154,6 +161,7 @@ export function renderMapFleets(
         point.y - 5 / zoom,
       );
     }
+    if (remembered) sketch.pop();
   }
 }
 

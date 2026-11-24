@@ -20,7 +20,11 @@ import { FleetMapLayout } from '../../models/star-map/FleetMapLayout.js';
 import { pirateAsFleet } from '../../models/PirateFleet.js';
 import { MapArtwork } from '../MapArtwork.js';
 import { renderPlanetGlyph } from '../PlanetGlyph.js';
-import { fleetGlideDuration, fleetGlidePoint } from './FleetGlide.js';
+import {
+  fleetGlideDuration,
+  fleetGlidePoint,
+  fleetGlideProgress,
+} from './FleetGlide.js';
 
 const STAR_MAP_LABEL =
   'Star map. Select a hex to see it and the route there; select it again to travel. Click a fleet to select it. Drag a fleet to set its destination. Escape cancels. Drag empty space to pan; pinch or use the mouse wheel to zoom. Plus and minus keys zoom. Arrow keys pan; Home returns to the start planet; Enter selects the central hex.';
@@ -148,6 +152,7 @@ export class GalaxyMapView implements MapPort {
     frame: TurnFrame,
     onProgress?: (progress: number) => void,
     duration = 400,
+    ends?: { readonly start: boolean; readonly end: boolean },
   ): Promise<void> {
     if (
       this.#disposed ||
@@ -172,7 +177,7 @@ export class GalaxyMapView implements MapPort {
         }
         if (this.#ready) {
           started ??= now;
-          const progress = Math.min(1, (now - started) / glide);
+          const progress = fleetGlideProgress((now - started) / glide, ends);
           this.#movement = { movements: frame.movements, progress };
           onProgress?.(progress);
           this.#requestDraw();
@@ -252,7 +257,7 @@ export class GalaxyMapView implements MapPort {
     if (this.#canvas) {
       this.#canvas.setAttribute(
         'aria-description',
-        'Bright hexes are currently visible. Dim hexes were explored earlier. Dark hexes are unknown. The outline marks current detection range. Pirates are shown only within current sight.',
+        'Bright hexes are currently visible. Dim hexes were explored earlier. Dark hexes are unknown. The outline marks current detection range. A dim pirate marks its last known position; a question mark means it has moved.',
       );
       this.#canvas.setAttribute(
         'aria-label',

@@ -1,7 +1,8 @@
 # Sikt och teleskop
 
 Aktuell sikt skiljs från kartminnet. En utforskad ruta förblir känd även när
-ingen observerar den. Det är bara aktuell sikt som avslöjar pirater.
+ingen observerar den. Det är bara aktuell sikt som avslöjar piraters aktuella
+position; `pirat-minne-efter-sikt` visar deras senast kända plats efteråt.
 
 `sikt-under-forflyttning` — **Fullständigt implementerat**: synfältet följer
 skeppets visade position även under årets rörelseanimation. När skeppet går

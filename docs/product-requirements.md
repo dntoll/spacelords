@@ -53,7 +53,10 @@ engelska.
   eller som kartminne.
 - Spelaren zoomar och panorerar, väljer himlakroppar och flottor och drar en
   flotta till ett mål.
-- Flottorna ger sikt. Teleskop ökar räckvidden.
+- Flottorna ger sikt. Teleskop ökar räckvidden. En pirat utanför sikten
+  visas vid sin senast kända plats; när den flyttat sig visas ett frågetecken.
+- Flottan rör sig mjukt längs en så rak väg som möjligt. Synliga pirater
+  rör sig också mjukt över kartan.
 - Planeter är platser. En utforskad planet visar typ, miljö och resurser.
 
 ## Flottor

@@ -1,10 +1,19 @@
 import type { HexCoordinate, Point } from '../../../common/HexCoordinate.js';
 import type { MapCell } from '../../models/Galaxy.js';
 
-/** glidande-hexsteg: ease between hex centres so the marker slides instead of popping. */
-export function fleetGlideProgress(progress: number): number {
+/** flytande-forflyttning: soften journey endpoints while preserving speed between steps. */
+export function fleetGlideProgress(
+  progress: number,
+  ends: { readonly start: boolean; readonly end: boolean } = {
+    start: true,
+    end: true,
+  },
+): number {
   const t = Math.max(0, Math.min(1, progress));
-  return t * t * (3 - 2 * t);
+  if (ends.start && ends.end) return t * t * (3 - 2 * t);
+  if (ends.start) return 2 * t * t - t * t * t;
+  if (ends.end) return t + t * t - t * t * t;
+  return t;
 }
 
 export function fleetGlidePoint(
@@ -12,7 +21,7 @@ export function fleetGlidePoint(
   to: Point,
   progress: number,
 ): Point {
-  const t = fleetGlideProgress(progress);
+  const t = Math.max(0, Math.min(1, progress));
   return {
     x: from.x + (to.x - from.x) * t,
     y: from.y + (to.y - from.y) * t,

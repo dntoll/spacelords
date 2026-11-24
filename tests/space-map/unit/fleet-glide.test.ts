@@ -48,3 +48,23 @@ describe('langsam-forflyttning-i-asteroidbalte', () => {
     expect(ASTEROID_GLIDE_FACTOR).toBeGreaterThan(1);
   });
 });
+
+describe('flytande-forflyttning', () => {
+  it('moves linearly between steps and eases only at the ends of a journey', () => {
+    expect(fleetGlideProgress(0.25, { start: false, end: false })).toBe(0.25);
+    expect(fleetGlideProgress(0.25, { start: true, end: false })).toBeLessThan(
+      0.25,
+    );
+    expect(
+      fleetGlideProgress(0.75, { start: false, end: true }),
+    ).toBeGreaterThan(0.75);
+    const epsilon = 0.0001;
+    expect(
+      (1 - fleetGlideProgress(1 - epsilon, { start: true, end: false })) /
+        epsilon,
+    ).toBeCloseTo(1, 2);
+    expect(
+      fleetGlideProgress(epsilon, { start: false, end: true }) / epsilon,
+    ).toBeCloseTo(1, 2);
+  });
+});

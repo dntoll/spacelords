@@ -347,7 +347,9 @@ avbrott, sammanslagning och omladdning får inte skapa ny rörelsebudget.
 
 `nebulosornas-sikt`: Detection räknar siktlinjer, kontrollerar båda sidor av
 exakta hexkanter och skiljer observerad terrängyta från synligt innehåll.
-Kartminnet bevaras; pirater använder bara aktuell, gemensam sikt.
+Kartminnet bevaras; piraters aktuella position visas bara inom gemensam sikt.
+`pirat-minne-efter-sikt` sparar den senast observerade positionen och om
+piraten därefter flyttat sig i valfria fält i sparformat version 18.
 
 Sparversion 12 innehåller världens terräng, systemens planetavstånd, känd
 terräng och flottans pågående stjärnvarv. Äldre modellformat kan fortfarande

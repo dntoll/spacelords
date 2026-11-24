@@ -953,9 +953,10 @@ export class AppView implements AppPort {
     frame: TurnFrame,
     onProgress?: (progress: number) => void,
     duration?: number,
+    ends?: { readonly start: boolean; readonly end: boolean },
   ): Promise<void> {
     return (
-      this.#map?.animateTurnStep?.(frame, onProgress, duration) ??
+      this.#map?.animateTurnStep?.(frame, onProgress, duration, ends) ??
       Promise.resolve()
     );
   }

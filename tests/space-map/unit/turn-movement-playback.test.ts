@@ -328,3 +328,53 @@ describe('en-flotta-i-taget / osynliga-flottor-utan-animation', () => {
     controller.dispose();
   });
 });
+
+it('animerade-piratsteg: replays an enemy turn when both ends of a pirate step are visible', async () => {
+  vi.useFakeTimers();
+  const state = new Game(createExampleGalaxy()).exportState();
+  const pirate = state.pirates![0]!;
+  const from = new HexCoordinate(pirate.position.q, pirate.position.r);
+  const position = from.neighbors()[1]!;
+  const model = new AppModel(undefined, {
+    load: () => ({
+      lastPlayed: '2026-11-24T00:00:00Z',
+      state: {
+        ...state,
+        pirates: [{ ...pirate, active: true }],
+        fleets: [{ ...state.fleets[0]!, position }],
+        enemyTurnPending: true,
+        actionTime: { 'fleet-home': 0 },
+      },
+    }),
+    save() {},
+    clear() {},
+  });
+  model.startSlot(1);
+  const movements: TurnFrame['movements'][number][] = [];
+  const controller = new MasterController(model, {
+    bind() {},
+    render() {},
+    dispose() {},
+    animateTurnStep(frame, onProgress) {
+      movements.push(...frame.movements);
+      const step = frame.movements.find((move) => move.fleetId === pirate.id);
+      if (step) {
+        onProgress?.(0.25);
+        expect(
+          model.snapshot.pirates.find((item) => item.id === pirate.id)?.position
+            .key,
+        ).toBe(step.from.key);
+        onProgress?.(0.75);
+        expect(
+          model.snapshot.pirates.find((item) => item.id === pirate.id)?.position
+            .key,
+        ).toBe(step.to.key);
+      }
+      return Promise.resolve();
+    },
+  });
+  controller.start();
+  await vi.advanceTimersByTimeAsync(10000);
+  expect(movements.some((step) => step.fleetId === pirate.id)).toBe(true);
+  controller.dispose();
+});
