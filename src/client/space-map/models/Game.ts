@@ -79,6 +79,7 @@ export interface TurnFrame {
 interface Fleet {
   navigationIssue?: string;
   shipUnits?: ShipUnit[];
+  shipOrder?: string[];
   id: string;
   name: string;
   position: HexCoordinate | null;
@@ -733,7 +734,7 @@ export class Game {
       destination: fleet.destination,
       ships: Object.freeze({ ...fleet.ships }),
       shipUnits: Object.freeze(
-        fleet.shipUnits!.map((unit) =>
+        this.#displayShips().map((unit) =>
           Object.freeze({
             ...unit,
             engines: Object.freeze({ ...unit.engines }),
@@ -745,6 +746,30 @@ export class Game {
       crew: this.#crew(fleet.ships),
       cargo: Object.freeze(this.#cargo(fleet.id)),
     });
+  }
+  // fleet-skeppsordning: ordering is presentation only; combat keeps its ship order.
+  #displayShips(): ShipUnit[] {
+    const ships = this.#fleet.shipUnits!;
+    const byId = new Map(ships.map((ship) => [ship.id, ship]));
+    const ordered: ShipUnit[] = [];
+    for (const id of this.#fleet.shipOrder ?? []) {
+      const ship = byId.get(id);
+      if (ship) {
+        ordered.push(ship);
+        byId.delete(id);
+      }
+    }
+    return [...ordered, ...ships.filter((ship) => byId.has(ship.id))];
+  }
+  reorderShip(shipId: string, index: number): void {
+    if (this.#phase !== 'planning' || !Number.isInteger(index)) return;
+    const ships = this.#displayShips();
+    const from = ships.findIndex((ship) => ship.id === shipId);
+    if (from < 0 || index < 0 || index >= ships.length || from === index)
+      return;
+    const [ship] = ships.splice(from, 1);
+    ships.splice(index, 0, ship!);
+    this.#fleet.shipOrder = ships.map((item) => item.id);
   }
   moveEngine(from: EngineSlot, to: EngineSlot): void {
     if (this.#phase !== 'planning') return;

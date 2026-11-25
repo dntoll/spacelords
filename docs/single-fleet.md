@@ -61,6 +61,17 @@ inte resa. Äldre sparningar behåller sina skepp och får tomma lastplatser.
 Beslutet om två startskepp ersätter tidigare krav på en ensam Raptor.
 Övriga typer av utrustning och personer på platser är fortfarande öppna.
 
+### Fleet: platser och dragning
+
+- `fleet-visuella-platser` är **Fullständigt implementerat**: kvadratiska
+  motor- och lastplatser ligger på fasta positioner på skeppsbilden och
+  monterade eller lagrade motorer visas med bilder.
+- `fleet-drag-och-rullning` är **Fullständigt implementerat**: föremålet
+  följer pekaren vid dragning och listan rullar vid kanten så att det kan
+  flyttas till skepp utanför den synliga delen.
+- `fleet-skeppsordning` är **Fullständigt implementerat**: skeppens ordning
+  kan ändras med draghandtag eller knappar och sparas med flottan.
+
 ## Ersätter tidigare riktning
 
 Ersättningarna gäller inom denna utforskning. Äldre kravfiler dokumenterar

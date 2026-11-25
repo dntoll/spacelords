@@ -1100,3 +1100,12 @@ väljer steg, och MasterController startar fiendernas steg direkt när
 spelarens AP är förbrukade. Oupptäckta piraters steg ger inga spår och därmed
 ingen animation. AppView markerar rotelementet med `data-turn-idle` när kartan
 väntar på spelaren, vilket webbläsartesterna använder i stället för End turn.
+
+## Fleet: bildrutor och dragning
+
+`fleet-visuella-platser`: vyer placerar kvadratiska platser relativt
+skeppsbilden och visar motorer med transparenta bilder. `fleet-drag-och-rullning`:
+en vyägd pekargest visar en bild under pekaren och rullar listan vid kanten;
+modellen ändras först vid ett giltigt släpp. `fleet-skeppsordning`:
+visningsordningen lagras separat från skeppens stridsordning och äldre
+sparningar behåller sin befintliga ordning.
