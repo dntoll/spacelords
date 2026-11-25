@@ -16,3 +16,5 @@ export * from './star-map/MapGesture.js';
 export * from './star-map/MapSelectionScroll.js';
 export * from './turn/DiscoveryView.js';
 export * from './turn/GameText.js';
+
+export * from './fleets/FleetShipsView.js';

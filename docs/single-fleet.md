@@ -16,16 +16,17 @@ Kraven nedan är **Ej implementerat** utom där annat anges. Befintliga
 skärmar och mekaniker är utgångspunkter, men uppfyller ännu inte dessa nya
 beteendekrav. `enda-spelarflottan` och `flottstyrning-med-ap-pa-starmap` är
 **Fullständigt implementerat** (se [flottor](areas/fleets.md)).
+`fleet-som-skeppsoversikt` och `skeppsslots-for-utrustning-och-personer` är
+**Delvis implementerat**: fler skeppsegenskaper, personer och vapensystem återstår.
 `startflotta-med-raptor` är **Fullständigt implementerat** (2026-11-23): ett
-nytt spel börjar med en ensam Raptor vid Tellus. Raptor ser en hex åt alla
+nytt spel börjar med en Raptor och en Transport ship vid Tellus. Raptor ser en hex åt alla
 håll, som Telescope I, och utforskar planeter vid ankomst. Den har fart 2,
-Light cannon och kan docka för bordning. Flykt från fångenskap och besättning,
-utrustning och last från start är inte bestämda.
+Light cannon och kan docka för bordning. Flykt från fångenskap, övrig utrustning och besättning från start är inte bestämda.
 
 | Stabilt kravnamn                          | Önskat beteende                                                                                                                                                                                          |
 | ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `enda-spelarflottan`                      | Spelaren har en enda flotta och inga egna planeter eller fasta resurser. Allt spelaren har finns i flottan.                                                                                              |
-| `startflotta-med-raptor`                  | Spelaren börjar med en Raptor.                                                                                                                                                                           |
+| `startflotta-med-raptor`                  | Spelaren börjar med en Raptor och en Transport ship.                                                                                                                                                     |
 | `flottaventyr-med-strid-och-bordning`     | Spelaren utforskar planeter och asteroidbälten, möter pirater, gör uppdrag och raids och hittar eller bygger skepp och teknik. Rymdstrid och bordning är centrala aktiviteter.                           |
 | `flottstyrning-med-ap-pa-starmap`         | Star map behålls och används för direkt styrning av den enda flottan. Flottan har AP, därefter agerar motståndarna och sedan flottan igen. Utan motståndare inom räckhåll fortsätter spelarens tur.      |
 | `fleet-som-skeppsoversikt`                | Fleets blir Fleet och visar varje skepp i flottan och dess egenskaper. Vyn är ingen karta.                                                                                                               |
@@ -48,6 +49,17 @@ utrustning och last från start är inte bestämda.
   har egenskaper men börjar med samma egenskapsvärden i den första
   implementationen. Individuella skillnader är en möjlig senare utveckling;
   egenskaper, progression och eventuella senare skillnader är inte beslutade.
+
+### Motorer och last
+
+`fleet-motorer-och-last` är **Fullständigt implementerat**: Raptor har en
+motorplats och två lastplatser, Transport ship en motorplats och tio lastplatser.
+Båda börjar med Rocket engine monterad och Transport ship har två Ion pulse
+engine i lasten. Motorer kan dras eller väljas mellan platser; upptagna platser
+byter innehåll. Ett skepp utan motor kan inte drivas i strid och flottan kan
+inte resa. Äldre sparningar behåller sina skepp och får tomma lastplatser.
+Beslutet om två startskepp ersätter tidigare krav på en ensam Raptor.
+Övriga typer av utrustning och personer på platser är fortfarande öppna.
 
 ## Ersätter tidigare riktning
 
@@ -91,7 +103,7 @@ beställning; öppna beroenden ska först lösas med användaren.
 
 Följande är beslutat, men spelmekaniken är ännu inte implementerad:
 
-- En enda spelarflotta, en Raptor från början, inga egna planeter eller
+- En enda spelarflotta, en Raptor och en Transport ship från början, inga egna planeter eller
   fasta resurser. Rymdstrid och bordning är huvudaktiviteter.
 - Star map, Research och Production behålls och anpassas. Fleet blir en
   skeppsöversikt utan karta. Crew blir en egen skärm.

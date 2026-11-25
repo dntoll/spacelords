@@ -14,7 +14,7 @@ end note
 package "Publik yta (index.js)" as public_surface #FFFFEE {
   rectangle "<b>controllers/index.js</b>\nFleetController\nProductionController\nResearchController\nSaveController\nStarMapController\nTurnController" as public__controllers
   rectangle "<b>models/index.js</b>\nBrowserSaveRepository\nCamera\nEconomy\nFleetFacade\nFleetMapLayout\nGalaxy\nGame\nMapScreen\nPirateFleet\nProductionFacade\nResearchFacade\nResearchTree\nSaveFacade\nSaveRepository\nStarMapFacade\nTravel\nTurnFacade\nTurnMovementPlayback\nTurnSimulation\nexampleGalaxy" as public__models
-  rectangle "<b>views/index.js</b>\nDiscoveryView\nFleetMapPanel\nGalaxyMapView\nGameText\nMapGesture\nMapLocationHeading\nMapSelectionScroll\nPlanetImages\nProductionView\nResearchDetailsView\nResearchTreeView\nResearchView\nSaveMapPreview\nSaveSlotsView\nShipImages\nShipView" as public__views
+  rectangle "<b>views/index.js</b>\nDiscoveryView\nFleetMapPanel\nFleetShipsView\nGalaxyMapView\nGameText\nMapGesture\nMapLocationHeading\nMapSelectionScroll\nPlanetImages\nProductionView\nResearchDetailsView\nResearchTreeView\nResearchView\nSaveMapPreview\nSaveSlotsView\nShipImages\nShipView" as public__views
 }
 package "(delat)" as space_map___delat_ {
   rectangle "<b>models</b>\nCamera\nCatalog\nDetection\nEconomy\nFleetCombat\nFleetPursuit\nGalaxy\nGalaxyTerrain\nGame\nGameSnapshots\nHexNavigation\nMapScreen\nPirateFleet\nPlanet\nShipEquipment\nSpiralGalaxyLayout\nTurnSimulation\nexampleGalaxy" as space_map___delat___models
@@ -24,7 +24,7 @@ package "(delat)" as space_map___delat_ {
 package "fleets" as space_map__fleets {
   rectangle "<b>controllers</b>\nFleetController" as space_map__fleets__controllers
   rectangle "<b>models</b>\nFleetFacade" as space_map__fleets__models
-  rectangle "<b>views</b>\nFleetMapPanel\nFleetOrderDrag" as space_map__fleets__views
+  rectangle "<b>views</b>\nFleetMapPanel\nFleetOrderDrag\nFleetShipsView" as space_map__fleets__views
 }
 package "production" as space_map__production {
   rectangle "<b>controllers</b>\nProductionController" as space_map__production__controllers
@@ -67,7 +67,7 @@ space_map___delat_ --> space_map__research : 3
 space_map___delat_ ..> space_map__saves : 1, typer
 space_map___delat_ --> space_map__star_map : 1
 space_map___delat_ ..> space_map__turn : 2, typer
-space_map__fleets --> space_map___delat_ : 3
+space_map__fleets --> space_map___delat_ : 5
 space_map__research --> space_map___delat_ : 8
 space_map__research --> space_map__star_map : 1
 space_map__saves --> space_map___delat_ : 8

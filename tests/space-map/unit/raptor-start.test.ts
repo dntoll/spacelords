@@ -4,10 +4,13 @@ import { createExampleGalaxy } from '../../../src/client/space-map/models/exampl
 import { HexCoordinate } from '../../../src/client/common/HexCoordinate.js';
 
 describe('startflotta-med-raptor', () => {
-  it('starts the game with a single Raptor at the home planet', () => {
+  it('starts the game with a Raptor and Transport ship at the home planet', () => {
     const game = new Game(createExampleGalaxy());
     const fleet = game.fleetSnapshot();
-    expect(fleet.shipUnits?.map((unit) => unit.type)).toEqual(['Raptor']);
+    expect(fleet.shipUnits?.map((unit) => unit.type)).toEqual([
+      'Transport ship',
+      'Raptor',
+    ]);
     expect(fleet.position?.key).toBe(game.galaxy.homePlanet.position.key);
     expect(fleet.speed).toBe(2);
   });

@@ -36,7 +36,6 @@ test('skeppsbilder / viewport-game-layout / enda-spelarflottan: a large fleet st
   const name = page.getByRole('textbox', { name: 'Fleet name', exact: true });
   await name.fill('Sentinel');
   await name.press('Enter');
-  await page.getByRole('button', { name: 'Fleets', exact: true }).click();
   await selectMapFleet(page, 'Sentinel');
   await expect(panel.locator('.selected-fleet-card')).toContainText('Sentinel');
   await expect(

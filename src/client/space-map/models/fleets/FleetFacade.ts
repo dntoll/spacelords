@@ -4,6 +4,13 @@ import type { AppHost } from '../../../app/models/AppModel.js';
 export class FleetFacade {
   constructor(private readonly host: AppHost) {}
 
+  moveEngine(
+    from: { shipId: string; slot: number | 'engine' },
+    to: { shipId: string; slot: number | 'engine' },
+  ): void {
+    this.host.game.moveEngine(from, to);
+  }
+
   openFleets(): void {
     this.host.openMapScreen('fleets');
   }

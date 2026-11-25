@@ -80,7 +80,7 @@ for (const size of [
     await expect(page.locator('canvas[data-rendered="true"]')).toHaveCount(1);
     await expect(page.locator('html')).toHaveAttribute('lang', 'en');
     await expectContentFits(page);
-    for (const label of ['Fleets', 'Production']) {
+    for (const label of ['Fleet', 'Production']) {
       await page
         .getByRole('navigation', { name: 'Main navigation' })
         .getByRole('button', { name: label, exact: true })

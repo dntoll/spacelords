@@ -13,7 +13,7 @@ import {
 import { HexCoordinate } from '../../../src/client/common/HexCoordinate.js';
 import type { SavedGame } from '../../../src/client/space-map/models/saves/SaveRepository.js';
 
-for (const screen of ['Star map', 'Fleets']) {
+for (const screen of ['Star map']) {
   test(`rymdpirater-per-stjarna / flottstrid-per-hex / rymdpiraters-sparning: ${screen} shows hostile read-only pirates and persists combat`, async ({
     page,
   }, testInfo) => {
@@ -66,8 +66,6 @@ for (const screen of ['Star map', 'Fleets']) {
     }, prepared);
     await page.goto('./');
     await startFirstSlot(page);
-    if (screen === 'Fleets')
-      await page.getByRole('button', { name: 'Fleets', exact: true }).click();
     const game = Game.restore(prepared);
     const marker = FleetMapLayout.markers([
       game.fleetSnapshot(),

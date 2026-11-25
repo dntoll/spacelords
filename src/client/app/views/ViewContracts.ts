@@ -22,6 +22,17 @@ import type {
 } from '../../boarding/models/index.js';
 
 export type AppIntent =
+  | {
+      readonly type: 'move-engine';
+      readonly from: {
+        readonly shipId: string;
+        readonly slot: number | 'engine';
+      };
+      readonly to: {
+        readonly shipId: string;
+        readonly slot: number | 'engine';
+      };
+    }
   | { readonly type: 'test-battle' }
   | {
       readonly type: 'test-boarding';

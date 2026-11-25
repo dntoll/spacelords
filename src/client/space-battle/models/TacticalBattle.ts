@@ -50,6 +50,7 @@ export interface BattleFleet {
     readonly id: string;
     readonly type: CombatShipType;
     readonly ion: boolean;
+    readonly powered?: boolean;
     readonly towing?: boolean;
     readonly missiles?: number;
     readonly armored?: boolean;
@@ -474,8 +475,10 @@ export class TacticalBattle {
             side: f.side,
             type: ship.type,
             movement:
-              (ship.towing ? 1 : SHIP_PROFILES[ship.type].movement) +
-              Number(ship.ion),
+              ship.powered === false
+                ? 0
+                : (ship.towing ? 1 : SHIP_PROFILES[ship.type].movement) +
+                  Number(ship.ion),
             hull: Math.max(
               1,
               maxHull({ type: ship.type, armored }) - (ship.damage ?? 0),
@@ -622,7 +625,7 @@ export class TacticalBattle {
             (p.status === 'destroyed' && p.hull !== 0)
           : (p.status === 'destroyed') !== (p.hull === 0)) ||
         !Number.isSafeInteger(p.movement) ||
-        p.movement < 1 ||
+        p.movement < 0 ||
         p.movement > profile.movement + 1 ||
         !Number.isSafeInteger(p.facing) ||
         p.facing < 0 ||
@@ -1483,6 +1486,8 @@ export class TacticalBattle {
     if (direction !== -1 && direction !== 0 && direction !== 1)
       return empty('Choose left, straight, or right.');
     if (!origin) return empty('Deploy the ship first.');
+    if (piece.movement === 0 && (delta !== 0 || direction !== 0))
+      return empty('This ship has no engine.');
     if (!pose && piece.dockedWith)
       return empty('This ship is locked in a boarding.');
     if (!pose && piece.escapeEdge && direction !== 0)

@@ -6,7 +6,7 @@ byta namn och utforskar planeter som ett Exploration ship står på.
 har exakt en spelarflotta i modell, läsmodell och vyer. Sparformatet behåller
 listan `fleets` med exakt en flotta, så befintliga sparningar fungerar; en
 sparning med fler eller färre flottor avvisas. Att ersätta `Fleets` med en
-skeppsöversikt (`fleet-som-skeppsoversikt`) väntar på beslut.
+skeppsöversikt (`fleet-som-skeppsoversikt`) visar nu skeppen och deras motor- och lastplatser.
 
 ## Krav
 

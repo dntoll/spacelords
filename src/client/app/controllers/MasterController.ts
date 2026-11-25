@@ -457,6 +457,9 @@ export class MasterController {
       case 'open-research':
         this.#research.openResearch();
         break;
+      case 'move-engine':
+        this.#fleets.moveEngine(intent.from, intent.to);
+        break;
       case 'open-fleets':
         this.#fleets.openFleets();
         break;

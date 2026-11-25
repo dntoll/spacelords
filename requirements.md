@@ -32,10 +32,11 @@ kraven med stabila namn och status. Statusen nedan sammanfattar området.
   och lika startegenskaper. `enda-spelarflottan` och
   `flottstyrning-med-ap-pa-starmap` är **Fullständigt implementerat** (en
   flotta, AP, turordning och piraternas aktivering), liksom
-  `startflotta-med-raptor` (en ensam Raptor vid start);
-  övriga nya beteendekrav är **Ej implementerat**.
+  `startflotta-med-raptor` (Raptor och Transport ship vid start);
+  `fleet-som-skeppsoversikt` och `skeppsslots-for-utrustning-och-personer` är **Delvis implementerat**; fler egenskaper, personer och vapen återstår. Övriga nya beteendekrav är **Ej implementerat**.
   Planen anger vilka delar som måste diskuteras och låsas med användaren
   före implementation (`single-fleet-beslut-fore-implementation`).
+  `fleet-motorer-och-last` är **Fullständigt implementerat**: motorer kan flyttas mellan skeppens motor- och lastplatser.
   [Rensningsplanen](docs/single-fleet-cleanup.md) följer borttagningen av den
   tidigare spelmekaniken (`single-fleet-rensning`, **Fullständigt
   implementerat**: rensningen är klar och testerna är anpassade).

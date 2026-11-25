@@ -1,4 +1,5 @@
 import {
+  renderFleetEquipment,
   discoveryControls,
   renderProduction,
   bindMapSelectionScroll,
@@ -259,11 +260,7 @@ export class AppView implements AppPort {
           : focusScope?.hasAttribute('data-fleet-id')
             ? `[data-fleet-id="${focusScope.getAttribute('data-fleet-id')}"]`
             : null;
-    if (
-      changedScreen &&
-      isMapScreen(this.#screen) &&
-      isMapScreen(model.screen)
-    ) {
+    if (changedScreen && this.#screen === 'map' && model.screen === 'map') {
       this.#root
         .querySelector('header')
         ?.replaceWith(this.#header(model.screen));
@@ -283,7 +280,9 @@ export class AppView implements AppPort {
       this.#selectionKey = '';
       this.#root.replaceChildren(this.#header(model.screen));
       const main = element('main', 'page');
-      if (isMapScreen(model.screen)) main.append(this.#mapPage(model.screen));
+      if (model.screen === 'map') main.append(this.#mapPage(model.screen));
+      else if (model.screen === 'fleets')
+        main.append(renderFleetEquipment(model.fleet, this.#emit));
       else if (model.screen === 'production') main.append(renderProduction());
       else
         main.append(
@@ -295,7 +294,7 @@ export class AppView implements AppPort {
           ),
         );
       this.#root.append(main);
-      if (isMapScreen(model.screen) && this.#container) {
+      if (model.screen === 'map' && this.#container) {
         this.#map = this.#mapFactory(this.#container, (intent) =>
           this.#emit(intent),
         );
@@ -434,7 +433,11 @@ export class AppView implements AppPort {
       }
     }
     this.#syncLocalEditorNav(model);
-    if (isMapScreen(model.screen)) {
+    if (model.screen === 'fleets' && !changedScreen)
+      this.#root
+        .querySelector('main')
+        ?.replaceChildren(renderFleetEquipment(model.fleet, this.#emit));
+    if (model.screen === 'map') {
       this.#root
         .querySelector('.map-page')
         ?.classList.toggle('is-turn-movement', !!model.turnMovement);
@@ -494,7 +497,7 @@ export class AppView implements AppPort {
         .querySelector('.map-page')
         ?.classList.toggle('has-selection', selected);
     }
-    if (isMapScreen(model.screen)) this.#measureMap();
+    if (model.screen === 'map') this.#measureMap();
     for (const control of this.#root.querySelectorAll<HTMLButtonElement>(
       'header button',
     ))
@@ -718,7 +721,7 @@ export class AppView implements AppPort {
     for (const [target, label] of [
       ['map', 'Star map'],
       ['research', 'Research'],
-      ['fleets', 'Fleets'],
+      ['fleets', 'Fleet'],
       ['production', 'Production'],
     ] as const) {
       const choice = button(

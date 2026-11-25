@@ -24,7 +24,14 @@ export const SHIPS: Readonly<
   Raptor: { crew: 50, speed: 2 },
 });
 
+export type EngineType = 'Rocket engine' | 'Ion pulse engine';
+export interface EngineSlot {
+  readonly shipId: string;
+  readonly slot: number | 'engine';
+}
+
 export interface ShipUnit {
+  readonly cargoSlots?: readonly (EngineType | null)[];
   readonly telescope?: TelescopeLevel;
   readonly id: string;
   readonly type: ShipType;
