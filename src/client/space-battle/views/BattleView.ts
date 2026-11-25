@@ -385,7 +385,11 @@ export class BattleView {
       this.#renderDeployment(state, friendly, selected, rules);
     else if (selected) {
       this.#renderActions(state, selected, rules);
-      const weapons = battleWeapons(selected.type, selected.hasMissiles);
+      const weapons = battleWeapons(
+        selected.type,
+        selected.hasMissiles,
+        selected.weapons,
+      );
       if (!weapons.includes(this.#weapon))
         this.#weapon = weapons[0] ?? 'Cannon';
       if (weapons.length) {

@@ -8,11 +8,15 @@ export class FleetFacade {
     this.host.game.reorderShip(shipId, index);
   }
 
-  moveEngine(
-    from: { shipId: string; slot: number | 'engine' },
-    to: { shipId: string; slot: number | 'engine' },
+  moveEquipment(
+    from: {
+      shipId: string;
+      slot: number | 'engine' | 'weapon';
+      index?: number;
+    },
+    to: { shipId: string; slot: number | 'engine' | 'weapon'; index?: number },
   ): void {
-    this.host.game.moveEngine(from, to);
+    this.host.game.moveEquipment(from, to);
   }
 
   openFleets(): void {

@@ -28,14 +28,16 @@ export type AppIntent =
       readonly index: number;
     }
   | {
-      readonly type: 'move-engine';
+      readonly type: 'move-equipment';
       readonly from: {
         readonly shipId: string;
-        readonly slot: number | 'engine';
+        readonly slot: number | 'engine' | 'weapon';
+        readonly index?: number;
       };
       readonly to: {
         readonly shipId: string;
-        readonly slot: number | 'engine';
+        readonly slot: number | 'engine' | 'weapon';
+        readonly index?: number;
       };
     }
   | { readonly type: 'test-battle' }

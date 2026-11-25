@@ -460,8 +460,8 @@ export class MasterController {
       case 'reorder-ship':
         this.#fleets.reorderShip(intent.shipId, intent.index);
         break;
-      case 'move-engine':
-        this.#fleets.moveEngine(intent.from, intent.to);
+      case 'move-equipment':
+        this.#fleets.moveEquipment(intent.from, intent.to);
         break;
       case 'open-fleets':
         this.#fleets.openFleets();

@@ -74,6 +74,7 @@ test('fleet-skeppsordning: ship order is saved and can be changed with the keybo
   await startFirstSlot(page);
   await page.getByRole('button', { name: 'Fleet', exact: true }).click();
   await page.getByRole('button', { name: 'Move Raptor up' }).click();
+  await page.getByRole('button', { name: 'Move Raptor up' }).click();
   await expect(page.locator('.fleet-ship h2').first()).toHaveText('Raptor');
   await page.reload();
   await startFirstSlot(page);
@@ -82,9 +83,7 @@ test('fleet-skeppsordning: ship order is saved and can be changed with the keybo
   const down = page.getByRole('button', { name: 'Move Raptor down' });
   await down.focus();
   await page.keyboard.press('Enter');
-  await expect(page.locator('.fleet-ship h2').first()).toHaveText(
-    'Transport ship',
-  );
+  await expect(page.locator('.fleet-ship h2').first()).toHaveText('Fighter');
 });
 
 test('fleet-skeppsordning: drag a ship down while the list scrolls', async ({
@@ -97,7 +96,9 @@ test('fleet-skeppsordning: drag a ship down while the list scrolls', async ({
   const handle = page.getByRole('button', {
     name: 'Drag Transport ship to reorder',
   });
-  const target = page.locator('.fleet-ship').nth(1);
+  const target = page
+    .locator('.fleet-ship')
+    .filter({ has: page.getByRole('heading', { name: 'Raptor' }) });
   const start = await handle.boundingBox();
   const bounds = await list.boundingBox();
   if (!start || !bounds) throw new Error('Missing ship drag handle');
@@ -127,7 +128,7 @@ test('fleet-skeppsordning: drag a ship down while the list scrolls', async ({
     Math.min(end.y + end.height - 20, bounds.y + bounds.height - 20),
   );
   await page.mouse.up();
-  await expect(page.locator('.fleet-ship h2').first()).toHaveText('Raptor');
+  await expect(page.locator('.fleet-ship h2').nth(1)).toHaveText('Raptor');
 });
 
 test('fleet-platsinformation: slot labels and selected engine details remain visible on mobile', async ({
@@ -139,9 +140,11 @@ test('fleet-platsinformation: slot labels and selected engine details remain vis
   const source = page.getByRole('button', {
     name: 'Transport ship Cargo 1: Ion pulse engine',
   });
-  await expect(source.locator('..').locator('.fleet-slot-label')).toHaveText(
-    'Storage',
-  );
+  await expect(
+    source
+      .locator('xpath=ancestor::div[contains(@class,"fleet-storage")]')
+      .locator('.fleet-storage-title'),
+  ).toHaveText('Storage');
   await source.click();
   const panel = page.getByLabel('Selected slot details');
   await expect(panel).toBeVisible();
@@ -158,5 +161,78 @@ test('fleet-platsinformation: slot labels and selected engine details remain vis
   await target.click();
   await expect(
     page.getByRole('button', { name: 'Raptor Engine: Ion pulse engine' }),
+  ).toBeVisible();
+});
+
+test('fleet-vapenplatser: fighter weapon can be stored and re-equipped', async ({
+  page,
+}) => {
+  await page.goto('./');
+  await startFirstSlot(page);
+  await page.getByRole('button', { name: 'Fleet', exact: true }).click();
+  const cannon = page.getByRole('button', { name: 'Fighter Weapon 1: Cannon' });
+  await cannon.click();
+  await expect(page.getByLabel('Selected slot details')).toContainText(
+    'Cannon',
+  );
+  await expect(page.getByLabel('Selected slot details')).toContainText(
+    'Range: 1–3',
+  );
+  await page
+    .getByRole('button', { name: 'Transport ship Cargo 3: Empty' })
+    .click();
+  await page
+    .getByRole('button', { name: 'Transport ship Cargo 3: Cannon' })
+    .click();
+  await page.getByRole('button', { name: 'Fighter Weapon 2: Empty' }).click();
+  await expect(
+    page.getByRole('button', { name: 'Fighter Weapon 2: Cannon' }),
+  ).toBeVisible();
+});
+
+test('fleet-vapenplatser: drag a weapon into storage while scrolling', async ({
+  page,
+}) => {
+  await page.goto('./');
+  await startFirstSlot(page);
+  await page.getByRole('button', { name: 'Fleet', exact: true }).click();
+  const list = page.locator('.fleet-ships');
+  const source = page.getByRole('button', { name: 'Fighter Weapon 1: Cannon' });
+  const target = page.getByRole('button', {
+    name: 'Transport ship Cargo 3: Empty',
+  });
+  const start = await source.boundingBox();
+  const bounds = await list.boundingBox();
+  if (!start || !bounds) throw new Error('Missing weapon or fleet');
+  await page.mouse.move(start.x + start.width / 2, start.y + start.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(
+    bounds.x + bounds.width / 2,
+    bounds.y + bounds.height - 10,
+    { steps: 8 },
+  );
+  await expect(page.locator('.fleet-item-ghost')).toBeVisible();
+  await expect
+    .poll(async () => {
+      const box = await target.boundingBox();
+      return (
+        !!box &&
+        box.y >= bounds.y &&
+        box.y + box.height < bounds.y + bounds.height - 20
+      );
+    })
+    .toBe(true);
+  await page.mouse.move(
+    bounds.x + bounds.width / 2,
+    bounds.y + bounds.height / 2,
+  );
+  const end = await target.boundingBox();
+  if (!end) throw new Error('Missing destination');
+  await page.mouse.move(end.x + end.width / 2, end.y + end.height / 2, {
+    steps: 8,
+  });
+  await page.mouse.up();
+  await expect(
+    page.getByRole('button', { name: 'Transport ship Cargo 3: Cannon' }),
   ).toBeVisible();
 });

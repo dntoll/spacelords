@@ -78,12 +78,78 @@ describe('fleet-skeppsordning', () => {
     expect(
       game.exportState().fleets[0]!.shipUnits!.map((ship) => ship.id),
     ).toEqual(originalCombatOrder);
-    expect(game.fleetSnapshot().shipUnits).toEqual([before[1], before[0]]);
+    expect(game.fleetSnapshot().shipUnits).toEqual([
+      before[1],
+      before[0],
+      ...before.slice(2),
+    ]);
     game.reorderShip('missing', 0);
     game.reorderShip(before[0]!.id, 12);
     expect(Game.restore(game.exportState()).fleetSnapshot().shipUnits).toEqual([
       before[1],
       before[0],
+      ...before.slice(2),
     ]);
+  });
+});
+
+describe('fleet-vapenplatser', () => {
+  it('starts with an armed fighter and moves weapons through storage to another ship', () => {
+    const game = new Game(createExampleGalaxy());
+    const units = game.fleetSnapshot().shipUnits!;
+    const fighter = units.find((ship) => ship.type === 'Fighter')!;
+    const raptor = units.find((ship) => ship.type === 'Raptor')!;
+    const transport = units.find((ship) => ship.type === 'Transport ship')!;
+    expect(fighter.cargoSlots).toHaveLength(0);
+    expect(fighter.weaponSlots).toEqual([{ type: 'Cannon' }, null]);
+    game.moveEquipment(
+      { shipId: raptor.id, slot: 'weapon', index: 0 },
+      { shipId: transport.id, slot: 2 },
+    );
+    game.moveEquipment(
+      { shipId: transport.id, slot: 2 },
+      { shipId: fighter.id, slot: 'weapon', index: 1 },
+    );
+    const restored = Game.restore(game.exportState());
+    expect(
+      restored
+        .fleetSnapshot()
+        .shipUnits!.find((ship) => ship.id === fighter.id)!.weaponSlots,
+    ).toEqual([{ type: 'Cannon' }, { type: 'Light cannon' }]);
+  });
+});
+
+describe('fleet-vapenplatser / sparkompatibilitet', () => {
+  it('restores legacy missile launchers and preserves their ammunition while moved through storage', () => {
+    const state = structuredClone(
+      new Game(createExampleGalaxy()).exportState(),
+    );
+    const fighter = state.fleets[0]!.shipUnits!.find(
+      (ship) => ship.type === 'Fighter',
+    )!;
+    delete (fighter as { weaponSlots?: unknown }).weaponSlots;
+    (fighter as { missiles?: number }).missiles = 2;
+    const game = Game.restore(state);
+    const ships = game.fleetSnapshot().shipUnits!;
+    const transport = ships.find((ship) => ship.type === 'Transport ship')!;
+    expect(
+      ships.find((ship) => ship.id === fighter.id)!.weaponSlots![1],
+    ).toEqual({ type: 'Missiles', salvos: 2 });
+    game.moveEquipment(
+      { shipId: fighter.id, slot: 'weapon', index: 1 },
+      { shipId: transport.id, slot: 2 },
+    );
+    const restored = Game.restore(game.exportState());
+    expect(
+      restored
+        .fleetSnapshot()
+        .shipUnits!.find((ship) => ship.id === transport.id)!.cargoSlots![2],
+    ).toEqual({ type: 'Missiles', salvos: 2 });
+    const before = restored.exportState();
+    restored.moveEquipment(
+      { shipId: transport.id, slot: 2 },
+      { shipId: fighter.id, slot: 'engine' },
+    );
+    expect(restored.exportState()).toEqual(before);
   });
 });

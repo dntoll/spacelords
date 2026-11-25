@@ -104,7 +104,8 @@ class Ship {
   id
   type
   installedEngines
-  cargoSlots: motor eller tom plats
+  cargoSlots: utrustning eller tom plats
+  weaponSlots: vapen eller tom plats
   installedTelescope: I | II | III [0..1]
   missiles: 0 | 2 [0..1]
   armored [0..1]

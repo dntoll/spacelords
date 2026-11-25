@@ -31,13 +31,26 @@ export const ENGINE_SPEED_BONUS: Readonly<Record<EngineType, number>> =
     'Rocket engine': 0,
     'Ion pulse engine': 1,
   });
+export type ShipWeapon =
+  'Cannon' | 'Light cannon' | 'Raider cannon' | 'Missiles';
+export interface WeaponEquipment {
+  readonly type: ShipWeapon;
+  readonly salvos?: number;
+}
+export type Equipment = EngineType | WeaponEquipment;
+export interface EquipmentSlot {
+  readonly shipId: string;
+  readonly slot: number | 'engine' | 'weapon';
+  readonly index?: number;
+}
 export interface EngineSlot {
   readonly shipId: string;
   readonly slot: number | 'engine';
 }
 
 export interface ShipUnit {
-  readonly cargoSlots?: readonly (EngineType | null)[];
+  readonly cargoSlots?: readonly (Equipment | null)[];
+  readonly weaponSlots?: readonly (WeaponEquipment | null)[];
   readonly telescope?: TelescopeLevel;
   readonly id: string;
   readonly type: ShipType;
