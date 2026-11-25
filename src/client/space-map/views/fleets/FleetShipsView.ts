@@ -11,15 +11,16 @@ import { WEAPONS } from '../../../space-battle/models/index.js';
 import { SHIP_IMAGES } from '../ShipImages.js';
 import rocketImage from '../../assets/equipment/rocket-engine.png';
 import ionImage from '../../assets/equipment/ion-pulse-engine.png';
-import cannonImage from '../../assets/equipment/cannon.svg';
-import lightCannonImage from '../../assets/equipment/light-cannon.svg';
-import missilesImage from '../../assets/equipment/missiles.svg';
+import cannonImage from '../../assets/equipment/cannon-illustration.png';
+import lightCannonImage from '../../assets/equipment/light-cannon-illustration.png';
+import raiderCannonImage from '../../assets/equipment/raider-cannon-illustration.png';
+import missilesImage from '../../assets/equipment/missiles-illustration.png';
 
 type Slot = EquipmentSlot;
 const WEAPON_IMAGES: Record<ShipWeapon, string> = {
   Cannon: cannonImage,
   'Light cannon': lightCannonImage,
-  'Raider cannon': cannonImage,
+  'Raider cannon': raiderCannonImage,
   Missiles: missilesImage,
 };
 const equipmentName = (item: Equipment) =>
@@ -43,7 +44,7 @@ export function renderFleetEquipment(
   page.append(heading);
   const hint = document.createElement('p');
   hint.textContent =
-    'Drag equipment, or select it and then select a destination. Drag the handle to reorder ships.';
+    'Drag equipment to move or swap it. Select an item for details, then an empty slot to move it. Drag the handle to reorder ships.';
   page.append(hint);
   const details = document.createElement('aside');
   details.className = 'fleet-item-details';
@@ -98,6 +99,22 @@ export function renderFleetEquipment(
     content: Equipment | null;
   } | null = null;
   let dragging = false;
+  // fleet-direktmarkering: background clicks clear the current inspection.
+  const clearSelection = () => {
+    selected?.button.classList.remove('selected');
+    selected?.button.setAttribute('aria-pressed', 'false');
+    selected = null;
+    details.hidden = true;
+  };
+  page.addEventListener('clear-fleet-selection', clearSelection);
+  page.addEventListener('click', (event) => {
+    const target = event.target;
+    if (
+      target instanceof Element &&
+      !target.closest('button, .fleet-item-details')
+    )
+      clearSelection();
+  });
 
   function enableDrag(
     handle: HTMLElement,
@@ -287,7 +304,7 @@ export function renderFleetEquipment(
         wrapper.classList.add('fleet-engine-position');
       } else if (slot === 'weapon') {
         wrapper.classList.add('fleet-weapon-position');
-        wrapper.style.top = `${30 + (weaponIndex ?? 0) * 20}%`;
+        wrapper.style.top = weaponIndex === 0 ? '18%' : '80%';
       } else wrapper.classList.add('fleet-storage-slot');
       if (content) {
         const icon = document.createElement('img');
@@ -309,7 +326,7 @@ export function renderFleetEquipment(
           details.hidden = true;
           return;
         }
-        if (selected?.content) {
+        if (selected?.content && !content) {
           const from = selected.slot;
           selected.button.classList.remove('selected');
           selected.button.setAttribute('aria-pressed', 'false');

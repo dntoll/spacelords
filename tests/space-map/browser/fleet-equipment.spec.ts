@@ -159,9 +159,9 @@ test('fleet-platsinformation: slot labels and selected engine details remain vis
     'Engine',
   );
   await target.click();
-  await expect(
-    page.getByRole('button', { name: 'Raptor Engine: Ion pulse engine' }),
-  ).toBeVisible();
+  await expect(target).toHaveAttribute('aria-pressed', 'true');
+  await expect(panel).toContainText('Rocket engine');
+  await expect(source).toHaveAttribute('aria-pressed', 'false');
 });
 
 test('fleet-vapenplatser: fighter weapon can be stored and re-equipped', async ({
@@ -235,4 +235,70 @@ test('fleet-vapenplatser: drag a weapon into storage while scrolling', async ({
   await expect(
     page.getByRole('button', { name: 'Transport ship Cargo 3: Cannon' }),
   ).toBeVisible();
+});
+
+test('fleet-placering-vapen-och-motor: weapon slots flank storage and engine sits at the rear', async ({
+  page,
+}) => {
+  await page.goto('./');
+  await startFirstSlot(page);
+  await page.getByRole('button', { name: 'Fleet', exact: true }).click();
+  const fighter = page
+    .locator('.fleet-ship')
+    .filter({ has: page.getByRole('heading', { name: 'Fighter' }) });
+  const image = await fighter.locator('.fleet-ship-image').boundingBox();
+  const engine = await fighter
+    .getByRole('button', { name: 'Fighter Engine: Rocket engine' })
+    .boundingBox();
+  const upper = await fighter
+    .getByRole('button', { name: 'Fighter Weapon 1: Cannon' })
+    .boundingBox();
+  const lower = await fighter
+    .getByRole('button', { name: 'Fighter Weapon 2: Empty' })
+    .boundingBox();
+  if (!image || !engine || !upper || !lower)
+    throw new Error('Missing equipment layout');
+  const center = (r: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  }) => ({ x: r.x + r.width / 2, y: r.y + r.height / 2 });
+  expect((center(engine).x - image.x) / image.width).toBeLessThan(0.2);
+  expect((center(engine).y - image.y) / image.height).toBeCloseTo(0.5, 1);
+  expect((center(upper).x - image.x) / image.width).toBeCloseTo(0.5, 1);
+  expect((center(lower).x - image.x) / image.width).toBeCloseTo(0.5, 1);
+  expect((center(upper).y - image.y) / image.height).toBeLessThan(0.3);
+  expect((center(lower).y - image.y) / image.height).toBeGreaterThan(0.7);
+});
+
+test('fleet-direktmarkering: another occupied slot becomes selected and background clears it', async ({
+  page,
+}) => {
+  await page.goto('./');
+  await startFirstSlot(page);
+  await page.getByRole('button', { name: 'Fleet', exact: true }).click();
+  const first = page.getByRole('button', { name: 'Fighter Weapon 1: Cannon' });
+  const second = page.getByRole('button', {
+    name: 'Raptor Engine: Rocket engine',
+  });
+  await first.click();
+  await expect(page.getByLabel('Selected slot details')).toContainText(
+    'Cannon',
+  );
+  await expect(first.locator('img')).toHaveJSProperty('complete', true);
+  expect(
+    await first
+      .locator('img')
+      .evaluate((img: HTMLImageElement) => img.naturalWidth),
+  ).toBeGreaterThan(0);
+  await second.click();
+  await expect(first).toHaveAttribute('aria-pressed', 'false');
+  await expect(second).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByLabel('Selected slot details')).toContainText(
+    'Rocket engine',
+  );
+  await page.getByRole('heading', { name: 'Fleet', exact: true }).click();
+  await expect(second).toHaveAttribute('aria-pressed', 'false');
+  await expect(page.getByLabel('Selected slot details')).toBeHidden();
 });

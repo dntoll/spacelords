@@ -80,6 +80,17 @@ export class AppView implements AppPort {
   #presentationFrame = 0;
   #finishPresentation: (() => void) | null = null;
   #disposed = false;
+  readonly #clearFleetOnOutsideClick = (event: MouseEvent): void => {
+    const page = this.#root.querySelector('.fleet-ships');
+    const target = event.target;
+    if (
+      page &&
+      target instanceof Element &&
+      !page.contains(target) &&
+      !target.closest('button')
+    )
+      page.dispatchEvent(new Event('clear-fleet-selection'));
+  };
 
   constructor(
     root: HTMLElement,
@@ -93,6 +104,7 @@ export class AppView implements AppPort {
   ) {
     this.#root = root;
     this.#mapFactory = mapFactory;
+    this.#root.addEventListener('click', this.#clearFleetOnOutsideClick);
   }
 
   bind(handler: IntentHandler): void {
@@ -630,6 +642,7 @@ export class AppView implements AppPort {
   }
 
   dispose(): void {
+    this.#root.removeEventListener('click', this.#clearFleetOnOutsideClick);
     this.#editorView?.dispose();
     this.#editorView = null;
     this.#boardingView?.dispose();

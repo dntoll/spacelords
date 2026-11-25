@@ -68,3 +68,18 @@ Bildprompter (inbyggd imagegen):
 
 - `Use case: stylized-concept. Asset type: transparent game inventory icon. Draw one compact mechanical rocket engine module, gray worn industrial metal with a warm orange nozzle, three-quarter top view, centered and fully visible, crisp illustrated sci-fi game art, no text, no frame or shadow, transparent background.`
 - `Use case: stylized-concept. Asset type: transparent game inventory icon. Draw one compact ion pulse engine module, gray worn industrial metal with a luminous cyan-blue nozzle and subtle coils, three-quarter top view, centered and fully visible, crisp illustrated sci-fi game art, no text, no frame or shadow, transparent background.`
+
+## Vapenbilder i Fleet
+
+`fleet-vapenbilder`: Cannon, Light cannon, Raider cannon och Missiles har
+varsin transparent inventariebild, skapad med den inbyggda bildgeneratorn.
+Bilderna finns i `src/client/space-map/assets/equipment/` med filnamnen
+`cannon-illustration.png`, `light-cannon-illustration.png`,
+`raider-cannon-illustration.png` och `missiles-illustration.png`.
+
+Bildprompter:
+
+- `Use case: stylized-concept. Asset type: transparent inventory image for a science-fiction spaceship video game. Subject: Light cannon: a small compact starship energy cannon with a slender futuristic barrel and warm amber details. Style: illustrated game art, worn steel and muted blue-gray with amber accents, matching a lived-in spaceship, isolated three-quarter top view. Single module, centered fully in frame, actual transparent background. No words, labels, frame or watermark.`
+- `Use case: stylized-concept. Asset type: transparent inventory image for a science-fiction spaceship video game. Subject: Cannon: a larger spaceship cannon with a chunky futuristic barrel and warm amber details. Style: illustrated game art, worn steel and muted blue-gray with amber accents, matching a lived-in spaceship, isolated three-quarter top view. Single module, centered fully in frame, actual transparent background. No words, labels, frame or watermark.`
+- `Use case: stylized-concept. Asset type: transparent inventory illustration for a fictional spaceship game. Subject: an improvised pirate starship Raider cannon, a compact rusty science-fiction turret assembled from mismatched industrial metal, glowing amber details. Style: crisp hand-painted game art, centered single isolated module in three-quarter view, actual transparent background. No labels, frame, or watermark.`
+- `Use case: stylized-concept. Asset type: inventory illustration for a fictional science-fiction video game. Draw one compact starship missile launcher, an imaginary mechanical box containing two small stylized projectiles in round bays. Strongly stylized hand-painted game art, worn blue-grey industrial metal and amber lights. Single isolated object in three-quarter view, transparent background, no text, no logos, no people, no photorealism.`

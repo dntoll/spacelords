@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { MasterController } from '../../../src/client/app/controllers/MasterController.js';
 import { AppModel } from '../../../src/client/app/models/AppModel.js';
 import { AppView } from '../../../src/client/app/views/AppView.js';
+import { renderFleetEquipment } from '../../../src/client/space-map/views/fleets/FleetShipsView.js';
 import type { IntentHandler } from '../../../src/client/app/views/ViewContracts.js';
 import { tradeNetworkState } from '../../fixtures/trade-network.js';
 
@@ -58,7 +59,7 @@ describe('fleet-som-skeppsoversikt', () => {
       '[aria-label="Transport ship Cargo 1: Ion pulse engine"]',
     )!;
     const target = root.querySelector<HTMLButtonElement>(
-      '[aria-label="Raptor Engine: Rocket engine"]',
+      '[aria-label="Raptor Cargo 1: Empty"]',
     )!;
     expect(source).not.toBeNull();
     expect(target).not.toBeNull();
@@ -67,7 +68,7 @@ describe('fleet-som-skeppsoversikt', () => {
     const raptor = model.snapshot.fleet.shipUnits!.find(
       (ship) => ship.type === 'Raptor',
     )!;
-    expect(raptor.engines['Ion pulse engine']).toBe(1);
+    expect(raptor.cargoSlots![0]).toBe('Ion pulse engine');
   });
 });
 
@@ -115,11 +116,13 @@ describe('fleet-platsinformation', () => {
     expect(panel.querySelector('img')).toBeNull();
     empty.click();
     source.click();
-    engine.click();
+    root
+      .querySelector<HTMLButtonElement>('[aria-label="Raptor Cargo 1: Empty"]')!
+      .click();
     expect(
       model.snapshot.fleet.shipUnits!.find((ship) => ship.type === 'Raptor')!
-        .engines['Ion pulse engine'],
-    ).toBe(1);
+        .cargoSlots![0],
+    ).toBe('Ion pulse engine');
   });
 });
 
@@ -163,5 +166,85 @@ describe('fleet-vapenplatser', () => {
       model.snapshot.fleet.shipUnits!.find((ship) => ship.type === 'Fighter')!
         .weaponSlots![1],
     ).toEqual({ type: 'Cannon' });
+  });
+});
+
+describe('fleet-direktmarkering', () => {
+  it('selects another occupied slot without moving either item and clears on background click', () => {
+    const { model, root, emit } = setup();
+    model.startSlot(2);
+    emit({ type: 'open-fleets' });
+    const source = root.querySelector<HTMLButtonElement>(
+      '[aria-label="Transport ship Cargo 1: Ion pulse engine"]',
+    )!;
+    const target = root.querySelector<HTMLButtonElement>(
+      '[aria-label="Raptor Engine: Rocket engine"]',
+    )!;
+    source.click();
+    target.click();
+    expect(source.getAttribute('aria-pressed')).toBe('false');
+    expect(target.getAttribute('aria-pressed')).toBe('true');
+    expect(root.querySelector('.fleet-item-details')?.textContent).toContain(
+      'Rocket engine',
+    );
+    expect(
+      model.snapshot.fleet.shipUnits!.find((ship) => ship.type === 'Raptor')!
+        .engines['Rocket engine'],
+    ).toBe(1);
+    root.querySelector<HTMLElement>('.fleet-ship-image')!.click();
+    expect(target.getAttribute('aria-pressed')).toBe('false');
+    expect(root.querySelector<HTMLElement>('.fleet-item-details')!.hidden).toBe(
+      true,
+    );
+    target.click();
+    root.querySelector<HTMLElement>('main')!.click();
+    expect(target.getAttribute('aria-pressed')).toBe('false');
+    expect(root.querySelector<HTMLElement>('.fleet-item-details')!.hidden).toBe(
+      true,
+    );
+  });
+});
+
+describe('fleet-vapenbilder', () => {
+  it('uses each weapon illustration in the slot and its details', () => {
+    const model = new AppModel();
+    const fleet = model.snapshot.fleet;
+    const fighter = fleet.shipUnits!.find((ship) => ship.type === 'Fighter')!;
+    const raptor = fleet.shipUnits!.find((ship) => ship.type === 'Raptor')!;
+    const view = renderFleetEquipment(
+      {
+        ...fleet,
+        shipUnits: [
+          {
+            ...fighter,
+            weaponSlots: [{ type: 'Cannon' }, { type: 'Missiles', salvos: 2 }],
+          },
+          raptor,
+          {
+            ...raptor,
+            id: 'captured-pirate',
+            type: 'Space pirate',
+            weaponSlots: [{ type: 'Raider cannon' }],
+            cargoSlots: [],
+          },
+        ],
+      },
+      () => undefined,
+    );
+    for (const [label, asset] of [
+      ['Fighter Weapon 1: Cannon', 'cannon-illustration'],
+      ['Fighter Weapon 2: Missiles', 'missiles-illustration'],
+      ['Raptor Weapon 1: Light cannon', 'light-cannon-illustration'],
+      ['Space pirate Weapon 1: Raider cannon', 'raider-cannon-illustration'],
+    ]) {
+      const slot = view.querySelector<HTMLButtonElement>(
+        `[aria-label="${label}"]`,
+      )!;
+      expect(slot.querySelector('img')?.getAttribute('src')).toContain(asset);
+      slot.click();
+      expect(
+        view.querySelector('.fleet-item-details img')?.getAttribute('src'),
+      ).toContain(asset);
+    }
   });
 });

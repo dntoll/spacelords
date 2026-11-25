@@ -13,7 +13,7 @@ rymdstrid, bordningar och utveckling av skepp och besättning står i centrum.
 - `Star map` används för direkt styrning av flottan med AP. Spelaren och
   motståndarna turas om; utan motståndare inom räckhåll fortsätter spelarens tur.
 - `Fleet` visar skeppen utan karta. Motorer och vapen kan flyttas mellan skeppens utrustnings- och lastplatser (`fleet-motorer-och-last`).
-  Utrustning visas i märkta rutor på skeppsbilderna. Markerad utrustning visar namn, bild och egenskaper. Skeppens ordning kan ändras.
+  Utrustning visas i märkta rutor på skeppsbilderna, med motorplatsen mitt bak och vapenplatserna över och under Storage. Markerad utrustning visar namn, bild och egenskaper. Ett tryck på annan utrustning markerar den direkt och ett tryck på bakgrunden avmarkerar. Skeppens ordning kan ändras.
   Personer, vapensystem och motorer kan flyttas mellan skeppens slots.
   Cargo ships kan förvara oanvänd utrustning och Civilian transports har
   plats för människor.
