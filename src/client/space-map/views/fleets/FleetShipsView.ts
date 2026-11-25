@@ -1,6 +1,6 @@
 import type { FleetSnapshot } from '../../models/GameSnapshots.js';
 import type { IntentHandler } from '../../../app/views/ViewContracts.js';
-import type { EngineType } from '../../models/Catalog.js';
+import { ENGINE_SPEED_BONUS, type EngineType } from '../../models/Catalog.js';
 import { SHIP_IMAGES } from '../ShipImages.js';
 import rocketImage from '../../assets/equipment/rocket-engine.png';
 import ionImage from '../../assets/equipment/ion-pulse-engine.png';
@@ -25,8 +25,42 @@ export function renderFleetEquipment(
   hint.textContent =
     'Drag an engine, or select it and then select a destination. Drag the handle to reorder ships.';
   page.append(hint);
+  const details = document.createElement('aside');
+  details.className = 'fleet-item-details';
+  details.setAttribute('aria-label', 'Selected slot details');
+  details.setAttribute('aria-live', 'polite');
+  details.hidden = true;
+  page.append(details);
+  const showDetails = (slotName: string, content: EngineType | null) => {
+    details.replaceChildren();
+    details.hidden = false;
+    const heading = document.createElement('h2');
+    heading.textContent = content ?? `Empty ${slotName.toLowerCase()} slot`;
+    details.append(heading);
+    if (!content) return;
+    const picture = document.createElement('img');
+    picture.src = ENGINE_IMAGES[content];
+    picture.alt = '';
+    const stats = document.createElement('div');
+    const bonus = ENGINE_SPEED_BONUS[content];
+    const map = document.createElement('p');
+    map.textContent = `Star map speed bonus: +${bonus}`;
+    const battle = document.createElement('p');
+    battle.textContent = `Battle speed bonus: +${bonus}`;
+    const condition = document.createElement('p');
+    condition.textContent = 'Bonuses apply when equipped.';
+    stats.append(map, battle, condition);
+    const body = document.createElement('div');
+    body.className = 'fleet-item-details-body';
+    body.append(picture, stats);
+    details.append(body);
+  };
   const ships = fleet.shipUnits ?? [];
-  let selected: { slot: Slot; button: HTMLButtonElement } | null = null;
+  let selected: {
+    slot: Slot;
+    button: HTMLButtonElement;
+    content: EngineType | null;
+  } | null = null;
   let dragging = false;
 
   function enableDrag(
@@ -187,6 +221,13 @@ export function renderFleetEquipment(
       const control = document.createElement('button');
       control.type = 'button';
       control.className = 'fleet-equipment-slot';
+      control.setAttribute('aria-pressed', 'false');
+      const wrapper = document.createElement('div');
+      wrapper.className = 'fleet-slot';
+      const label = document.createElement('span');
+      label.className = 'fleet-slot-label';
+      label.textContent = slot === 'engine' ? 'Engine' : 'Storage';
+      label.setAttribute('aria-hidden', 'true');
       control.dataset.shipId = ship.id;
       control.dataset.slot = String(slot);
       const slotName = slot === 'engine' ? 'Engine' : `Cargo ${slot + 1}`;
@@ -198,8 +239,8 @@ export function renderFleetEquipment(
       // Coordinates are percentages of the square ship artwork; cargo uses two rows of five.
       const column = slot === 'engine' ? 2 : slot % 5;
       const row = slot === 'engine' ? 2 : Math.floor(slot / 5);
-      control.style.left = `${10 + column * 20}%`;
-      control.style.top = `${22 + row * 27}%`;
+      wrapper.style.left = `${10 + column * 20}%`;
+      wrapper.style.top = `${22 + row * 27}%`;
       if (content) {
         const icon = document.createElement('img');
         icon.src = ENGINE_IMAGES[content];
@@ -209,15 +250,28 @@ export function renderFleetEquipment(
       const current = { shipId: ship.id, slot };
       control.addEventListener('click', () => {
         if (dragging) return;
-        if (selected) {
+        if (selected?.button === control) {
+          control.classList.remove('selected');
+          control.setAttribute('aria-pressed', 'false');
+          selected = null;
+          details.hidden = true;
+          return;
+        }
+        if (selected?.content) {
           const from = selected.slot;
           selected.button.classList.remove('selected');
+          selected.button.setAttribute('aria-pressed', 'false');
           selected = null;
+          details.hidden = true;
           emit({ type: 'move-engine', from, to: current });
-        } else if (content) {
-          selected = { slot: current, button: control };
-          control.classList.add('selected');
+          return;
         }
+        selected?.button.classList.remove('selected');
+        selected?.button.setAttribute('aria-pressed', 'false');
+        selected = { slot: current, button: control, content };
+        control.classList.add('selected');
+        control.setAttribute('aria-pressed', 'true');
+        showDetails(slot === 'engine' ? 'Engine' : 'Storage', content);
       });
       if (content)
         enableDrag(
@@ -245,7 +299,8 @@ export function renderFleetEquipment(
           },
           '.fleet-equipment-slot',
         );
-      image.append(control);
+      wrapper.append(label, control);
+      image.append(wrapper);
     };
     const engine = ship.engines['Ion pulse engine']
       ? 'Ion pulse engine'

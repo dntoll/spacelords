@@ -37,6 +37,7 @@ kraven med stabila namn och status. Statusen nedan sammanfattar området.
   Planen anger vilka delar som måste diskuteras och låsas med användaren
   före implementation (`single-fleet-beslut-fore-implementation`).
   `fleet-visuella-platser`, `fleet-drag-och-rullning` och `fleet-skeppsordning` är **Fullständigt implementerat**.
+  `fleet-platsinformation` är **Fullständigt implementerat**: varje plats visar funktion och markerad utrustning visar namn, bild och egenskaper.
   `fleet-motorer-och-last` är **Fullständigt implementerat**: motorer kan flyttas mellan skeppens motor- och lastplatser.
   [Rensningsplanen](docs/single-fleet-cleanup.md) följer borttagningen av den
   tidigare spelmekaniken (`single-fleet-rensning`, **Fullständigt

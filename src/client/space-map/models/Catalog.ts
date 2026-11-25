@@ -25,6 +25,12 @@ export const SHIPS: Readonly<
 });
 
 export type EngineType = 'Rocket engine' | 'Ion pulse engine';
+// fleet-platsinformation: the bonus is shared by combat, travel and the details panel.
+export const ENGINE_SPEED_BONUS: Readonly<Record<EngineType, number>> =
+  Object.freeze({
+    'Rocket engine': 0,
+    'Ion pulse engine': 1,
+  });
 export interface EngineSlot {
   readonly shipId: string;
   readonly slot: number | 'engine';
