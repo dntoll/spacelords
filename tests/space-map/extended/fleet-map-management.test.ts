@@ -35,7 +35,7 @@ describe('flottadministration / flottval-pa-kartan', () => {
     const panel = root.querySelector('.map-fleet-management')!;
     expect(
       panel.querySelectorAll('.ship-manifest .ship-portrait'),
-    ).toHaveLength(1); // startflotta-med-raptor: the starting Raptor.
+    ).toHaveLength(2); // startflotta-med-raptor: both starting ships.
     expect(panel.querySelector('.fleet-panel-sizing')).toBeNull();
     expect(panel.querySelector('.fleet-panel-help')).toBeNull();
     expect(panel.textContent).not.toContain('Expand fleet panel');
@@ -122,11 +122,7 @@ describe('flottknappar-pa-kartan / flottadministration', () => {
     model.pan({ x: 80, y: 25 });
     model.openFleet('fleet-home');
     view.render(model.snapshot);
-    expect(
-      root
-        .querySelector('.selected-fleet-card')!
-        .getAttribute('aria-description'),
-    ).toContain('Destination: Vesta');
+    expect(root.querySelector('.fleet-ships')).not.toBeNull();
     expect(model.snapshot.screen).toBe('fleets');
     expect(model.snapshot.mapFleetId).toBe('fleet-home');
     expect(model.snapshot.camera.center).toEqual(

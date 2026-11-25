@@ -36,8 +36,19 @@ test('snabb-mobilpublicering / viewport-game-layout / sparat-spel: touch navigat
   await expect(
     page.getByRole('heading', { name: 'Research', exact: true }),
   ).toBeVisible();
-  await page.getByRole('button', { name: 'Fleets', exact: true }).tap();
-  await expect(map).toHaveAttribute('aria-label', /^Fleets map\./);
+  await page.getByRole('button', { name: 'Fleet', exact: true }).tap();
+  await expect(
+    page.getByRole('heading', { name: 'Fleet', exact: true }),
+  ).toBeVisible();
+  await page
+    .getByRole('button', { name: 'Transport ship Cargo 1: Ion pulse engine' })
+    .tap();
+  await page
+    .getByRole('button', { name: 'Raptor Engine: Rocket engine' })
+    .tap();
+  await expect(
+    page.getByRole('button', { name: 'Raptor Engine: Ion pulse engine' }),
+  ).toBeVisible();
   await page.getByRole('button', { name: 'Star map', exact: true }).tap();
   await expect(map).toHaveAttribute('aria-label', /^Star map\./);
   expect(

@@ -172,7 +172,6 @@ test('flyttmal-pa-kartan / inga-hexkoordinater: fleet controls save mobile space
   page,
 }, testInfo) => {
   await seed(page, researchStationState());
-  await page.getByRole('button', { name: 'Fleets', exact: true }).click();
   await selectMapFleet(page, 'Home Fleet');
   await expect(page.locator('.coordinate-label')).toHaveCount(0);
   await page.screenshot({

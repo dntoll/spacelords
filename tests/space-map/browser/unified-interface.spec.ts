@@ -54,7 +54,7 @@ test('skeppssprites-pa-kartan / genererade-skeppssprites: all ship sprites load 
     ],
   };
   await seed(page, state);
-  for (const screen of ['Star map', 'Fleets']) {
+  for (const screen of ['Star map']) {
     await page
       .getByRole('navigation', { name: 'Main navigation' })
       .getByRole('button', { name: screen, exact: true })
@@ -98,7 +98,7 @@ test('planetinformation-pa-kartan / handelser-som-toppnotis: known facts across 
   page,
 }, testInfo) => {
   await seed(page, researchStationState());
-  for (const label of ['Research', 'Fleets', 'Production', 'Star map']) {
+  for (const label of ['Research', 'Fleet', 'Production', 'Star map']) {
     await page
       .getByRole('navigation', { name: 'Main navigation' })
       .getByRole('button', { name: label, exact: true })

@@ -3,6 +3,13 @@ import type { FleetFacade } from '../../models/fleets/FleetFacade.js';
 export class FleetController {
   constructor(private readonly facade: FleetFacade) {}
 
+  moveEngine(
+    from: { shipId: string; slot: number | 'engine' },
+    to: { shipId: string; slot: number | 'engine' },
+  ): void {
+    this.facade.moveEngine(from, to);
+  }
+
   openFleets(): void {
     return this.facade.openFleets();
   }

@@ -2,11 +2,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { MasterController } from '../../../src/client/app/controllers/MasterController.js';
 import { AppModel } from '../../../src/client/app/models/AppModel.js';
-import { FleetMapLayout } from '../../../src/client/space-map/models/star-map/FleetMapLayout.js';
-import {
-  HexCoordinate,
-  HexGeometry,
-} from '../../../src/client/common/HexCoordinate.js';
 import { AppView } from '../../../src/client/app/views/AppView.js';
 import type { IntentHandler } from '../../../src/client/app/views/ViewContracts.js';
 import { tradeNetworkState } from '../../fixtures/trade-network.js';
@@ -36,69 +31,42 @@ function setup() {
       view.dispose();
     },
   }).start();
-  const click = (label: string) => {
-    const button = root.querySelector<HTMLButtonElement>(
-      `[aria-label="${label}"]`,
-    );
-    expect(button, label).not.toBeNull();
-    button!.click();
-  };
-  const at = (q: number, r: number) => {
-    const world = HexGeometry.toPoint(new HexCoordinate(q, r));
-    const { center, zoom } = model.snapshot.camera;
-    return { x: (world.x - center.x) * zoom, y: (world.y - center.y) * zoom };
-  };
-  const fleetPoint = (id = 'fleet-home') => {
-    const marker = FleetMapLayout.markers([model.snapshot.fleet]).find(
-      (m) => m.fleet.id === id,
-    )!;
-    const { center, zoom } = model.snapshot.camera;
-    return {
-      x: (marker.point.x - center.x) * zoom,
-      y: (marker.point.y - center.y) * zoom,
-    };
-  };
-  return { model, root, view, emit, click, at, fleetPoint };
+  return { model, root, emit };
 }
 
-describe('delad-kartkamera', () => {
-  it('shares pan and zoom bidirectionally without recentering and keeps fleet selection', () => {
+describe('fleet-som-skeppsoversikt', () => {
+  it('shows ships without a map and retains the star map camera', () => {
     const { model, root, emit } = setup();
-    emit({ type: 'map-select-fleet', id: 'fleet-home' });
     emit({ type: 'pan', delta: { x: 83, y: -42 } });
     emit({ type: 'zoom', factor: 1.6, anchor: { x: 23, y: -9 } });
     const camera = model.snapshot.camera;
     emit({ type: 'open-fleets' });
-    expect(root.querySelector('.map-container')).not.toBeNull();
-    expect(root.querySelector('h1')?.textContent).toBe('Fleets');
-    expect(model.snapshot.camera).toEqual(camera);
-    expect(model.snapshot.mapFleetId).toBe('fleet-home');
-    emit({ type: 'pan', delta: { x: -24, y: 70 } });
-    emit({ type: 'zoom', factor: 0.8, anchor: { x: -20, y: 4 } });
-    const nextCamera = model.snapshot.camera;
-    emit({ type: 'open-map' });
-    expect(model.snapshot.camera).toEqual(nextCamera);
-    expect(model.snapshot.mapFleetId).toBe('fleet-home');
-  });
-});
-
-describe('flottfokuserad-kartvy', () => {
-  it('dismisses selection outside the hex field and cancels the destination picker with canvas Escape', () => {
-    const { model, root, emit } = setup();
-    emit({ type: 'open-fleets' });
-    emit({ type: 'map-select-fleet', id: 'fleet-home' });
-    const outside = { x: 10000, y: 10000 };
-    emit({ type: 'pointer-start', id: 1, point: outside });
-    emit({ type: 'pointer-end', id: 1, point: outside });
-    expect(model.snapshot.mapFleetId).toBeNull();
-    expect(root.querySelector<HTMLElement>('.selection-panel')!.hidden).toBe(
-      true,
+    expect(root.querySelector('.map-container')).toBeNull();
+    expect(root.querySelector('h1')?.textContent).toBe('Fleet');
+    expect(root.querySelectorAll('.fleet-ship')).toHaveLength(
+      model.snapshot.fleet.shipUnits!.length,
     );
-    emit({ type: 'map-select-fleet', id: 'fleet-home' });
-    emit({ type: 'begin-destination', id: 'fleet-home' });
-    emit({ type: 'pointer-cancel' });
-    expect(model.snapshot.destinationFleetId).toBeNull();
-    expect(model.snapshot.screen).toBe('fleets');
-    expect(model.snapshot.fleet.destination).toBeNull();
+    emit({ type: 'open-map' });
+    expect(model.snapshot.camera).toEqual(camera);
+  });
+  it('fleet-motorer-och-last: moves an engine using accessible slot controls', () => {
+    const { model, root, emit } = setup();
+    // Start a fresh game with its two test engines.
+    model.startSlot(2);
+    emit({ type: 'open-fleets' });
+    const source = root.querySelector<HTMLButtonElement>(
+      '[aria-label="Transport ship Cargo 1: Ion pulse engine"]',
+    )!;
+    const target = root.querySelector<HTMLButtonElement>(
+      '[aria-label="Raptor Engine: Rocket engine"]',
+    )!;
+    expect(source).not.toBeNull();
+    expect(target).not.toBeNull();
+    source.click();
+    target.click();
+    const raptor = model.snapshot.fleet.shipUnits!.find(
+      (ship) => ship.type === 'Raptor',
+    )!;
+    expect(raptor.engines['Ion pulse engine']).toBe(1);
   });
 });
