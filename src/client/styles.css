@@ -3132,10 +3132,10 @@ body:has(.discovery-controls) .selection-panel {
 /* fleet-vapenplatser / fleet-storage-grupperad */
 .fleet-engine-position {
   left: 10%;
-  top: 80%;
+  top: 50%;
 }
 .fleet-weapon-position {
-  left: 10%;
+  left: 50%;
 }
 .fleet-storage {
   position: absolute;

@@ -66,6 +66,9 @@ Beslutet om tre startskepp ersätter tidigare krav på en Raptor och en Transpor
   motor- och lastplatser ligger på fasta positioner på skeppsbilden och
   monterade eller lagrade motorer visas med bilder.
 - `fleet-platsinformation` är **Fullständigt implementerat**: utrustningsrutor märks `Engine` eller `Weapon`, och lastplatser grupperas under `Storage`. Markerad utrustning visar namn, bild och relevanta egenskaper; tomma rutor visas som tomma.
+- `fleet-direktmarkering` är **Fullständigt implementerat**: ett tryck på en fylld ruta väljer den direkt och avmarkerar den tidigare. Ett tryck på bakgrunden avmarkerar.
+- `fleet-placering-vapen-och-motor` är **Fullständigt implementerat**: motorplatsen är mitt bak på skeppet och vapenplatserna ligger i mitten över och under `Storage`.
+- `fleet-vapenbilder` är **Fullständigt implementerat**: Cannon, Light cannon, Raider cannon och Missiles har egna bilder som visas i Fleet och detaljpanelen.
 - `fleet-storage-grupperad` är **Fullständigt implementerat**: motorplatserna är till vänster och lastplatserna ligger tätt i en gemensam `Storage`-ruta mot mitten.
 - `fleet-vapenplatser` är **Fullständigt implementerat**: Raptor och erövrade piratskepp har en vapenplats och Fighter har två. Fighter börjar med Cannon och en tom plats, utan Storage. Vapen kan flyttas mellan vapenplatser och Storage, används i strid och behåller kvarvarande ammunition. Äldre sparningar behåller sina tidigare vapen.
 - `fleet-drag-och-rullning` är **Fullständigt implementerat**: föremålet

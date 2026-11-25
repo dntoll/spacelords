@@ -1106,8 +1106,9 @@ väntar på spelaren, vilket webbläsartesterna använder i stället för End tu
 `fleet-platsinformation`: Fleet-vyn märker varje plats med sin funktion och
 visar en panel med markerat innehåll. Motorernas fartbonus hämtas från samma
 modellvärde som används på Star map och i strid. En tom ruta saknar bild och
-egenskaper. Val av en upptagen ruta följt av en annan plats flyttar eller byter
-fortfarande utrustningen.
+egenskaper. Val av en upptagen ruta följt av en tom plats flyttar utrustningen.
+`fleet-direktmarkering`: val av en annan upptagen ruta växlar markering
+utan att flytta föremålen; klick på bakgrunden avmarkerar.
 
 ## Fleet: bildrutor och dragning
 
@@ -1126,3 +1127,10 @@ installerade vapnen och kvarvarande ammunition sparas efter striden.
 Äldre sparningar utan vapenplatser får sina tidigare vapen.
 `fleet-storage-grupperad`: motorplatsen ligger till vänster och lastplatser
 är samlade i en kompakt ruta med rubriken `Storage`.
+
+## Fleet: placering och vapenbilder
+
+`fleet-placering-vapen-och-motor`: motorplatsen positioneras mitt bak
+och vapenplatserna ovanför och under det centrala lastutrymmet.
+`fleet-vapenbilder`: Fleet använder egna transparenta bilder för varje
+vapentyp i rutor, vid dragning och i detaljpanelen.
