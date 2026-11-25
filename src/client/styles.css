@@ -2987,40 +2987,89 @@ body:has(.discovery-controls) .selection-panel {
   }
 }
 
-/* fleet-motorer-och-last */
+/* fleet-visuella-platser / fleet-drag-och-rullning */
 .fleet-ships {
   height: 100%;
   overflow: auto;
-  max-width: 1100px;
+  max-width: 700px;
   margin: auto;
   padding: 1rem;
 }
 .fleet-ship {
   margin: 1rem 0;
 }
+.fleet-ship-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.fleet-ship-header h2 {
+  flex: 1;
+}
+.fleet-ship-header button {
+  min-width: 44px;
+  min-height: 44px;
+}
+.fleet-ship-handle {
+  touch-action: none;
+  cursor: grab;
+}
 .fleet-ship-image {
-  min-height: 280px;
+  position: relative;
+  width: min(100%, 440px);
+  aspect-ratio: 1;
+  margin: auto;
   background-position: center;
   background-repeat: no-repeat;
   background-size: contain;
-  display: flex;
-  align-items: end;
-}
-.fleet-ship-slots {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.35rem;
-  padding: 0.5rem;
 }
 .fleet-equipment-slot {
-  min-height: 44px;
-  background: #162438e8;
+  position: absolute;
+  transform: translate(-50%, -50%);
+  width: clamp(44px, 12vw, 56px);
+  aspect-ratio: 1;
+  padding: 2px;
+  background: #162438d9;
   color: white;
   border: 1px solid #9fb7ce;
-  border-radius: 0.35rem;
-  padding: 0.35rem;
+  border-radius: 3px;
   touch-action: none;
 }
-.fleet-equipment-slot.selected {
+.fleet-equipment-slot img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+}
+.fleet-equipment-slot.selected,
+.fleet-equipment-slot.drag-target {
   outline: 3px solid #ffd875;
+}
+.fleet-ship.drag-target {
+  outline: 2px solid #ffd875;
+}
+.fleet-drag-ghost {
+  position: fixed;
+  z-index: 10000;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  filter: drop-shadow(0 3px 5px #000a);
+}
+.fleet-item-ghost {
+  width: 56px;
+  height: 56px;
+  object-fit: contain;
+}
+.fleet-ship-ghost {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem;
+  background: #162438e8;
+  border: 1px solid #ffd875;
+}
+.fleet-ship-ghost img {
+  width: 80px;
+  height: 80px;
+  object-fit: contain;
 }

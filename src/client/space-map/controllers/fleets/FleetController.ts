@@ -3,6 +3,10 @@ import type { FleetFacade } from '../../models/fleets/FleetFacade.js';
 export class FleetController {
   constructor(private readonly facade: FleetFacade) {}
 
+  reorderShip(shipId: string, index: number): void {
+    this.facade.reorderShip(shipId, index);
+  }
+
   moveEngine(
     from: { shipId: string; slot: number | 'engine' },
     to: { shipId: string; slot: number | 'engine' },

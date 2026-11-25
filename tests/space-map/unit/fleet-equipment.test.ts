@@ -66,3 +66,24 @@ describe('fleet-motorer-och-last / compatibility', () => {
     expect(game.fleetSnapshot().shipUnits).toEqual(before);
   });
 });
+
+describe('fleet-skeppsordning', () => {
+  it('persists reordered ships while preserving their equipment and ignores invalid moves', () => {
+    const game = new Game(createExampleGalaxy());
+    const before = game.fleetSnapshot().shipUnits!;
+    const originalCombatOrder = game
+      .exportState()
+      .fleets[0]!.shipUnits!.map((ship) => ship.id);
+    game.reorderShip(before[1]!.id, 0);
+    expect(
+      game.exportState().fleets[0]!.shipUnits!.map((ship) => ship.id),
+    ).toEqual(originalCombatOrder);
+    expect(game.fleetSnapshot().shipUnits).toEqual([before[1], before[0]]);
+    game.reorderShip('missing', 0);
+    game.reorderShip(before[0]!.id, 12);
+    expect(Game.restore(game.exportState()).fleetSnapshot().shipUnits).toEqual([
+      before[1],
+      before[0],
+    ]);
+  });
+});

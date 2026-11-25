@@ -433,10 +433,13 @@ export class AppView implements AppPort {
       }
     }
     this.#syncLocalEditorNav(model);
-    if (model.screen === 'fleets' && !changedScreen)
-      this.#root
-        .querySelector('main')
-        ?.replaceChildren(renderFleetEquipment(model.fleet, this.#emit));
+    if (model.screen === 'fleets' && !changedScreen) {
+      const scroll =
+        this.#root.querySelector<HTMLElement>('.fleet-ships')?.scrollTop ?? 0;
+      const next = renderFleetEquipment(model.fleet, this.#emit);
+      this.#root.querySelector('main')?.replaceChildren(next);
+      next.scrollTop = scroll;
+    }
     if (model.screen === 'map') {
       this.#root
         .querySelector('.map-page')

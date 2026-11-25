@@ -36,6 +36,7 @@ kraven med stabila namn och status. Statusen nedan sammanfattar området.
   `fleet-som-skeppsoversikt` och `skeppsslots-for-utrustning-och-personer` är **Delvis implementerat**; fler egenskaper, personer och vapen återstår. Övriga nya beteendekrav är **Ej implementerat**.
   Planen anger vilka delar som måste diskuteras och låsas med användaren
   före implementation (`single-fleet-beslut-fore-implementation`).
+  `fleet-visuella-platser`, `fleet-drag-och-rullning` och `fleet-skeppsordning` är **Fullständigt implementerat**.
   `fleet-motorer-och-last` är **Fullständigt implementerat**: motorer kan flyttas mellan skeppens motor- och lastplatser.
   [Rensningsplanen](docs/single-fleet-cleanup.md) följer borttagningen av den
   tidigare spelmekaniken (`single-fleet-rensning`, **Fullständigt

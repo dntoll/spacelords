@@ -67,7 +67,7 @@ space_map___delat_ --> space_map__research : 3
 space_map___delat_ ..> space_map__saves : 1, typer
 space_map___delat_ --> space_map__star_map : 1
 space_map___delat_ ..> space_map__turn : 2, typer
-space_map__fleets --> space_map___delat_ : 5
+space_map__fleets --> space_map___delat_ : 6
 space_map__research --> space_map___delat_ : 8
 space_map__research --> space_map__star_map : 1
 space_map__saves --> space_map___delat_ : 8

@@ -23,6 +23,11 @@ import type {
 
 export type AppIntent =
   | {
+      readonly type: 'reorder-ship';
+      readonly shipId: string;
+      readonly index: number;
+    }
+  | {
       readonly type: 'move-engine';
       readonly from: {
         readonly shipId: string;

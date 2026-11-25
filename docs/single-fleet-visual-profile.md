@@ -56,3 +56,15 @@ Originalen finns i `assets/original/ships/raptor.png` och
 `src/client/space-map/assets/ships/raptor-boarding-hd.webp` (1 254 × 1 254).
 Båda är proportionella versioner av samma transparenta original. Testet
 `raptor-single-fleet-grafik` kontrollerar transparens och bildernas format.
+
+## Motorbilder i Fleet
+
+`fleet-visuella-platser`: Rocket engine och Ion pulse engine visas med egna
+transparenta bilder i `src/client/space-map/assets/equipment/`. Bilderna
+skapades med den inbyggda bildgeneratorn som slitna mekaniska moduler i
+trekvartsvy, med orange raketmunstycke respektive blå jonspolar och munstycke.
+
+Bildprompter (inbyggd imagegen):
+
+- `Use case: stylized-concept. Asset type: transparent game inventory icon. Draw one compact mechanical rocket engine module, gray worn industrial metal with a warm orange nozzle, three-quarter top view, centered and fully visible, crisp illustrated sci-fi game art, no text, no frame or shadow, transparent background.`
+- `Use case: stylized-concept. Asset type: transparent game inventory icon. Draw one compact ion pulse engine module, gray worn industrial metal with a luminous cyan-blue nozzle and subtle coils, three-quarter top view, centered and fully visible, crisp illustrated sci-fi game art, no text, no frame or shadow, transparent background.`

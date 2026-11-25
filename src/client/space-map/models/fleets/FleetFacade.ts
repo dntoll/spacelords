@@ -4,6 +4,10 @@ import type { AppHost } from '../../../app/models/AppModel.js';
 export class FleetFacade {
   constructor(private readonly host: AppHost) {}
 
+  reorderShip(shipId: string, index: number): void {
+    this.host.game.reorderShip(shipId, index);
+  }
+
   moveEngine(
     from: { shipId: string; slot: number | 'engine' },
     to: { shipId: string; slot: number | 'engine' },
