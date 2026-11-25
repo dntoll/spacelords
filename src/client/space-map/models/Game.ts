@@ -54,7 +54,9 @@ import {
   ENGINE_SPEED_BONUS,
   type ShipUnit,
   type EngineSlot,
-  type EngineType,
+  type Equipment,
+  type EquipmentSlot,
+  type WeaponEquipment,
 } from './Catalog.js';
 import type {
   ResearchSnapshot,
@@ -203,13 +205,13 @@ export class Game {
       position: galaxy.homePlanet.position,
       destination: null,
       // startflotta-med-raptor: the fleet starts with a Raptor and a Transport ship.
-      ships: { ...zeroShips(), Raptor: 1, 'Transport ship': 1 },
+      ships: { ...zeroShips(), Raptor: 1, Fighter: 1, 'Transport ship': 1 },
     };
     this.#normalizeShips();
     if (this.#fleet.shipUnits)
       this.#fleet.shipUnits = this.#fleet.shipUnits.map((unit) =>
         unit.type === 'Fighter' && unit.missiles === undefined
-          ? { ...unit, missiles: 0 }
+          ? { ...unit, missiles: 0, weaponSlots: [{ type: 'Cannon' }, null] }
           : unit,
       );
     this.#fleet.shipUnits = this.#fleet.shipUnits!.map((unit) =>
@@ -739,7 +741,18 @@ export class Game {
           Object.freeze({
             ...unit,
             engines: Object.freeze({ ...unit.engines }),
-            cargoSlots: Object.freeze([...(unit.cargoSlots ?? [])]),
+            cargoSlots: Object.freeze(
+              (unit.cargoSlots ?? []).map((item) =>
+                item && typeof item === 'object'
+                  ? Object.freeze({ ...item })
+                  : item,
+              ),
+            ),
+            weaponSlots: Object.freeze(
+              (unit.weaponSlots ?? []).map((item) =>
+                item ? Object.freeze({ ...item }) : null,
+              ),
+            ),
           }),
         ),
       ),
@@ -773,6 +786,9 @@ export class Game {
     this.#fleet.shipOrder = ships.map((item) => item.id);
   }
   moveEngine(from: EngineSlot, to: EngineSlot): void {
+    this.moveEquipment(from, to);
+  }
+  moveEquipment(from: EquipmentSlot, to: EquipmentSlot): void {
     if (this.#phase !== 'planning') return;
     const units = this.#fleet.shipUnits!;
     const source = units.findIndex((unit) => unit.id === from.shipId);
@@ -780,9 +796,9 @@ export class Game {
     if (source < 0 || target < 0) return;
     const read = (
       unit: ShipUnit,
-      slot: EngineSlot['slot'],
-    ): EngineType | null | undefined => {
-      if (slot === 'engine') {
+      slot: EquipmentSlot,
+    ): Equipment | null | undefined => {
+      if (slot.slot === 'engine') {
         if (engineCount(unit.type) !== 1) return undefined;
         return unit.engines['Ion pulse engine']
           ? 'Ion pulse engine'
@@ -790,25 +806,46 @@ export class Game {
             ? 'Rocket engine'
             : null;
       }
+      if (slot.slot === 'weapon') {
+        if (
+          !Number.isInteger(slot.index) ||
+          slot.index! < 0 ||
+          slot.index! >= (unit.weaponSlots?.length ?? 0)
+        )
+          return undefined;
+        return unit.weaponSlots![slot.index!];
+      }
       if (
-        !Number.isInteger(slot) ||
-        slot < 0 ||
-        slot >= (unit.cargoSlots?.length ?? 0)
+        !Number.isInteger(slot.slot) ||
+        slot.slot < 0 ||
+        slot.slot >= (unit.cargoSlots?.length ?? 0)
       )
         return undefined;
-      return unit.cargoSlots![slot];
+      return unit.cargoSlots![slot.slot];
     };
-    const a = read(units[source]!, from.slot);
-    const b = read(units[target]!, to.slot);
-    if (!a || b === undefined || (source === target && from.slot === to.slot))
+    const fits = (slot: EquipmentSlot, item: Equipment | null) =>
+      !item ||
+      typeof slot.slot === 'number' ||
+      (slot.slot === 'engine'
+        ? typeof item === 'string'
+        : typeof item === 'object');
+    const a = read(units[source]!, from),
+      b = read(units[target]!, to);
+    if (
+      !a ||
+      b === undefined ||
+      (source === target && from.slot === to.slot && from.index === to.index) ||
+      !fits(to, a) ||
+      !fits(from, b)
+    )
       return;
     const write = (
       index: number,
-      slot: EngineSlot['slot'],
-      value: EngineType | null,
-    ): void => {
+      slot: EquipmentSlot,
+      value: Equipment | null,
+    ) => {
       const unit = units[index]!;
-      if (slot === 'engine')
+      if (slot.slot === 'engine')
         units[index] = {
           ...unit,
           engines: {
@@ -816,14 +853,18 @@ export class Game {
             'Ion pulse engine': Number(value === 'Ion pulse engine'),
           },
         };
-      else {
+      else if (slot.slot === 'weapon') {
+        const weaponSlots = [...unit.weaponSlots!];
+        weaponSlots[slot.index!] = value as WeaponEquipment | null;
+        units[index] = { ...unit, weaponSlots };
+      } else {
         const cargoSlots = [...unit.cargoSlots!];
-        cargoSlots[slot] = value;
+        cargoSlots[slot.slot] = value;
         units[index] = { ...unit, cargoSlots };
       }
     };
-    write(source, from.slot, b);
-    write(target, to.slot, a);
+    write(source, from, b);
+    write(target, to, a);
   }
   fleet(id: string): FleetSnapshot | null {
     return id === this.#fleet.id ? this.fleetSnapshot() : null;
@@ -1156,6 +1197,8 @@ export class Game {
         fleet.shipUnits!.push({
           id: piece.id,
           type: piece.type,
+          weaponSlots:
+            piece.type === 'Space pirate' ? [{ type: 'Raider cannon' }] : [],
           engines: { 'Rocket engine': 1, 'Ion pulse engine': 0 },
         });
       }
@@ -1255,7 +1298,14 @@ export class Game {
               unit.engines['Rocket engine'] + unit.engines['Ion pulse engine'] >
               0,
             towing: false,
-            missiles: unit.type === 'Fighter' ? (unit.missiles ?? 2) : 0,
+            weapons: (unit.weaponSlots ?? []).flatMap((weapon) =>
+              weapon ? [weapon.type] : [],
+            ),
+            missiles: (unit.weaponSlots ?? []).reduce(
+              (sum, weapon) =>
+                sum + (weapon?.type === 'Missiles' ? (weapon.salvos ?? 0) : 0),
+              0,
+            ),
             armored: unit.armored === true,
             ...(unit.damage ? { damage: unit.damage } : {}),
           })),
@@ -1358,10 +1408,21 @@ export class Game {
         .map((unit) => {
           const piece = pieces.find((p) => p.id === unit.id);
           if (!piece) return unit;
+          let remainingSalvos = piece.missiles;
+          const weaponSlots = unit.weaponSlots?.map((weapon) => {
+            if (weapon?.type !== 'Missiles') return weapon;
+            const salvos = Math.min(weapon.salvos ?? 0, remainingSalvos);
+            remainingSalvos -= salvos;
+            return { ...weapon, salvos };
+          });
           const damage = maxHull(piece) - piece.hull;
           const { damage: _previous, ...rest } = unit;
           void _previous;
-          return damage > 0 ? { ...rest, damage } : rest;
+          return {
+            ...rest,
+            ...(weaponSlots ? { weaponSlots } : {}),
+            ...(damage > 0 ? { damage } : {}),
+          };
         });
       if (escaped && participant.retreat && this.#shipCount(fleet.ships)) {
         fleet.position = new HexCoordinate(
@@ -2130,11 +2191,56 @@ export class Game {
             (item) =>
               item !== null &&
               item !== 'Rocket engine' &&
-              item !== 'Ion pulse engine',
+              item !== 'Ion pulse engine' &&
+              !(
+                typeof item === 'object' &&
+                [
+                  'Cannon',
+                  'Light cannon',
+                  'Raider cannon',
+                  'Missiles',
+                ].includes(item.type) &&
+                (item.type !== 'Missiles' ||
+                  (Number.isInteger(item.salvos) &&
+                    item.salvos! >= 0 &&
+                    item.salvos! <= 2))
+              ),
           )
         )
           throw new Error('Invalid ship cargo.');
-        return { ...unit, cargoSlots };
+        const defaults: (WeaponEquipment | null)[] =
+          unit.type === 'Raptor'
+            ? [{ type: 'Light cannon' }]
+            : unit.type === 'Fighter'
+              ? [
+                  { type: 'Cannon' },
+                  (unit.missiles ?? 2) > 0
+                    ? { type: 'Missiles', salvos: unit.missiles ?? 2 }
+                    : null,
+                ]
+              : unit.type === 'Space pirate'
+                ? [{ type: 'Raider cannon' }]
+                : [];
+        const weaponSlots = unit.weaponSlots ?? defaults;
+        if (
+          weaponSlots.length !== defaults.length ||
+          weaponSlots.some(
+            (item) =>
+              item &&
+              (![
+                'Cannon',
+                'Light cannon',
+                'Raider cannon',
+                'Missiles',
+              ].includes(item.type) ||
+                (item.type === 'Missiles' &&
+                  (!Number.isInteger(item.salvos) ||
+                    item.salvos! < 0 ||
+                    item.salvos! > 2))),
+          )
+        )
+          throw new Error('Invalid ship weapons.');
+        return { ...unit, cargoSlots, weaponSlots };
       });
     }
   }

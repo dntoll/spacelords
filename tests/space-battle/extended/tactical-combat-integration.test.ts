@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { createExampleGalaxy } from '../../../src/client/space-map/models/exampleGalaxy.js';
 import {
   Game,
   type GameState,
@@ -203,5 +204,39 @@ describe('tactical combat integration', () => {
       ),
     ).toBe(true);
     expect(TacticalBattle.restore(deployed).snapshot).toEqual(deployed);
+  });
+});
+
+describe('fleet-vapenplatser', () => {
+  it('passes moved weapons into combat and preserves the battle on reload', () => {
+    const state = new Game(createExampleGalaxy()).exportState();
+    const positioned = Game.restore({
+      ...state,
+      fleets: [{ ...state.fleets[0]!, position: { q: 8, r: -4 } }],
+    });
+    const ships = positioned.fleetSnapshot().shipUnits!;
+    const fighter = ships.find((ship) => ship.type === 'Fighter')!;
+    const raptor = ships.find((ship) => ship.type === 'Raptor')!;
+    positioned.moveEquipment(
+      { shipId: raptor.id, slot: 'weapon', index: 0 },
+      { shipId: fighter.id, slot: 'weapon', index: 1 },
+    );
+    positioned.startTurn();
+    for (let step = 0; !positioned.tacticalBattle && step < 20; step++) {
+      if (positioned.phase === 'interrupted') positioned.continueTurn();
+      const frame = positioned.nextTurnFrame();
+      if (!frame) throw new Error('No encounter occurred.');
+      positioned.applyFrame(frame);
+    }
+    const battle = positioned.tacticalBattle!;
+    expect(
+      battle.pieces.find((piece) => piece.id === fighter.id)!.weapons,
+    ).toEqual(['Cannon', 'Light cannon']);
+    expect(
+      battle.pieces.find((piece) => piece.id === raptor.id)!.weapons,
+    ).toEqual([]);
+    expect(Game.restore(positioned.exportState()).tacticalBattle).toEqual(
+      battle,
+    );
   });
 });

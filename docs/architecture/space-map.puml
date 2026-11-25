@@ -76,6 +76,7 @@ space_map__turn --> space_map___delat_ : 8
 space_map__turn --> space_map__star_map : 1
 space_map___delat_ --> ext__boarding : models
 space_map___delat_ --> ext__space_battle : models
+space_map__fleets --> ext__space_battle : models
 space_map__saves --> ext__boarding : models
 space_map__saves ..> ext__space_battle : models, typer
 @enduml

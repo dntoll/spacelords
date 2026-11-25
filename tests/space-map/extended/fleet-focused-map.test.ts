@@ -80,7 +80,7 @@ describe('fleet-platsinformation', () => {
       '[aria-label="Transport ship Cargo 1: Ion pulse engine"]',
     )!;
     expect(
-      source.closest('.fleet-slot')?.querySelector('.fleet-slot-label')
+      source.closest('.fleet-storage')?.querySelector('.fleet-storage-title')
         ?.textContent,
     ).toBe('Storage');
     source.click();
@@ -120,5 +120,48 @@ describe('fleet-platsinformation', () => {
       model.snapshot.fleet.shipUnits!.find((ship) => ship.type === 'Raptor')!
         .engines['Ion pulse engine'],
     ).toBe(1);
+  });
+});
+
+describe('fleet-vapenplatser', () => {
+  it('shows weapons and moves them between ships and storage', () => {
+    const { model, root, emit } = setup();
+    model.startSlot(2);
+    emit({ type: 'open-fleets' });
+    const fighter = root.querySelector<HTMLButtonElement>(
+      '[aria-label="Fighter Weapon 1: Cannon"]',
+    )!;
+    fighter.click();
+    expect(root.querySelector('.fleet-item-details')?.textContent).toContain(
+      'Range: 1–3',
+    );
+    root
+      .querySelector<HTMLButtonElement>(
+        '[aria-label="Transport ship Cargo 3: Empty"]',
+      )!
+      .click();
+    expect(
+      model.snapshot.fleet.shipUnits!.find((ship) => ship.type === 'Fighter')!
+        .weaponSlots![0],
+    ).toBeNull();
+    expect(
+      model.snapshot.fleet.shipUnits!.find(
+        (ship) => ship.type === 'Transport ship',
+      )!.cargoSlots![2],
+    ).toEqual({ type: 'Cannon' });
+    root
+      .querySelector<HTMLButtonElement>(
+        '[aria-label="Transport ship Cargo 3: Cannon"]',
+      )!
+      .click();
+    root
+      .querySelector<HTMLButtonElement>(
+        '[aria-label="Fighter Weapon 2: Empty"]',
+      )!
+      .click();
+    expect(
+      model.snapshot.fleet.shipUnits!.find((ship) => ship.type === 'Fighter')!
+        .weaponSlots![1],
+    ).toEqual({ type: 'Cannon' });
   });
 });

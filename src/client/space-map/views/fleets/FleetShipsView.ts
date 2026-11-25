@@ -1,11 +1,31 @@
 import type { FleetSnapshot } from '../../models/GameSnapshots.js';
 import type { IntentHandler } from '../../../app/views/ViewContracts.js';
-import { ENGINE_SPEED_BONUS, type EngineType } from '../../models/Catalog.js';
+import {
+  ENGINE_SPEED_BONUS,
+  type EngineType,
+  type Equipment,
+  type EquipmentSlot,
+  type ShipWeapon,
+} from '../../models/Catalog.js';
+import { WEAPONS } from '../../../space-battle/models/index.js';
 import { SHIP_IMAGES } from '../ShipImages.js';
 import rocketImage from '../../assets/equipment/rocket-engine.png';
 import ionImage from '../../assets/equipment/ion-pulse-engine.png';
+import cannonImage from '../../assets/equipment/cannon.svg';
+import lightCannonImage from '../../assets/equipment/light-cannon.svg';
+import missilesImage from '../../assets/equipment/missiles.svg';
 
-type Slot = { shipId: string; slot: number | 'engine' };
+type Slot = EquipmentSlot;
+const WEAPON_IMAGES: Record<ShipWeapon, string> = {
+  Cannon: cannonImage,
+  'Light cannon': lightCannonImage,
+  'Raider cannon': cannonImage,
+  Missiles: missilesImage,
+};
+const equipmentName = (item: Equipment) =>
+  typeof item === 'string' ? item : item.type;
+const equipmentImage = (item: Equipment) =>
+  typeof item === 'string' ? ENGINE_IMAGES[item] : WEAPON_IMAGES[item.type];
 const ENGINE_IMAGES: Record<EngineType, string> = {
   'Rocket engine': rocketImage,
   'Ion pulse engine': ionImage,
@@ -23,7 +43,7 @@ export function renderFleetEquipment(
   page.append(heading);
   const hint = document.createElement('p');
   hint.textContent =
-    'Drag an engine, or select it and then select a destination. Drag the handle to reorder ships.';
+    'Drag equipment, or select it and then select a destination. Drag the handle to reorder ships.';
   page.append(hint);
   const details = document.createElement('aside');
   details.className = 'fleet-item-details';
@@ -31,25 +51,41 @@ export function renderFleetEquipment(
   details.setAttribute('aria-live', 'polite');
   details.hidden = true;
   page.append(details);
-  const showDetails = (slotName: string, content: EngineType | null) => {
+  const showDetails = (slotName: string, content: Equipment | null) => {
     details.replaceChildren();
     details.hidden = false;
     const heading = document.createElement('h2');
-    heading.textContent = content ?? `Empty ${slotName.toLowerCase()} slot`;
+    heading.textContent = content
+      ? equipmentName(content)
+      : `Empty ${slotName.toLowerCase()} slot`;
     details.append(heading);
     if (!content) return;
     const picture = document.createElement('img');
-    picture.src = ENGINE_IMAGES[content];
+    picture.src = equipmentImage(content);
     picture.alt = '';
     const stats = document.createElement('div');
-    const bonus = ENGINE_SPEED_BONUS[content];
-    const map = document.createElement('p');
-    map.textContent = `Star map speed bonus: +${bonus}`;
-    const battle = document.createElement('p');
-    battle.textContent = `Battle speed bonus: +${bonus}`;
-    const condition = document.createElement('p');
-    condition.textContent = 'Bonuses apply when equipped.';
-    stats.append(map, battle, condition);
+    if (typeof content === 'string') {
+      const bonus = ENGINE_SPEED_BONUS[content];
+      const map = document.createElement('p');
+      map.textContent = `Star map speed bonus: +${bonus}`;
+      const battle = document.createElement('p');
+      battle.textContent = `Battle speed bonus: +${bonus}`;
+      const condition = document.createElement('p');
+      condition.textContent = 'Bonuses apply when equipped.';
+      stats.append(map, battle, condition);
+    } else {
+      const profile = WEAPONS[content.type];
+      const range = document.createElement('p');
+      range.textContent = `Range: ${profile.min}–${profile.max} · Arc: ${profile.arc}°`;
+      const damage = document.createElement('p');
+      damage.textContent = `Damage dice: ${profile.dice} · Hit: ${profile.threshold}+`;
+      stats.append(range, damage);
+      if (content.type === 'Missiles') {
+        const ammo = document.createElement('p');
+        ammo.textContent = `Salvos: ${content.salvos ?? 0}`;
+        stats.append(ammo);
+      }
+    }
     const body = document.createElement('div');
     body.className = 'fleet-item-details-body';
     body.append(picture, stats);
@@ -59,7 +95,7 @@ export function renderFleetEquipment(
   let selected: {
     slot: Slot;
     button: HTMLButtonElement;
-    content: EngineType | null;
+    content: Equipment | null;
   } | null = null;
   let dragging = false;
 
@@ -217,7 +253,11 @@ export function renderFleetEquipment(
     const image = document.createElement('div');
     image.className = 'fleet-ship-image';
     image.style.backgroundImage = `url("${SHIP_IMAGES[ship.type]}")`;
-    const addSlot = (slot: Slot['slot'], content: EngineType | null): void => {
+    const addSlot = (
+      slot: Slot['slot'],
+      content: Equipment | null,
+      weaponIndex?: number,
+    ): void => {
       const control = document.createElement('button');
       control.type = 'button';
       control.className = 'fleet-equipment-slot';
@@ -226,28 +266,40 @@ export function renderFleetEquipment(
       wrapper.className = 'fleet-slot';
       const label = document.createElement('span');
       label.className = 'fleet-slot-label';
-      label.textContent = slot === 'engine' ? 'Engine' : 'Storage';
+      label.textContent =
+        slot === 'engine' ? 'Engine' : slot === 'weapon' ? 'Weapon' : '';
       label.setAttribute('aria-hidden', 'true');
       control.dataset.shipId = ship.id;
-      control.dataset.slot = String(slot);
-      const slotName = slot === 'engine' ? 'Engine' : `Cargo ${slot + 1}`;
+      control.dataset.slot =
+        slot === 'weapon' ? `weapon:${weaponIndex}` : String(slot);
+      const slotName =
+        slot === 'engine'
+          ? 'Engine'
+          : slot === 'weapon'
+            ? `Weapon ${weaponIndex! + 1}`
+            : `Cargo ${slot + 1}`;
       control.setAttribute(
         'aria-label',
-        `${ship.type} ${slotName}: ${content ?? 'Empty'}`,
+        `${ship.type} ${slotName}: ${content ? equipmentName(content) : 'Empty'}`,
       );
-      control.title = `${slotName}: ${content ?? 'Empty'}`;
-      // Coordinates are percentages of the square ship artwork; cargo uses two rows of five.
-      const column = slot === 'engine' ? 2 : slot % 5;
-      const row = slot === 'engine' ? 2 : Math.floor(slot / 5);
-      wrapper.style.left = `${10 + column * 20}%`;
-      wrapper.style.top = `${22 + row * 27}%`;
+      control.title = `${slotName}: ${content ? equipmentName(content) : 'Empty'}`;
+      if (slot === 'engine') {
+        wrapper.classList.add('fleet-engine-position');
+      } else if (slot === 'weapon') {
+        wrapper.classList.add('fleet-weapon-position');
+        wrapper.style.top = `${30 + (weaponIndex ?? 0) * 20}%`;
+      } else wrapper.classList.add('fleet-storage-slot');
       if (content) {
         const icon = document.createElement('img');
-        icon.src = ENGINE_IMAGES[content];
+        icon.src = equipmentImage(content);
         icon.alt = '';
         control.append(icon);
       }
-      const current = { shipId: ship.id, slot };
+      const current: Slot = {
+        shipId: ship.id,
+        slot,
+        ...(slot === 'weapon' ? { index: weaponIndex! } : {}),
+      };
       control.addEventListener('click', () => {
         if (dragging) return;
         if (selected?.button === control) {
@@ -263,7 +315,7 @@ export function renderFleetEquipment(
           selected.button.setAttribute('aria-pressed', 'false');
           selected = null;
           details.hidden = true;
-          emit({ type: 'move-engine', from, to: current });
+          emit({ type: 'move-equipment', from, to: current });
           return;
         }
         selected?.button.classList.remove('selected');
@@ -271,7 +323,14 @@ export function renderFleetEquipment(
         selected = { slot: current, button: control, content };
         control.classList.add('selected');
         control.setAttribute('aria-pressed', 'true');
-        showDetails(slot === 'engine' ? 'Engine' : 'Storage', content);
+        showDetails(
+          slot === 'engine'
+            ? 'Engine'
+            : slot === 'weapon'
+              ? 'Weapon'
+              : 'Storage',
+          content,
+        );
       });
       if (content)
         enableDrag(
@@ -279,7 +338,7 @@ export function renderFleetEquipment(
           () => {
             const ghost = document.createElement('img');
             ghost.className = 'fleet-item-ghost';
-            ghost.src = ENGINE_IMAGES[content];
+            ghost.src = equipmentImage(content);
             ghost.alt = '';
             return ghost;
           },
@@ -290,18 +349,44 @@ export function renderFleetEquipment(
             const destinationSlot =
               destination.dataset.slot === 'engine'
                 ? 'engine'
-                : Number(destination.dataset.slot);
+                : destination.dataset.slot.startsWith('weapon:')
+                  ? 'weapon'
+                  : Number(destination.dataset.slot);
+            const destinationIndex =
+              destinationSlot === 'weapon'
+                ? Number(destination.dataset.slot.slice(7))
+                : undefined;
             emit({
-              type: 'move-engine',
+              type: 'move-equipment',
               from: current,
-              to: { shipId: destination.dataset.shipId, slot: destinationSlot },
+              to: {
+                shipId: destination.dataset.shipId,
+                slot: destinationSlot,
+                ...(destinationIndex !== undefined
+                  ? { index: destinationIndex }
+                  : {}),
+              },
             });
           },
           '.fleet-equipment-slot',
         );
-      wrapper.append(label, control);
-      image.append(wrapper);
+      if (slot === 'engine' || slot === 'weapon') wrapper.append(label);
+      wrapper.append(control);
+      if (typeof slot === 'number') storage?.append(wrapper);
+      else image.append(wrapper);
     };
+    let storage: HTMLElement | null = null;
+    if (ship.cargoSlots?.length) {
+      storage = document.createElement('div');
+      storage.className = 'fleet-storage';
+      storage.setAttribute('role', 'group');
+      storage.setAttribute('aria-label', 'Storage');
+      const title = document.createElement('span');
+      title.className = 'fleet-storage-title';
+      title.textContent = 'Storage';
+      storage.append(title);
+      image.append(storage);
+    }
     const engine = ship.engines['Ion pulse engine']
       ? 'Ion pulse engine'
       : ship.engines['Rocket engine']
@@ -309,6 +394,7 @@ export function renderFleetEquipment(
         : null;
     addSlot('engine', engine);
     ship.cargoSlots?.forEach((item, index) => addSlot(index, item));
+    ship.weaponSlots?.forEach((item, index) => addSlot('weapon', item, index));
     card.append(image);
     page.append(card);
   });

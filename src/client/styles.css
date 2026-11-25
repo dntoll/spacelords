@@ -3129,3 +3129,39 @@ body:has(.discovery-controls) .selection-panel {
   margin: 0.1rem 0;
   font-size: 0.85rem;
 }
+/* fleet-vapenplatser / fleet-storage-grupperad */
+.fleet-engine-position {
+  left: 10%;
+  top: 80%;
+}
+.fleet-weapon-position {
+  left: 10%;
+}
+.fleet-storage {
+  position: absolute;
+  left: 27%;
+  top: 32%;
+  width: 70%;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 2px;
+  padding: 5px;
+  border: 1px solid #9fb7ce;
+  border-radius: 4px;
+  background: #10232e88;
+}
+.fleet-storage-title {
+  position: absolute;
+  left: 6px;
+  bottom: 100%;
+  padding: 0 3px;
+  color: white;
+  background: #10232ee8;
+  font-size: 10px;
+  line-height: 1.2;
+}
+.fleet-storage .fleet-storage-slot {
+  position: relative;
+  transform: none;
+  width: 100%;
+}

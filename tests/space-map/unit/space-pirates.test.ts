@@ -243,7 +243,22 @@ describe('flottstrid-per-hex / motorbehov-for-alla-skepp', () => {
     // permanenta-skador: survivors keep their equipment and may carry damage.
     for (const { damage, ...unit } of game.fleet('fleet-home')!.shipUnits!) {
       expect(damage ?? 0).toBeGreaterThanOrEqual(0);
-      expect(before.fleets[0]!.shipUnits).toContainEqual(unit);
+      const previous = before.fleets[0]!.shipUnits!.find(
+        (ship) => ship.id === unit.id,
+      )!;
+      expect({ ...unit, weaponSlots: undefined }).toEqual({
+        ...previous,
+        weaponSlots: undefined,
+      });
+      expect(unit.weaponSlots?.map((weapon) => weapon?.type ?? null)).toEqual(
+        previous.weaponSlots?.map((weapon) => weapon?.type ?? null),
+      );
+      unit.weaponSlots?.forEach((weapon, index) => {
+        if (weapon?.type === 'Missiles')
+          expect(weapon.salvos).toBeLessThanOrEqual(
+            previous.weaponSlots![index]!.salvos!,
+          );
+      });
     }
   });
 });

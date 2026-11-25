@@ -32,12 +32,13 @@ kraven med stabila namn och status. Statusen nedan sammanfattar området.
   och lika startegenskaper. `enda-spelarflottan` och
   `flottstyrning-med-ap-pa-starmap` är **Fullständigt implementerat** (en
   flotta, AP, turordning och piraternas aktivering), liksom
-  `startflotta-med-raptor` (Raptor och Transport ship vid start);
-  `fleet-som-skeppsoversikt` och `skeppsslots-for-utrustning-och-personer` är **Delvis implementerat**; fler egenskaper, personer och vapen återstår. Övriga nya beteendekrav är **Ej implementerat**.
+  `startflotta-med-raptor` (Raptor, Fighter och Transport ship vid start);
+  `fleet-som-skeppsoversikt` och `skeppsslots-for-utrustning-och-personer` är **Delvis implementerat**; fler egenskaper och personer återstår. Övriga nya beteendekrav är **Ej implementerat**.
   Planen anger vilka delar som måste diskuteras och låsas med användaren
   före implementation (`single-fleet-beslut-fore-implementation`).
   `fleet-visuella-platser`, `fleet-drag-och-rullning` och `fleet-skeppsordning` är **Fullständigt implementerat**.
   `fleet-platsinformation` är **Fullständigt implementerat**: varje plats visar funktion och markerad utrustning visar namn, bild och egenskaper.
+  `fleet-vapenplatser` och `fleet-storage-grupperad` är **Fullständigt implementerat**: vapen kan flyttas och användas och lastplatser är grupperade.
   `fleet-motorer-och-last` är **Fullständigt implementerat**: motorer kan flyttas mellan skeppens motor- och lastplatser.
   [Rensningsplanen](docs/single-fleet-cleanup.md) följer borttagningen av den
   tidigare spelmekaniken (`single-fleet-rensning`, **Fullständigt

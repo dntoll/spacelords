@@ -42,8 +42,9 @@ export class BattleFacade {
       (p) => p.side === 'player' && p.status === 'active' && !p.activated,
     );
     const ship =
-      eligible.find((p) => battleWeapons(p.type, p.hasMissiles).length) ??
-      eligible[0];
+      eligible.find(
+        (p) => battleWeapons(p.type, p.hasMissiles, p.weapons).length,
+      ) ?? eligible[0];
     if (!ship) return false;
     this.host.commandBattle({ type: 'activate', id: ship.id });
     return true;

@@ -1117,3 +1117,12 @@ en vyägd pekargest visar en bild under pekaren och rullar listan vid kanten;
 modellen ändras först vid ett giltigt släpp. `fleet-skeppsordning`:
 visningsordningen lagras separat från skeppens stridsordning och äldre
 sparningar behåller sin befintliga ordning.
+
+## Fleet: vapen och grupperad last
+
+`fleet-vapenplatser`: vapen och deras återstående ammunition lagras per
+utrustningsplats och kan flyttas via lastutrymmet. Striden använder de
+installerade vapnen och kvarvarande ammunition sparas efter striden.
+Äldre sparningar utan vapenplatser får sina tidigare vapen.
+`fleet-storage-grupperad`: motorplatsen ligger till vänster och lastplatser
+är samlade i en kompakt ruta med rubriken `Storage`.

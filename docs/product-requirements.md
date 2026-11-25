@@ -6,13 +6,13 @@ status står i områdesfilerna under [docs/areas](areas/), som
 
 ## Ny riktning: Single fleet
 
-Spelaren leder en enda flotta och börjar med en Raptor och en Transport ship. Allt spelaren har
+Spelaren leder en enda flotta och börjar med en Raptor, en Fighter och en Transport ship. Allt spelaren har
 finns i flottan, utan egna planeter eller fasta resurser. Utforskning,
 rymdstrid, bordningar och utveckling av skepp och besättning står i centrum.
 
 - `Star map` används för direkt styrning av flottan med AP. Spelaren och
   motståndarna turas om; utan motståndare inom räckhåll fortsätter spelarens tur.
-- `Fleet` visar skeppen utan karta. Motorer kan flyttas mellan skeppens motor- och lastplatser (`fleet-motorer-och-last`).
+- `Fleet` visar skeppen utan karta. Motorer och vapen kan flyttas mellan skeppens utrustnings- och lastplatser (`fleet-motorer-och-last`).
   Utrustning visas i märkta rutor på skeppsbilderna. Markerad utrustning visar namn, bild och egenskaper. Skeppens ordning kan ändras.
   Personer, vapensystem och motorer kan flyttas mellan skeppens slots.
   Cargo ships kan förvara oanvänd utrustning och Civilian transports har
