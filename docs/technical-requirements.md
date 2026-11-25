@@ -1101,6 +1101,14 @@ spelarens AP är förbrukade. Oupptäckta piraters steg ger inga spår och därm
 ingen animation. AppView markerar rotelementet med `data-turn-idle` när kartan
 väntar på spelaren, vilket webbläsartesterna använder i stället för End turn.
 
+## Fleet: platsinformation
+
+`fleet-platsinformation`: Fleet-vyn märker varje plats med sin funktion och
+visar en panel med markerat innehåll. Motorernas fartbonus hämtas från samma
+modellvärde som används på Star map och i strid. En tom ruta saknar bild och
+egenskaper. Val av en upptagen ruta följt av en annan plats flyttar eller byter
+fortfarande utrustningen.
+
 ## Fleet: bildrutor och dragning
 
 `fleet-visuella-platser`: vyer placerar kvadratiska platser relativt

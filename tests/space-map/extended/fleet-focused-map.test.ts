@@ -70,3 +70,55 @@ describe('fleet-som-skeppsoversikt', () => {
     expect(raptor.engines['Ion pulse engine']).toBe(1);
   });
 });
+
+describe('fleet-platsinformation', () => {
+  it('labels slots and shows the selected engine image and its actual bonuses', () => {
+    const { model, root, emit } = setup();
+    model.startSlot(2);
+    emit({ type: 'open-fleets' });
+    const source = root.querySelector<HTMLButtonElement>(
+      '[aria-label="Transport ship Cargo 1: Ion pulse engine"]',
+    )!;
+    expect(
+      source.closest('.fleet-slot')?.querySelector('.fleet-slot-label')
+        ?.textContent,
+    ).toBe('Storage');
+    source.click();
+    const panel = root.querySelector<HTMLElement>('.fleet-item-details')!;
+    expect(panel.hidden).toBe(false);
+    expect(panel.textContent).toContain('Ion pulse engine');
+    expect(panel.textContent).toContain('Star map speed bonus: +1');
+    expect(panel.textContent).toContain('Battle speed bonus: +1');
+    expect(panel.querySelector('img')?.getAttribute('src')).toContain(
+      'ion-pulse-engine',
+    );
+    source.click();
+    const engine = root.querySelector<HTMLButtonElement>(
+      '[aria-label="Raptor Engine: Rocket engine"]',
+    )!;
+    expect(
+      engine.closest('.fleet-slot')?.querySelector('.fleet-slot-label')
+        ?.textContent,
+    ).toBe('Engine');
+    engine.click();
+    expect(panel.textContent).toContain('Rocket engine');
+    expect(panel.textContent).toContain('Star map speed bonus: +0');
+    expect(panel.querySelector('img')?.getAttribute('src')).toContain(
+      'rocket-engine',
+    );
+    engine.click();
+    const empty = root.querySelector<HTMLButtonElement>(
+      '[aria-label="Raptor Cargo 1: Empty"]',
+    )!;
+    empty.click();
+    expect(panel.textContent).toContain('Empty storage slot');
+    expect(panel.querySelector('img')).toBeNull();
+    empty.click();
+    source.click();
+    engine.click();
+    expect(
+      model.snapshot.fleet.shipUnits!.find((ship) => ship.type === 'Raptor')!
+        .engines['Ion pulse engine'],
+    ).toBe(1);
+  });
+});

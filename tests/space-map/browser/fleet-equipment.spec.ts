@@ -129,3 +129,34 @@ test('fleet-skeppsordning: drag a ship down while the list scrolls', async ({
   await page.mouse.up();
   await expect(page.locator('.fleet-ship h2').first()).toHaveText('Raptor');
 });
+
+test('fleet-platsinformation: slot labels and selected engine details remain visible on mobile', async ({
+  page,
+}) => {
+  await page.goto('./');
+  await startFirstSlot(page);
+  await page.getByRole('button', { name: 'Fleet', exact: true }).click();
+  const source = page.getByRole('button', {
+    name: 'Transport ship Cargo 1: Ion pulse engine',
+  });
+  await expect(source.locator('..').locator('.fleet-slot-label')).toHaveText(
+    'Storage',
+  );
+  await source.click();
+  const panel = page.getByLabel('Selected slot details');
+  await expect(panel).toBeVisible();
+  await expect(panel).toContainText('Ion pulse engine');
+  await expect(panel).toContainText('Star map speed bonus: +1');
+  await expect(panel).toContainText('Battle speed bonus: +1');
+  await expect(panel.locator('img')).toBeVisible();
+  const target = page.getByRole('button', {
+    name: 'Raptor Engine: Rocket engine',
+  });
+  await expect(target.locator('..').locator('.fleet-slot-label')).toHaveText(
+    'Engine',
+  );
+  await target.click();
+  await expect(
+    page.getByRole('button', { name: 'Raptor Engine: Ion pulse engine' }),
+  ).toBeVisible();
+});

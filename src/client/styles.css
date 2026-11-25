@@ -3073,3 +3073,59 @@ body:has(.discovery-controls) .selection-panel {
   height: 80px;
   object-fit: contain;
 }
+
+/* fleet-platsinformation */
+.fleet-slot {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  width: clamp(44px, 12vw, 56px);
+}
+.fleet-slot-label {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 0 2px;
+  color: #fff;
+  background: #10232ee8;
+  font-size: 10px;
+  line-height: 1.2;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.fleet-slot .fleet-equipment-slot {
+  position: relative;
+  transform: none;
+  width: 100%;
+  display: block;
+}
+.fleet-item-details {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: #10232ef5;
+  border: 1px solid #9fb7ce;
+  border-radius: 5px;
+  padding: 0.5rem 0.7rem;
+}
+.fleet-item-details[hidden] {
+  display: none;
+}
+.fleet-item-details h2 {
+  margin: 0 0 0.25rem;
+  font-size: 1rem;
+}
+.fleet-item-details-body {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+}
+.fleet-item-details img {
+  width: 56px;
+  height: 56px;
+  object-fit: contain;
+}
+.fleet-item-details p {
+  margin: 0.1rem 0;
+  font-size: 0.85rem;
+}

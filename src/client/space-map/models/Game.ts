@@ -51,6 +51,7 @@ export { TECHNOLOGIES, type Technology } from './research/Research.js';
 import {
   type ShipType,
   SHIPS,
+  ENGINE_SPEED_BONUS,
   type ShipUnit,
   type EngineSlot,
   type EngineType,
@@ -1244,6 +1245,12 @@ export class Game {
             id: unit.id,
             type: unit.type,
             ion: unit.engines['Ion pulse engine'] > 0,
+            engineBonus:
+              ENGINE_SPEED_BONUS[
+                unit.engines['Ion pulse engine'] > 0
+                  ? 'Ion pulse engine'
+                  : 'Rocket engine'
+              ],
             powered:
               unit.engines['Rocket engine'] + unit.engines['Ion pulse engine'] >
               0,
@@ -2137,7 +2144,9 @@ export class Game {
         unit.engines['Rocket engine'] + unit.engines['Ion pulse engine'] === 0
           ? 0
           : SHIPS[unit.type].speed +
-            (unit.engines['Ion pulse engine'] > 0 ? 1 : 0),
+            (unit.engines['Ion pulse engine'] > 0
+              ? ENGINE_SPEED_BONUS['Ion pulse engine']
+              : ENGINE_SPEED_BONUS['Rocket engine']),
       ) ??
       Object.entries(fleet.ships).flatMap(([type, count]) =>
         count > 0 ? [SHIPS[type as ShipType].speed] : [],

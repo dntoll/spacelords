@@ -66,6 +66,7 @@ Beslutet om två startskepp ersätter tidigare krav på en ensam Raptor.
 - `fleet-visuella-platser` är **Fullständigt implementerat**: kvadratiska
   motor- och lastplatser ligger på fasta positioner på skeppsbilden och
   monterade eller lagrade motorer visas med bilder.
+- `fleet-platsinformation` är **Fullständigt implementerat**: varje ruta märks med `Engine` eller `Storage`. Markerad utrustning visar namn, bild och fartbonus på Star map och i strid; tomma rutor visas som tomma.
 - `fleet-drag-och-rullning` är **Fullständigt implementerat**: föremålet
   följer pekaren vid dragning och listan rullar vid kanten så att det kan
   flyttas till skepp utanför den synliga delen.

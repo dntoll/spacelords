@@ -50,6 +50,7 @@ export interface BattleFleet {
     readonly id: string;
     readonly type: CombatShipType;
     readonly ion: boolean;
+    readonly engineBonus?: number;
     readonly powered?: boolean;
     readonly towing?: boolean;
     readonly missiles?: number;
@@ -478,7 +479,7 @@ export class TacticalBattle {
               ship.powered === false
                 ? 0
                 : (ship.towing ? 1 : SHIP_PROFILES[ship.type].movement) +
-                  Number(ship.ion),
+                  (ship.engineBonus ?? Number(ship.ion)),
             hull: Math.max(
               1,
               maxHull({ type: ship.type, armored }) - (ship.damage ?? 0),
