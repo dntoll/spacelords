@@ -1,4 +1,4 @@
-import { crewPortraitAtlas } from '../../../boarding/views/index.js';
+import crewPortraitAtlas from '../../assets/crew/crew-portraits.png';
 import type { FleetSnapshot } from '../../models/GameSnapshots.js';
 import type { IntentHandler } from '../../../app/views/ViewContracts.js';
 import {
@@ -17,6 +17,14 @@ import lightCannonImage from '../../assets/equipment/light-cannon-illustration.p
 import raiderCannonImage from '../../assets/equipment/raider-cannon-illustration.png';
 import missilesImage from '../../assets/equipment/missiles-illustration.png';
 
+function setCrewPortrait(element: HTMLElement, id: string): void {
+  element.style.backgroundImage = `url(${crewPortraitAtlas})`;
+  const number = /^crew-(\d+)$/.exec(id);
+  const index = number
+    ? (Number(number[1]) - 1) % 12
+    : [...id].reduce((sum, character) => sum + character.charCodeAt(0), 0) % 12;
+  element.style.backgroundPosition = `${((index % 4) * 100) / 3}% ${Math.floor(index / 4) * 50}%`;
+}
 type Slot = EquipmentSlot;
 const WEAPON_IMAGES: Record<ShipWeapon, string> = {
   Cannon: cannonImage,
@@ -100,11 +108,15 @@ export function renderFleetEquipment(
     content: Equipment | null;
   } | null = null;
   let dragging = false;
+  let selectedCrew: HTMLButtonElement | null = null;
   // fleet-direktmarkering: background clicks clear the current inspection.
   const clearSelection = () => {
     selected?.button.classList.remove('selected');
     selected?.button.setAttribute('aria-pressed', 'false');
     selected = null;
+    selectedCrew?.classList.remove('selected');
+    selectedCrew?.setAttribute('aria-pressed', 'false');
+    selectedCrew = null;
     details.hidden = true;
   };
   page.addEventListener('clear-fleet-selection', clearSelection);
@@ -328,6 +340,9 @@ export function renderFleetEquipment(
       };
       control.addEventListener('click', () => {
         if (dragging) return;
+        selectedCrew?.classList.remove('selected');
+        selectedCrew?.setAttribute('aria-pressed', 'false');
+        selectedCrew = null;
         if (selected?.button === control) {
           control.classList.remove('selected');
           control.setAttribute('aria-pressed', 'false');
@@ -423,17 +438,57 @@ export function renderFleetEquipment(
     ship.weaponSlots?.forEach((item, index) => addSlot('weapon', item, index));
     card.append(layout);
     const roleOverview = document.createElement('div');
-    roleOverview.className = 'crew-role-overview';
+    roleOverview.className = 'fleet-crew crew-role-overview';
+    roleOverview.setAttribute('role', 'group');
+    roleOverview.setAttribute('aria-label', 'Crew');
+    const crewTitle = document.createElement('span');
+    crewTitle.className = 'fleet-storage-title';
+    crewTitle.textContent = 'Crew';
+    roleOverview.append(crewTitle);
     for (const role of ['pilot', 'engineer', 'gunner', 'boarder'] as const) {
-      const names = (fleet.people ?? [])
-        .filter(
-          (person) => person.shipId === ship.id && person.roles.includes(role),
-        )
-        .map((person) => person.name);
+      const members = (fleet.people ?? []).filter(
+        (person) => person.shipId === ship.id && person.roles.includes(role),
+      );
       for (let index = 0; index < (role === 'boarder' ? 4 : 1); index++) {
-        const slot = document.createElement('span');
-        slot.textContent = `${role === 'boarder' ? `boarder ${index + 1}` : role}: ${names[index] ?? 'Empty'}`;
-        roleOverview.append(slot);
+        const person = members[index];
+        const slotLabel =
+          role === 'boarder'
+            ? `Boarder ${index + 1}`
+            : role[0]!.toUpperCase() + role.slice(1);
+        const wrapper = document.createElement('div');
+        wrapper.className = 'fleet-crew-cell';
+        const label = document.createElement('span');
+        label.className = 'fleet-crew-label';
+        label.textContent = slotLabel;
+        const slot = document.createElement('button');
+        slot.type = 'button';
+        slot.className = 'fleet-equipment-slot fleet-crew-slot';
+        slot.setAttribute(
+          'aria-label',
+          `${ship.type} ${slotLabel}: ${person?.name ?? 'Empty'}`,
+        );
+        slot.setAttribute('aria-pressed', 'false');
+        if (person) {
+          const portrait = document.createElement('span');
+          portrait.className = 'crew-slot-portrait';
+          portrait.setAttribute('aria-hidden', 'true');
+          setCrewPortrait(portrait, person.id);
+          slot.append(portrait);
+          slot.addEventListener('click', () => {
+            if (selectedCrew === slot) {
+              clearSelection();
+              return;
+            }
+            clearSelection();
+            selectedCrew = slot;
+            slot.classList.add('selected');
+            slot.setAttribute('aria-pressed', 'true');
+            details.replaceChildren(crewPersonControls(fleet, person, emit));
+            details.hidden = false;
+          });
+        } else slot.disabled = true;
+        wrapper.append(label, slot);
+        roleOverview.append(wrapper);
       }
     }
     card.append(roleOverview);
@@ -493,7 +548,7 @@ function crewPersonControls(
   const portrait = document.createElement('span');
   portrait.className = 'crew-portrait';
   portrait.setAttribute('aria-hidden', 'true');
-  portrait.style.backgroundImage = `url(${crewPortraitAtlas})`;
+  setCrewPortrait(portrait, person.id);
   const info = document.createElement('p');
   info.textContent = `HP ${person.hitPoints}/${person.attributes.maxHitPoints} · ${person.status} · Accuracy ${person.attributes.accuracy} · Defense ${person.attributes.defense} · Agility ${person.attributes.agility}`;
   section.append(portrait, name, info);
