@@ -3166,3 +3166,50 @@ body:has(.discovery-controls) .selection-panel {
   transform: none;
   width: 100%;
 }
+
+/* fleet-kompakta-skepp: ship and equipment occupy separate columns. */
+.fleet-ship-layout {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.fleet-ship-picture {
+  width: min(22%, 110px);
+  height: auto;
+  object-fit: contain;
+}
+.fleet-ship-image {
+  flex: 1;
+  width: auto;
+  max-width: 440px;
+  min-width: 0;
+  aspect-ratio: auto;
+  display: grid;
+  grid-template-columns: 50px minmax(0, 1fr);
+  grid-template-rows: repeat(3, 58px);
+  align-items: center;
+  justify-items: center;
+}
+.fleet-ship-image .fleet-slot,
+.fleet-ship-image .fleet-storage {
+  position: relative;
+  inset: auto;
+  transform: none;
+}
+.fleet-engine-position {
+  grid-column: 1;
+  grid-row: 2;
+}
+.fleet-weapon-upper {
+  grid-column: 2;
+  grid-row: 1;
+}
+.fleet-weapon-lower {
+  grid-column: 2;
+  grid-row: 3;
+}
+.fleet-ship-image .fleet-storage {
+  grid-column: 2;
+  grid-row: 2;
+  width: 100%;
+}

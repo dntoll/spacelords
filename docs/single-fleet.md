@@ -66,6 +66,7 @@ Beslutet om tre startskepp ersätter tidigare krav på en Raptor och en Transpor
   motor- och lastplatser ligger på fasta positioner på skeppsbilden och
   monterade eller lagrade motorer visas med bilder.
 - `fleet-kompakt-skeppsyta` är **Fullständigt implementerat**: Fleet visar skeppen med mindre tomrum ovanför och nedanför, med utrustningsplatserna kvar vid skeppen.
+- `fleet-kompakta-skepp` är **Delvis implementerat**: mindre skeppsbild bredvid utrustningen. Platser för pilot, engineer, gunner och högst fyra bordningssoldater samt porträtt, namn och personinformation återstår.
 - `fleet-platsinformation` är **Fullständigt implementerat**: utrustningsrutor märks `Engine` eller `Weapon`, och lastplatser grupperas under `Storage`. Markerad utrustning visar namn, bild och relevanta egenskaper; tomma rutor visas som tomma.
 - `fleet-direktmarkering` är **Fullständigt implementerat**: ett tryck på en fylld ruta väljer den direkt och avmarkerar den tidigare. Ett tryck på bakgrunden avmarkerar.
 - `fleet-placering-vapen-och-motor` är **Fullständigt implementerat**: motorplatsen är mitt bak på skeppet och vapenplatserna ligger i mitten över och under `Storage`.

@@ -267,9 +267,15 @@ export function renderFleetEquipment(
       '.fleet-ship',
     );
 
+    const layout = document.createElement('div');
+    layout.className = 'fleet-ship-layout';
+    const picture = document.createElement('img');
+    picture.className = 'fleet-ship-picture';
+    picture.src = SHIP_IMAGES[ship.type];
+    picture.alt = '';
     const image = document.createElement('div');
     image.className = 'fleet-ship-image';
-    image.style.backgroundImage = `url("${SHIP_IMAGES[ship.type]}")`;
+    layout.append(picture, image);
     const addSlot = (
       slot: Slot['slot'],
       content: Equipment | null,
@@ -304,7 +310,9 @@ export function renderFleetEquipment(
         wrapper.classList.add('fleet-engine-position');
       } else if (slot === 'weapon') {
         wrapper.classList.add('fleet-weapon-position');
-        wrapper.style.top = weaponIndex === 0 ? '10%' : '87.5%';
+        wrapper.classList.add(
+          weaponIndex === 0 ? 'fleet-weapon-upper' : 'fleet-weapon-lower',
+        );
       } else wrapper.classList.add('fleet-storage-slot');
       if (content) {
         const icon = document.createElement('img');
@@ -412,7 +420,7 @@ export function renderFleetEquipment(
     addSlot('engine', engine);
     ship.cargoSlots?.forEach((item, index) => addSlot(index, item));
     ship.weaponSlots?.forEach((item, index) => addSlot('weapon', item, index));
-    card.append(image);
+    card.append(layout);
     page.append(card);
   });
   return page;
