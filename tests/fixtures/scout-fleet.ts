@@ -1,3 +1,4 @@
+import { staffFleet } from './staff-fleet.js';
 import type { GameState } from '../../src/client/space-map/models/Game.js';
 
 /**
@@ -6,12 +7,12 @@ import type { GameState } from '../../src/client/space-map/models/Game.js';
  * Fighter instead.
  */
 export function withScoutFleet<T extends GameState>(state: T): T {
-  return {
+  return staffFleet({
     ...state,
     fleets: state.fleets.map((fleet) => ({
       ...fleet,
       ships: { ...fleet.ships, Raptor: 0, 'Exploration ship': 1, Fighter: 1 },
       shipUnits: [],
     })),
-  };
+  });
 }

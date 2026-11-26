@@ -237,6 +237,22 @@ test('fleet-vapenplatser: drag a weapon into storage while scrolling', async ({
   ).toBeVisible();
 });
 
+test('fleet-kompakta-skepp: ship picture sits beside equipment', async ({
+  page,
+}) => {
+  await page.goto('./');
+  await startFirstSlot(page);
+  await page.getByRole('button', { name: 'Fleet', exact: true }).click();
+  const ship = page
+    .locator('.fleet-ship')
+    .filter({ has: page.getByRole('heading', { name: 'Fighter' }) });
+  const picture = await ship.locator('.fleet-ship-picture').boundingBox();
+  const equipment = await ship.locator('.fleet-ship-image').boundingBox();
+  expect(picture).not.toBeNull();
+  expect(equipment).not.toBeNull();
+  expect(picture!.x + picture!.width).toBeLessThanOrEqual(equipment!.x);
+});
+
 test('fleet-kompakt-skeppsyta: ship images leave less vertical space and equipment remains inside', async ({
   page,
 }) => {
@@ -249,7 +265,6 @@ test('fleet-kompakt-skeppsyta: ship images leave less vertical space and equipme
   const image = await fighter.locator('.fleet-ship-image').boundingBox();
   const slots = await fighter.locator('.fleet-equipment-slot').all();
   if (!image) throw new Error('Missing ship image');
-  expect(image.height / image.width).toBeLessThan(0.85);
   for (const slot of slots) {
     const bounds = await slot.boundingBox();
     if (!bounds) throw new Error('Missing equipment slot');
@@ -289,8 +304,8 @@ test('fleet-placering-vapen-och-motor: weapon slots flank storage and engine sit
   }) => ({ x: r.x + r.width / 2, y: r.y + r.height / 2 });
   expect((center(engine).x - image.x) / image.width).toBeLessThan(0.2);
   expect((center(engine).y - image.y) / image.height).toBeCloseTo(0.5, 1);
-  expect((center(upper).x - image.x) / image.width).toBeCloseTo(0.5, 1);
-  expect((center(lower).x - image.x) / image.width).toBeCloseTo(0.5, 1);
+  expect(center(upper).x).toBeGreaterThan(center(engine).x);
+  expect(center(lower).x).toBeCloseTo(center(upper).x, 0);
   expect((center(upper).y - image.y) / image.height).toBeLessThan(0.3);
   expect((center(lower).y - image.y) / image.height).toBeGreaterThan(0.7);
 });

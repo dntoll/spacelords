@@ -21,13 +21,15 @@ rymdstrid, bordningar och utveckling av skepp och besättning står i centrum.
   behöver förflytta sig för att hitta ny försörjning.
 - `Crew` visar personer som kan utrustas och flyttas mellan skepp. Samma
   person kan ha flera roller, även i bordningsstyrkan. Personer börjar
-  med samma egenskapsvärden.
+  med samma egenskapsvärden. Tolv personer bemannar startflottan. Skador och
+  personlig utrustning följer med mellan bordningar, och skador läker under
+  resan. Skepp utan nödvändig besättning lämnas kvar och kan återtas.
 - `Research` gäller tekniker för skepp och bordning. Planetforskning tas bort
   och forskningen låser upp tekniker i stället för fabriker.
 - `Production` har en gemensam kö för skepp, utrustning, uppgraderingar och
   reparationer.
 
-Riktningen är ännu inte implementerad. Se [Single fleet](single-fleet.md)
+Delar av riktningen är ännu inte implementerade. Se [Single fleet](single-fleet.md)
 för krav och öppna frågor. Den tidigare planetekonomin är borttagen.
 Följande avsnitt beskriver det spelet innehåller nu.
 

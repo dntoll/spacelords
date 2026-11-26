@@ -22,6 +22,24 @@ import type {
 } from '../../boarding/models/index.js';
 
 export type AppIntent =
+  | { readonly type: 'rejoin-ship'; readonly shipId: string }
+  | {
+      readonly type: 'crew-role';
+      readonly personId: string;
+      readonly role: 'pilot' | 'engineer' | 'gunner' | 'boarder';
+      readonly assigned: boolean;
+    }
+  | {
+      readonly type: 'crew-move';
+      readonly personId: string;
+      readonly shipId: string;
+    }
+  | {
+      readonly type: 'crew-swap-equipment';
+      readonly firstId: string;
+      readonly secondId: string;
+      readonly slot: 'weapon' | 'gadget';
+    }
   | {
       readonly type: 'reorder-ship';
       readonly shipId: string;
@@ -90,6 +108,7 @@ export type AppIntent =
         | 'open-map'
         | 'open-research'
         | 'open-fleets'
+        | 'open-crew'
         | 'home'
         | 'pointer-cancel'
         | 'map-leave';

@@ -55,7 +55,8 @@ import {
   type PlayerNotice,
 } from './PlayerNotice.js';
 
-export type Screen = 'saves' | 'map' | 'research' | 'fleets' | 'production';
+export type Screen =
+  'saves' | 'map' | 'research' | 'fleets' | 'crew' | 'production';
 
 export interface SaveSlotSnapshot {
   readonly id: number;

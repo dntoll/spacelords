@@ -1,3 +1,4 @@
+import { staffFleet } from './staff-fleet.js';
 import { Game } from '../../src/client/space-map/models/Game.js';
 import { createExampleGalaxy } from '../../src/client/space-map/models/exampleGalaxy.js';
 
@@ -13,7 +14,7 @@ export function discoveryState(fighters = 1) {
     'Salvage ship': 0,
     Raptor: 0,
   };
-  return {
+  return staffFleet({
     ...state,
     pirates: [state.pirates![0]!],
     fleets: [
@@ -25,5 +26,5 @@ export function discoveryState(fighters = 1) {
         ships: { ...empty, Fighter: fighters, 'Exploration ship': 1 },
       },
     ],
-  };
+  });
 }

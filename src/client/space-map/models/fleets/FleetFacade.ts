@@ -19,6 +19,30 @@ export class FleetFacade {
     this.host.game.moveEquipment(from, to);
   }
 
+  rejoinShip(shipId: string): void {
+    this.host.game.rejoinShip(shipId);
+  }
+  openCrew(): void {
+    this.host.openMapScreen('crew');
+  }
+  assignCrewRole(
+    personId: string,
+    role: 'pilot' | 'engineer' | 'gunner' | 'boarder',
+    assigned: boolean,
+  ): void {
+    this.host.game.assignCrewRole(personId, role, assigned);
+  }
+  moveCrew(personId: string, shipId: string): void {
+    this.host.game.moveCrew(personId, shipId);
+  }
+  swapCrewEquipment(
+    firstId: string,
+    secondId: string,
+    slot: 'weapon' | 'gadget',
+  ): void {
+    this.host.game.swapCrewEquipment(firstId, secondId, slot);
+  }
+
   openFleets(): void {
     this.host.openMapScreen('fleets');
   }

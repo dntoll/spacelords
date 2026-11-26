@@ -240,3 +240,16 @@ describe('fleet-vapenplatser', () => {
     );
   });
 });
+
+it('besattningens-start-och-roller: old interrupted saves without crew cannot move or fire after loading', () => {
+  const state = structuredClone(encounterGame().exportState());
+  delete (state as { crew?: unknown }).crew;
+  const loaded = Game.restore(state);
+  for (const piece of loaded.tacticalBattle!.pieces.filter(
+    (entry) => entry.side === 'player',
+  )) {
+    expect(piece.movement).toBe(0);
+    expect(piece.weapons).toEqual([]);
+  }
+  expect(() => Game.restore(loaded.exportState())).not.toThrow();
+});

@@ -1,3 +1,4 @@
+import { crewPortraitAtlas } from '../../../boarding/views/index.js';
 import type { FleetSnapshot } from '../../models/GameSnapshots.js';
 import type { IntentHandler } from '../../../app/views/ViewContracts.js';
 import {
@@ -267,9 +268,15 @@ export function renderFleetEquipment(
       '.fleet-ship',
     );
 
+    const layout = document.createElement('div');
+    layout.className = 'fleet-ship-layout';
+    const picture = document.createElement('img');
+    picture.className = 'fleet-ship-picture';
+    picture.src = SHIP_IMAGES[ship.type];
+    picture.alt = '';
     const image = document.createElement('div');
     image.className = 'fleet-ship-image';
-    image.style.backgroundImage = `url("${SHIP_IMAGES[ship.type]}")`;
+    layout.append(picture, image);
     const addSlot = (
       slot: Slot['slot'],
       content: Equipment | null,
@@ -304,7 +311,9 @@ export function renderFleetEquipment(
         wrapper.classList.add('fleet-engine-position');
       } else if (slot === 'weapon') {
         wrapper.classList.add('fleet-weapon-position');
-        wrapper.style.top = weaponIndex === 0 ? '10%' : '87.5%';
+        wrapper.classList.add(
+          weaponIndex === 0 ? 'fleet-weapon-upper' : 'fleet-weapon-lower',
+        );
       } else wrapper.classList.add('fleet-storage-slot');
       if (content) {
         const icon = document.createElement('img');
@@ -412,8 +421,168 @@ export function renderFleetEquipment(
     addSlot('engine', engine);
     ship.cargoSlots?.forEach((item, index) => addSlot(index, item));
     ship.weaponSlots?.forEach((item, index) => addSlot('weapon', item, index));
-    card.append(image);
+    card.append(layout);
+    const roleOverview = document.createElement('div');
+    roleOverview.className = 'crew-role-overview';
+    for (const role of ['pilot', 'engineer', 'gunner', 'boarder'] as const) {
+      const names = (fleet.people ?? [])
+        .filter(
+          (person) => person.shipId === ship.id && person.roles.includes(role),
+        )
+        .map((person) => person.name);
+      for (let index = 0; index < (role === 'boarder' ? 4 : 1); index++) {
+        const slot = document.createElement('span');
+        slot.textContent = `${role === 'boarder' ? `boarder ${index + 1}` : role}: ${names[index] ?? 'Empty'}`;
+        roleOverview.append(slot);
+      }
+    }
+    card.append(roleOverview);
+    const crew = document.createElement('details');
+    crew.dataset.crewShip = ship.id;
+    const summary = document.createElement('summary');
+    summary.textContent = 'Crew';
+    crew.append(summary);
+    for (const person of fleet.people ?? [])
+      if (person.shipId === ship.id)
+        crew.append(crewPersonControls(fleet, person, emit));
+    card.append(crew);
     page.append(card);
   });
+  for (const ship of fleet.abandonedShips ?? []) {
+    const card = document.createElement('article');
+    card.className = 'fleet-ship';
+    const title = document.createElement('h2');
+    title.textContent = `${ship.type} · Left behind`;
+    const rejoin = document.createElement('button');
+    rejoin.textContent = 'Rejoin fleet';
+    const aboard = (fleet.people ?? []).filter(
+      (person) => person.shipId === ship.id && person.status === 'active',
+    );
+    rejoin.disabled = !(['pilot', 'engineer'] as const).every((role) =>
+      aboard.some((person) => person.roles.includes(role)),
+    );
+    if (rejoin.disabled)
+      rejoin.title = 'Assign an active pilot and engineer first.';
+    rejoin.addEventListener('click', () =>
+      emit({ type: 'rejoin-ship', shipId: ship.id }),
+    );
+    card.append(title, rejoin);
+    if (rejoin.disabled) {
+      const hint = document.createElement('p');
+      hint.textContent = 'Assign an active pilot and engineer to rejoin.';
+      card.append(hint);
+    }
+    for (const person of fleet.people ?? [])
+      if (person.shipId === ship.id)
+        card.append(crewPersonControls(fleet, person, emit));
+    page.append(card);
+  }
+  return page;
+}
+
+/** crew-med-utrustning-och-skeppsbyte: the same controls work in Fleet and Crew. */
+function crewPersonControls(
+  fleet: FleetSnapshot,
+  person: NonNullable<FleetSnapshot['people']>[number],
+  emit: IntentHandler,
+): HTMLElement {
+  const section = document.createElement('article');
+  section.className = 'crew-person';
+  const name = document.createElement('h3');
+  name.textContent = person.name;
+  const portrait = document.createElement('span');
+  portrait.className = 'crew-portrait';
+  portrait.setAttribute('aria-hidden', 'true');
+  portrait.style.backgroundImage = `url(${crewPortraitAtlas})`;
+  const info = document.createElement('p');
+  info.textContent = `HP ${person.hitPoints}/${person.attributes.maxHitPoints} · ${person.status} · Accuracy ${person.attributes.accuracy} · Defense ${person.attributes.defense} · Agility ${person.attributes.agility}`;
+  section.append(portrait, name, info);
+  const shipLabel = document.createElement('label');
+  shipLabel.textContent = 'Ship ';
+  const shipSelect = document.createElement('select');
+  shipSelect.setAttribute('aria-label', `${person.name} ship`);
+  for (const ship of [
+    ...(fleet.shipUnits ?? []),
+    ...(fleet.abandonedShips ?? []),
+  ]) {
+    const option = document.createElement('option');
+    option.value = ship.id;
+    option.textContent = ship.type;
+    option.selected = ship.id === person.shipId;
+    shipSelect.append(option);
+  }
+  shipSelect.addEventListener('change', () =>
+    emit({ type: 'crew-move', personId: person.id, shipId: shipSelect.value }),
+  );
+  shipLabel.append(shipSelect);
+  section.append(shipLabel);
+  const roles = document.createElement('div');
+  roles.className = 'crew-roles';
+  for (const role of ['pilot', 'engineer', 'gunner', 'boarder'] as const) {
+    const label = document.createElement('label');
+    const input = document.createElement('input');
+    input.type = 'checkbox';
+    input.checked = person.roles.includes(role);
+    input.disabled = person.status !== 'active' && !input.checked;
+    input.addEventListener('change', () =>
+      emit({
+        type: 'crew-role',
+        personId: person.id,
+        role,
+        assigned: input.checked,
+      }),
+    );
+    label.append(input, document.createTextNode(` ${role}`));
+    roles.append(label);
+  }
+  section.append(roles);
+  for (const slot of ['weapon', 'gadget'] as const) {
+    const row = document.createElement('label');
+    const item = slot === 'weapon' ? person.weapon : person.gadget?.type;
+    row.textContent = `${slot}: ${item ?? 'Empty'} · swap with `;
+    const select = document.createElement('select');
+    select.setAttribute('aria-label', `${person.name} swap ${slot}`);
+    const placeholder = document.createElement('option');
+    placeholder.value = '';
+    placeholder.textContent = 'Choose person';
+    select.append(placeholder);
+    for (const target of fleet.people ?? []) {
+      if (target.id === person.id || target.status === 'dead') continue;
+      const option = document.createElement('option');
+      option.value = target.id;
+      option.textContent = target.name;
+      select.append(option);
+    }
+    select.addEventListener('change', () => {
+      if (select.value)
+        emit({
+          type: 'crew-swap-equipment',
+          firstId: person.id,
+          secondId: select.value,
+          slot,
+        });
+    });
+    row.append(select);
+    section.append(row);
+  }
+  return section;
+}
+
+export function renderCrew(
+  fleet: FleetSnapshot,
+  emit: IntentHandler,
+): HTMLElement {
+  const page = document.createElement('section');
+  page.className = 'crew-page';
+  const heading = document.createElement('h1');
+  heading.textContent = 'Crew';
+  page.append(heading);
+  for (const person of fleet.people ?? [])
+    page.append(crewPersonControls(fleet, person, emit));
+  if (!fleet.people?.length) {
+    const empty = document.createElement('p');
+    empty.textContent = 'No crew aboard.';
+    page.append(empty);
+  }
   return page;
 }

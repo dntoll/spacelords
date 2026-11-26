@@ -36,9 +36,9 @@ export type BoardingSide = 'player' | 'defender' | 'civilian';
 export type BoardingPersonStatus =
   'active' | 'incapacitated' | 'dead' | 'evacuated';
 export type BoardingOutcome = 'victory' | 'defeat' | 'aborted';
-export type BoardingWeapon = 'rifle';
+export type BoardingWeapon = 'rifle' | null;
 export type BoardingGadget =
-  'frag-grenade' | 'smoke-grenade' | 'hacker-tools' | 'med-kit';
+  'frag-grenade' | 'smoke-grenade' | 'hacker-tools' | 'med-kit' | null;
 
 export interface BoardingLoadout {
   readonly weapon: BoardingWeapon;
@@ -696,6 +696,17 @@ export class BoardingBattle {
     attackerType: CombatShipType = 'Space pirate',
     defenderType: CombatShipType = 'Transport ship',
     standalone = false,
+    roster?: readonly Pick<
+      BoardingPerson,
+      | 'id'
+      | 'label'
+      | 'hitPoints'
+      | 'maxHitPoints'
+      | 'agility'
+      | 'accuracy'
+      | 'defense'
+      | 'loadout'
+    >[],
   ): BoardingBattle {
     const taken = new Set<string>();
     const occupy = (cell: BoardingCell | undefined): void => {
@@ -710,20 +721,21 @@ export class BoardingBattle {
       for (const cell of composed.defenderCivilians) occupy(cell);
     const cockpit = fill(cockpitCells, cockpitCells.length ? 1 : 0)[0];
     const playerCells = playerIsAttacker
-      ? fill(composed.boardingFront, 4)
-      : fill(composed.defenderSpawns, 3);
+      ? fill(composed.boardingFront, roster?.length ?? 4)
+      : fill(composed.defenderSpawns, roster?.length ?? 3);
     const enemyBoarders = playerIsAttacker
       ? fill(composed.defenderSpawns, 2)
       : fill(composed.boardingFront, 3);
     const people = [
-      ...playerCells.map((position, index) =>
-        person('player', index, position, {
+      ...playerCells.map((position, index) => ({
+        ...person('player', index, position, {
           label: playerIsAttacker
             ? `Boarder ${index + 1}`
             : `Crew ${index + 1}`,
           ...(playerIsAttacker ? { facing: 3 } : {}),
         }),
-      ),
+        ...(roster?.[index] ?? {}),
+      })),
       ...enemyBoarders.map((position, index) =>
         person(
           'defender',

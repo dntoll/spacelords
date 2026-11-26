@@ -18,6 +18,30 @@ export class FleetController {
     this.facade.moveEquipment(from, to);
   }
 
+  rejoinShip(shipId: string): void {
+    this.facade.rejoinShip(shipId);
+  }
+  openCrew(): void {
+    this.facade.openCrew();
+  }
+  assignCrewRole(
+    personId: string,
+    role: 'pilot' | 'engineer' | 'gunner' | 'boarder',
+    assigned: boolean,
+  ): void {
+    this.facade.assignCrewRole(personId, role, assigned);
+  }
+  moveCrew(personId: string, shipId: string): void {
+    this.facade.moveCrew(personId, shipId);
+  }
+  swapCrewEquipment(
+    firstId: string,
+    secondId: string,
+    slot: 'weapon' | 'gadget',
+  ): void {
+    this.facade.swapCrewEquipment(firstId, secondId, slot);
+  }
+
   openFleets(): void {
     return this.facade.openFleets();
   }

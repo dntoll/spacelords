@@ -1,6 +1,7 @@
 // Read-only snapshots the game model hands to controllers and views.
 import type { HexCoordinate } from '../../common/HexCoordinate.js';
 import type { ShipType, ShipUnit } from './Catalog.js';
+import type { CrewPerson } from './Crew.js';
 import type { Stock } from './Economy.js';
 import type { Technology } from './research/Research.js';
 import type { EventIllustration, EventLine } from './turn/EventDetails.js';
@@ -29,6 +30,12 @@ export interface FleetSnapshot {
   readonly destination: HexCoordinate | null;
   readonly ships: Readonly<Record<ShipType, number>>;
   readonly shipUnits?: readonly ShipUnit[];
+  readonly abandonedShips?: readonly ShipUnit[];
+  readonly abandonedLocations?: readonly {
+    readonly position: HexCoordinate;
+    readonly type: ShipType;
+  }[];
+  readonly people?: readonly CrewPerson[];
   readonly speed: number;
   readonly crew: number;
 }

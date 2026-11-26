@@ -33,11 +33,12 @@ kraven med stabila namn och status. Statusen nedan sammanfattar området.
   `flottstyrning-med-ap-pa-starmap` är **Fullständigt implementerat** (en
   flotta, AP, turordning och piraternas aktivering), liksom
   `startflotta-med-raptor` (Raptor, Fighter och Transport ship vid start);
-  `fleet-som-skeppsoversikt` och `skeppsslots-for-utrustning-och-personer` är **Delvis implementerat**; fler egenskaper och personer återstår. Övriga nya beteendekrav är **Ej implementerat**.
+  `fleet-som-skeppsoversikt` och `skeppsslots-for-utrustning-och-personer` är **Delvis implementerat**; fler egenskaper och dragning av personplatser återstår. `besattning-med-flera-roller`, `besattning-med-lika-startegenskaper`, `crew-med-utrustning-och-skeppsbyte`, `besattningens-start-och-roller`, `kvarlamnade-skepp-pa-kartan` och `besattningsskador-och-lakning` är **Fullständigt implementerat**. Övriga nya beteendekrav är **Ej implementerat**.
   Planen anger vilka delar som måste diskuteras och låsas med användaren
   före implementation (`single-fleet-beslut-fore-implementation`).
   `fleet-visuella-platser`, `fleet-drag-och-rullning` och `fleet-skeppsordning` är **Fullständigt implementerat**.
   `fleet-kompakt-skeppsyta` är **Fullständigt implementerat**: mindre tomrum ovanför och nedanför skeppen i Fleet.
+  `fleet-kompakta-skepp` är **Fullständigt implementerat**: skeppsbilden ligger bredvid utrustningen och personplatserna visas med personinformation.
   `fleet-platsinformation` är **Fullständigt implementerat**: varje plats visar funktion och markerad utrustning visar namn, bild och egenskaper.
   `fleet-direktmarkering` är **Fullständigt implementerat**: en fylld ruta väljs direkt och klick på bakgrunden avmarkerar.
   `fleet-placering-vapen-och-motor` och `fleet-vapenbilder` är **Fullständigt implementerat**: motorplatsen ligger mitt bak och vapenplatserna över och under Storage, med egna vapenbilder.

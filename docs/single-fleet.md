@@ -17,15 +17,15 @@ skärmar och mekaniker är utgångspunkter, men uppfyller ännu inte dessa nya
 beteendekrav. `enda-spelarflottan` och `flottstyrning-med-ap-pa-starmap` är
 **Fullständigt implementerat** (se [flottor](areas/fleets.md)).
 `fleet-som-skeppsoversikt` och `skeppsslots-for-utrustning-och-personer` är
-**Delvis implementerat**: fler skeppsegenskaper och personer återstår.
+**Delvis implementerat**: fler skeppsegenskaper och dragning av personplatser återstår.
 `startflotta-med-raptor` är **Fullständigt implementerat** (2026-11-23): ett
 nytt spel börjar med en Raptor, en Fighter och en Transport ship vid Tellus. Raptor ser en hex åt alla
 håll, som Telescope I, och utforskar planeter vid ankomst. Den har fart 2,
-Light cannon och kan docka för bordning. Flykt från fångenskap, övrig utrustning och besättning från start är inte bestämda.
+Light cannon och kan docka för bordning. Flykt från fångenskap och övrig utrustning är inte bestämda. Startbesättningen beskrivs nedan.
 
 | Stabilt kravnamn                          | Önskat beteende                                                                                                                                                                                          |
 | ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `enda-spelarflottan`                      | Spelaren har en enda flotta och inga egna planeter eller fasta resurser. Allt spelaren har finns i flottan.                                                                                              |
+| `enda-spelarflottan`                      | Spelaren har en enda styrbar flotta och inga egna planeter eller fasta resurser. Kvarlämnade skepp finns på kartan tills de återtas.                                                                     |
 | `startflotta-med-raptor`                  | Spelaren börjar med en Raptor, en Fighter och en Transport ship.                                                                                                                                         |
 | `flottaventyr-med-strid-och-bordning`     | Spelaren utforskar planeter och asteroidbälten, möter pirater, gör uppdrag och raids och hittar eller bygger skepp och teknik. Rymdstrid och bordning är centrala aktiviteter.                           |
 | `flottstyrning-med-ap-pa-starmap`         | Star map behålls och används för direkt styrning av den enda flottan. Flottan har AP, därefter agerar motståndarna och sedan flottan igen. Utan motståndare inom räckhåll fortsätter spelarens tur.      |
@@ -42,13 +42,34 @@ Light cannon och kan docka för bordning. Flykt från fångenskap, övrig utrust
   flottans drift förbrukar ändliga resurser, däribland bränsle. Spelaren
   behöver förflytta sig och hitta ny försörjning för att hålla flottan igång.
   Vilka övriga resurser som finns, kostnader och tidsskala är inte bestämda.
-- `besattning-med-flera-roller` är **Ej implementerat**: samma person kan
-  användas i flera roller, inklusive ombord på skepp och i bordningsstyrkan.
-  Exakta roller och regler för samtidiga uppgifter återstår att bestämma.
-- `besattning-med-lika-startegenskaper` är **Ej implementerat**: personer
-  har egenskaper men börjar med samma egenskapsvärden i den första
-  implementationen. Individuella skillnader är en möjlig senare utveckling;
-  egenskaper, progression och eventuella senare skillnader är inte beslutade.
+- `besattning-med-flera-roller` är **Fullständigt implementerat**: en person
+  kan ha flera skeppsroller och även vara bordare. Under bordning är skeppet
+  låst och när bordningen slutar måste rollerna fortfarande vara bemannade av
+  aktiva personer för att skeppets funktioner ska fungera.
+- `besattning-med-lika-startegenskaper` är **Fullständigt implementerat**:
+  personerna har samma startegenskaper som används i bordning.
+- `crew-med-utrustning-och-skeppsbyte` är **Fullständigt implementerat**:
+  Fleet och Crew visar personerna. Mellan strider kan spelaren flytta dem
+  mellan skepp och byta personlig utrustning mellan dem.
+- `besattningens-start-och-roller` är **Fullständigt implementerat**:
+  Raptor startar med pilot, engineer, gunner och fyra bordare, Fighter med
+  pilot, engineer och gunner samt Transport ship med pilot och engineer. Alla
+  skepp har en plats för vardera skeppsrollen och fyra bordningsplatser. De
+  fyra bordarna börjar med varsin rifle och varsitt av Frag grenade, Smoke
+  grenade, Hacker tools och Med kit. Pilot och engineer behövs för förflyttning
+  och gunner för skjutning.
+- `kvarlamnade-skepp-pa-kartan` är **Fullständigt implementerat**: skepp som
+  saknar pilot eller engineer lämnas vid avresan och visas på Star map. När
+  flottan återvänder kan personer flyttas till skeppet och det återanslutas.
+  Detta förtydligar `enda-spelarflottan`: övergivna skepp är spelarens
+  egendom på kartan men utgör inte en andra styrbar flotta.
+- `besattningsskador-och-lakning` är **Fullständigt implementerat**: skador,
+  dödsfall och utrustningens förbrukning sparas efter bordning. Resande personer
+  läker 1 HP per förflyttad hex; en utslagen person blir aktiv över 0 HP.
+  Besättningen dör om skeppet förstörs.
+
+Äldre sparningar får ingen automatisk besättning. Rollkraven gäller även där
+och sådana spel kan därför bli ospelbara, enligt användarens beslut.
 
 ### Motorer och last
 
@@ -58,7 +79,7 @@ Båda börjar med Rocket engine monterad och Transport ship har två Ion pulse
 engine i lasten. Motorer kan dras eller väljas mellan platser; upptagna platser
 byter innehåll. Ett skepp utan motor kan inte drivas i strid och flottan kan
 inte resa. Äldre sparningar behåller sina skepp och får tomma lastplatser.
-Beslutet om tre startskepp ersätter tidigare krav på en Raptor och en Transport ship. Personer på platser är fortfarande öppna.
+Beslutet om tre startskepp ersätter tidigare krav på en Raptor och en Transport ship. Personplatser och startbesättning beskrivs ovan.
 
 ### Fleet: platser och dragning
 
@@ -66,6 +87,7 @@ Beslutet om tre startskepp ersätter tidigare krav på en Raptor och en Transpor
   motor- och lastplatser ligger på fasta positioner på skeppsbilden och
   monterade eller lagrade motorer visas med bilder.
 - `fleet-kompakt-skeppsyta` är **Fullständigt implementerat**: Fleet visar skeppen med mindre tomrum ovanför och nedanför, med utrustningsplatserna kvar vid skeppen.
+- `fleet-kompakta-skepp` är **Fullständigt implementerat**: mindre skeppsbild bredvid utrustningen; skeppsroller och bordare visas med namn, porträtt och personinformation.
 - `fleet-platsinformation` är **Fullständigt implementerat**: utrustningsrutor märks `Engine` eller `Weapon`, och lastplatser grupperas under `Storage`. Markerad utrustning visar namn, bild och relevanta egenskaper; tomma rutor visas som tomma.
 - `fleet-direktmarkering` är **Fullständigt implementerat**: ett tryck på en fylld ruta väljer den direkt och avmarkerar den tidigare. Ett tryck på bakgrunden avmarkerar.
 - `fleet-placering-vapen-och-motor` är **Fullständigt implementerat**: motorplatsen är mitt bak på skeppet och vapenplatserna ligger i mitten över och under `Storage`.
@@ -143,18 +165,18 @@ Följande är beslutat, men spelmekaniken är ännu inte implementerad:
 Samtliga delar i tabellen har beslutsstatus **Öppen — diskuteras med
 användaren före implementation**. Frågorna är inga föreslagna standardregler.
 
-| Del                                | Beslut som behövs                                                                                                                                                                                                                                     | Berörda krav                                                                                               |
-| ---------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| Tid, AP och motståndarturer        | Vilka handlingar kostar AP? Hur återställs AP utan fiender? Vad betyder inom räckhåll? Vad utlöser motståndarnas tur, och hur förhåller sig karttiden till strid och bordning?                                                                        | `flottstyrning-med-ap-pa-starmap`                                                                          |
-| Förbrukning och försörjning        | Vilka resurser utöver bränsle finns? Förbrukas de vid förflyttning, handlingar eller förfluten tid? Är lokala fyndigheter ändliga, hur hittas och utvinns resurser och vad händer när bränslet tar slut?                                              | `andliga-resurser-driver-flottans-resa`                                                                    |
-| Startens Raptor och stödskepp      | Vilken besättning, utrustning, last och kapacitet finns från början? Vad gör varje stödskepp, vad kräver dem och hur får spelaren sitt första?                                                                                                        | `startflotta-med-raptor`, `flottans-stodskepp`                                                             |
-| Personer och roller                | Vilka egenskaper och gemensamma startvärden används? Vilka roller finns, kan uppgifter kombineras samtidigt och vad händer med skeppets funktioner när någon deltar i bordning? Rekrytering, skador, död och eventuell progression behöver bestämmas. | `besattning-med-flera-roller`, `besattning-med-lika-startegenskaper`, `crew-med-utrustning-och-skeppsbyte` |
-| Slots och förflyttning av innehåll | Vilka slottyper, antal och kompatibilitetsregler har varje skepp? Hur skiljs monterad utrustning från last och personplatser? När får saker och personer flyttas, vad kostar det och hur används detta på mobil?                                      | `skeppsslots-for-utrustning-och-personer`, `fleet-som-skeppsoversikt`                                      |
-| Research                           | Vilka tekniker finns, vilka förkunskaper och fynd krävs, vad kostar forskningen och hur fortskrider den? Vad bidrar besättning och Research ship med?                                                                                                 | `flottforskning-av-tekniker`                                                                               |
-| Production och reparation          | Vilka resurser och kapaciteter kräver jobben? Hur går tiden, hur prioriteras kön och vad gäller vid paus eller avbrott? Vad kan Raptor göra själv och vad kräver Construction ship?                                                                   | `gemensam-produktionsko-i-flottan`                                                                         |
-| Möten, uppdrag och erövring        | Hur väljs och varieras möten? När behövs rymdstrid, bordning eller båda? Hur förs skador, besättning, utrustning och byte mellan kartan och striderna? Hur behålls ett erövrat skepp?                                                                 | `flottaventyr-med-strid-och-bordning`, `enda-spelarflottan`                                                |
-| Resans mål och nederlag            | Vad driver resan utöver försörjning? Hur fungerar reträtt, förlorade skepp och återhämtning? När är spelet vunnet eller förlorat?                                                                                                                     | `flottaventyr-med-strid-och-bordning`, `enda-spelarflottan`                                                |
-| Övergång från tidigare spel        | Rensningens omfattning och inkompatibilitet för tidigare sparningar är beslutade för denna utforskning; se rensningsplanen. Ytterligare framtida inkompatibla ändringar ska stämmas av separat.                                                       | `avstamning-sparkompatibilitet`, berörda ersättningar ovan                                                 |
+| Del                                | Beslut som behövs                                                                                                                                                                                        | Berörda krav                                                                                               |
+| ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| Tid, AP och motståndarturer        | Vilka handlingar kostar AP? Hur återställs AP utan fiender? Vad betyder inom räckhåll? Vad utlöser motståndarnas tur, och hur förhåller sig karttiden till strid och bordning?                           | `flottstyrning-med-ap-pa-starmap`                                                                          |
+| Förbrukning och försörjning        | Vilka resurser utöver bränsle finns? Förbrukas de vid förflyttning, handlingar eller förfluten tid? Är lokala fyndigheter ändliga, hur hittas och utvinns resurser och vad händer när bränslet tar slut? | `andliga-resurser-driver-flottans-resa`                                                                    |
+| Startens Raptor och stödskepp      | Vilken övrig utrustning, last och kapacitet finns från början? Vad gör varje stödskepp, vad kräver dem och hur får spelaren sitt första?                                                                 | `startflotta-med-raptor`, `flottans-stodskepp`                                                             |
+| Personer och roller                | Rekrytering och eventuell progression behöver bestämmas. Startvärden, roller, skador och läkning är beslutade ovan.                                                                                      | `besattning-med-flera-roller`, `besattning-med-lika-startegenskaper`, `crew-med-utrustning-och-skeppsbyte` |
+| Slots och förflyttning av innehåll | Personplatser och personförflyttning mellan strider är beslutade ovan. Övriga slottyper, kostnader och kompatibilitet behöver bestämmas.                                                                 | `skeppsslots-for-utrustning-och-personer`, `fleet-som-skeppsoversikt`                                      |
+| Research                           | Vilka tekniker finns, vilka förkunskaper och fynd krävs, vad kostar forskningen och hur fortskrider den? Vad bidrar besättning och Research ship med?                                                    | `flottforskning-av-tekniker`                                                                               |
+| Production och reparation          | Vilka resurser och kapaciteter kräver jobben? Hur går tiden, hur prioriteras kön och vad gäller vid paus eller avbrott? Vad kan Raptor göra själv och vad kräver Construction ship?                      | `gemensam-produktionsko-i-flottan`                                                                         |
+| Möten, uppdrag och erövring        | Hur väljs och varieras möten? När behövs rymdstrid, bordning eller båda? Hur förs skador, besättning, utrustning och byte mellan kartan och striderna? Hur behålls ett erövrat skepp?                    | `flottaventyr-med-strid-och-bordning`, `enda-spelarflottan`                                                |
+| Resans mål och nederlag            | Vad driver resan utöver försörjning? Hur fungerar reträtt, förlorade skepp och återhämtning? När är spelet vunnet eller förlorat?                                                                        | `flottaventyr-med-strid-och-bordning`, `enda-spelarflottan`                                                |
+| Övergång från tidigare spel        | Rensningens omfattning och inkompatibilitet för tidigare sparningar är beslutade för denna utforskning; se rensningsplanen. Ytterligare framtida inkompatibla ändringar ska stämmas av separat.          | `avstamning-sparkompatibilitet`, berörda ersättningar ovan                                                 |
 
 ### Föreslagen diskussionsordning
 
