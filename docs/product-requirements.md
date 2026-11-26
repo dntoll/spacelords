@@ -106,3 +106,5 @@ engelska.
   beslutade.
 - Asteroidbälten.
 - Multiplayer med en eller två rundor per verkligt dygn.
+
+Utforskningen `single_fleet` beskrivs i [Single fleet](single-fleet.md): `dragbar-besattning`, `dragbar-personlig-utrustning` och `besattningsstaplar` är **Fullständigt implementerat**. Personer och deras utrustning flyttas mellan rutor och personernas egenskaper visas med staplar.

@@ -22,6 +22,15 @@ import type {
 } from '../../boarding/models/index.js';
 
 export type AppIntent =
+  | {
+      readonly type: 'crew-place';
+      readonly personId: string;
+      readonly fromShip: string;
+      readonly fromRole: 'pilot' | 'engineer' | 'gunner' | 'boarder' | null;
+      readonly toShip: string;
+      readonly toRole: 'pilot' | 'engineer' | 'gunner' | 'boarder';
+      readonly occupantId: string | null;
+    }
   | { readonly type: 'rejoin-ship'; readonly shipId: string }
   | {
       readonly type: 'crew-role';

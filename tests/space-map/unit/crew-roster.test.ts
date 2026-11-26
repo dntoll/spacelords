@@ -210,3 +210,68 @@ it('besattningens-start-och-roller: rejects malformed or duplicated saved people
     Game.restore({ ...state, crew: [{ ...first, hitPoints: -1 }] }),
   ).toThrow();
 });
+
+it('dragbar-besattning: swaps occupied roles across ships atomically and rejects invalid destinations', () => {
+  const game = new Game(createExampleGalaxy());
+  const people = game.exportState().crew!;
+  const first = people.find((p) => p.roles.includes('pilot'))!;
+  const second = people.find(
+    (p) => p.shipId !== first.shipId && p.roles.includes('engineer'),
+  )!;
+  expect(
+    game.placeCrew(
+      first.id,
+      first.shipId,
+      'pilot',
+      second.shipId,
+      'engineer',
+      second.id,
+    ),
+  ).toBe(true);
+  const after = game.exportState().crew!;
+  expect(after.find((p) => p.id === first.id)).toMatchObject({
+    shipId: second.shipId,
+    roles: ['engineer'],
+  });
+  expect(after.find((p) => p.id === second.id)).toMatchObject({
+    shipId: first.shipId,
+    roles: ['pilot'],
+  });
+  expect(
+    game.placeCrew(
+      first.id,
+      second.shipId,
+      'engineer',
+      'missing',
+      'pilot',
+      null,
+    ),
+  ).toBe(false);
+  expect(game.exportState().crew).toEqual(after);
+});
+
+it('dragbar-besattning: an unassigned crew member can take an empty role and a full ship rejects the move', () => {
+  const game = new Game(createExampleGalaxy());
+  const people = game.exportState().crew!;
+  const person = people.find((p) => p.roles.includes('engineer'))!;
+  const fullShip = people.find((p) => p.roles.includes('boarder'))!.shipId;
+  game.assignCrewRole(person.id, 'engineer', false);
+  const before = game.exportState().crew!;
+  expect(
+    game.placeCrew(person.id, person.shipId, null, fullShip, 'pilot', null),
+  ).toBe(false);
+  expect(game.exportState().crew).toEqual(before);
+  expect(
+    game.placeCrew(
+      person.id,
+      person.shipId,
+      null,
+      person.shipId,
+      'engineer',
+      null,
+    ),
+  ).toBe(true);
+  expect(
+    game.exportState().crew!.find((p) => p.id === person.id)!.roles,
+  ).toEqual(['engineer']);
+});

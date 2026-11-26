@@ -889,6 +889,83 @@ export class Game {
     );
     return true;
   }
+  // dragbar-besattning: validate the entire exchange before changing either person.
+  placeCrew(
+    personId: string,
+    fromShip: string,
+    fromRole: CrewRole | null,
+    toShip: string,
+    toRole: CrewRole,
+    occupantId: string | null,
+  ): boolean {
+    if (
+      this.#phase !== 'planning' ||
+      !this.#shipAvailable(fromShip) ||
+      !this.#shipAvailable(toShip)
+    )
+      return false;
+    const person = this.#crewPeople.find((p) => p.id === personId);
+    const occupant = occupantId
+      ? this.#crewPeople.find((p) => p.id === occupantId)
+      : null;
+    if (
+      !person ||
+      person.status !== 'active' ||
+      person.shipId !== fromShip ||
+      (fromRole === null
+        ? person.roles.length !== 0
+        : !person.roles.includes(fromRole))
+    )
+      return false;
+    if (
+      occupantId &&
+      (!occupant ||
+        occupant.id === personId ||
+        occupant.status !== 'active' ||
+        occupant.shipId !== toShip ||
+        !occupant.roles.includes(toRole))
+    )
+      return false;
+    const next = this.#crewPeople.map((p) => {
+      if (p.id === personId)
+        return {
+          ...p,
+          shipId: toShip,
+          roles: [
+            ...(fromShip === toShip
+              ? p.roles.filter((r) => r !== fromRole && r !== toRole)
+              : []),
+            toRole,
+          ],
+        };
+      if (p.id === occupantId)
+        return {
+          ...p,
+          shipId: fromShip,
+          roles: [
+            ...(fromShip === toShip
+              ? p.roles.filter((r) => r !== toRole && r !== fromRole)
+              : []),
+            ...(fromRole ? [fromRole] : []),
+          ],
+        };
+      return p;
+    });
+    for (const ship of [fromShip, toShip]) {
+      const aboard = next.filter(
+        (p) => p.shipId === ship && p.status !== 'dead',
+      );
+      if (aboard.length > 7) return false;
+      for (const role of ['pilot', 'engineer', 'gunner', 'boarder'] as const)
+        if (
+          aboard.filter((p) => p.roles.includes(role)).length >
+          (role === 'boarder' ? 4 : 1)
+        )
+          return false;
+    }
+    this.#crewPeople = next;
+    return true;
+  }
   swapCrewEquipment(
     firstId: string,
     secondId: string,
