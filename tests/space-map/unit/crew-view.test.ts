@@ -220,8 +220,8 @@ it('besattningsvarden-forklaras: Crew explains what every value does in boarding
     expect(term?.nextElementSibling?.textContent).toMatch(effect);
   }
   // besattningsvarden-i-rymdstrid: the roles that matter in space combat.
-  expect(legend.textContent).toMatch(/As gunner, 6 or more/);
-  expect(legend.textContent).toMatch(/As pilot, 14 or more/);
+  expect(legend.textContent).toMatch(/as gunner to every ship weapon roll/);
+  expect(legend.textContent).toMatch(/As pilot, each point above 12/);
   // The explanation also follows each bar, so it is reachable from Fleet.
   const row = crew.querySelector<HTMLElement>('.crew-stat')!;
   expect(row.title).toMatch(/damage/i);

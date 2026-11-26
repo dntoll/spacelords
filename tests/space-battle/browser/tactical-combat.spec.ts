@@ -307,7 +307,7 @@ test('begransad-stridskamera / fullskarms-stridskarta / skeppsnara-stridskontrol
     .getByRole('button', { name: 'Combat details', exact: true })
     .click();
   await expect(dialog.locator('.battle-shot-preview')).toContainText(
-    '2D6, hit 4+',
+    '2D20 + 4 vs 15 · 50%',
   );
   await dialog
     .getByRole('button', { name: 'Combat details', exact: true })
@@ -324,7 +324,7 @@ test('begransad-stridskamera / fullskarms-stridskarta / skeppsnara-stridskontrol
     .getByRole('button', { name: 'Combat details', exact: true })
     .click();
   await expect(dialog.locator('.battle-latest-roll')).toContainText(
-    '2D6 [1, 1]',
+    '2D20 [1, 1] + 4 vs 15',
   );
   await dialog
     .getByRole('button', { name: 'Combat details', exact: true })

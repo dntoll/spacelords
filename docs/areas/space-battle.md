@@ -66,7 +66,7 @@ order till skeppen, och striden kan också testas fristående från
   [taktisk strid](../space-battle/tactical-combat.md).
 
 - **Taktisk strid:** Ny separat hexkarta med alla deltagande skepp,
-  utplacering, växelvisa aktiveringar, eldbågar, skydd, öppna D6-slag och
+  utplacering, växelvisa aktiveringar, eldbågar, skydd, öppna D20-slag (`rymdstrid-med-d20`) och
   skeppsvis reträtt är **Fullständigt implementerat**. Sparade strider
   återupptas utan nya tärningsslag och äldre spel bevaras. Detta ersätter den fasta
   förlustformeln i `flottstrid-per-hex`. Se [taktisk strid](../space-battle/tactical-combat.md).

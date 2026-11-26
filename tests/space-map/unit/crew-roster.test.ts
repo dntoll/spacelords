@@ -1,10 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Game } from '../../../src/client/space-map/models/Game.js';
 import { createExampleGalaxy } from '../../../src/client/space-map/models/exampleGalaxy.js';
-import {
-  gunnerAim,
-  pilotEvasion,
-} from '../../../src/client/space-map/models/Crew.js';
 
 describe('besattningens-start-och-roller / besattning-med-varierade-startegenskaper', () => {
   it('starts twelve unique people on the specified ships and saves them', () => {
@@ -309,12 +305,7 @@ it('dragbar-besattning: an unassigned crew member can take an empty role and a f
 });
 
 describe('besattningsvarden-i-rymdstrid', () => {
-  it('turns gunner accuracy and pilot agility into one-step battle effects', () => {
-    expect([2, 3, 4, 5, 6].map(gunnerAim)).toEqual([-1, 0, 0, 0, 1]);
-    expect([10, 11, 12, 13, 14].map(pilotEvasion)).toEqual([-1, 0, 0, 0, 1]);
-  });
-
-  it('sends the active gunner and pilot of each ship into the battle', () => {
+  it('sends the active gunner accuracy and pilot agility into the battle', () => {
     const state = new Game(createExampleGalaxy()).exportState();
     const pirate = state.pirates![0]!;
     const game = Game.restore({
@@ -335,12 +326,13 @@ describe('besattningsvarden-i-rymdstrid', () => {
       pieces.find(
         (entry) => entry.id === ships.find((ship) => ship.type === type)!.id,
       )!;
-    // Alex (Accuracy 6) guns the Fighter; Avery and Jamie (Agility 14) fly
-    // the Raptor and the Transport ship; Cameron (Agility 13) is average.
-    expect(piece('Fighter').aim).toBe(1);
-    expect(piece('Fighter').evasion).toBeUndefined();
-    expect(piece('Raptor').aim).toBeUndefined();
-    expect(piece('Raptor').evasion).toBe(1);
-    expect(piece('Transport ship').evasion).toBe(1);
+    // Riley (Accuracy 5) and Avery (Agility 14) crew the Raptor; Alex
+    // (Accuracy 6) and Cameron (Agility 13) the Fighter. The Transport ship
+    // has no gunner and Jamie (Agility 14) as pilot.
+    expect(piece('Raptor')).toMatchObject({ accuracy: 5, defense: 17 });
+    expect(piece('Fighter')).toMatchObject({ accuracy: 6, defense: 16 });
+    expect(piece('Transport ship').defense).toBe(17);
+    for (const entry of pieces.filter((item) => item.side === 'enemy'))
+      expect(entry.defense).toBeUndefined();
   });
 });

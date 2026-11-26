@@ -89,7 +89,7 @@ export function renderFleetEquipment(
       const range = document.createElement('p');
       range.textContent = `Range: ${profile.min}–${profile.max} · Arc: ${profile.arc}°`;
       const damage = document.createElement('p');
-      damage.textContent = `Damage dice: ${profile.dice} · Hit: ${profile.threshold}+`;
+      damage.textContent = `Attacks: ${profile.dice}D20${profile.bonus ? ` · Weapon modifier: ${profile.bonus > 0 ? '+' : '−'}${Math.abs(profile.bonus)}` : ''}`;
       stats.append(range, damage);
       if (content.type === 'Missiles') {
         const ammo = document.createElement('p');
@@ -682,10 +682,10 @@ export function renderFleetEquipment(
 const CREW_STAT_EFFECTS = {
   HP: 'Damage a person can take in boarding before going down.',
   Accuracy:
-    'Added to the D20 roll for shots and grenade throws in boarding. As gunner, 6 or more lets ship weapons hit on one lower, 2 or less on one higher.',
+    'Added to the D20 roll for shots and grenade throws in boarding, and as gunner to every ship weapon roll.',
   Defense: 'The total an enemy shot must reach to hit this person.',
   Agility:
-    'Action points each boarding turn, before equipment changes them. As pilot, 14 or more makes the ship one harder to hit, 10 or less one easier.',
+    'Action points each boarding turn, before equipment changes them. As pilot, each point above 12 adds one to the ship’s Defense of 15 and each point below takes one away.',
 } as const;
 
 /** crew-med-utrustning-och-skeppsbyte: the same controls work in Fleet and Crew. */

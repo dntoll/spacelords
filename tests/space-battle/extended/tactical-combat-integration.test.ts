@@ -121,7 +121,7 @@ describe('tactical combat integration', () => {
       event.text.startsWith('Combat:'),
     )!;
     expect(
-      combatEvent.combatLog!.findLast((line) => line.includes('D6 [')),
+      combatEvent.combatLog!.findLast((line) => line.includes('D20 [')),
     ).toContain('Cannon');
     const saved = game.exportState();
     expect(Game.restore(saved).exportState()).toEqual(saved);

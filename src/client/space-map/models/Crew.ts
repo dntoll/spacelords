@@ -1,4 +1,5 @@
 import type { ShipUnit } from './Catalog.js';
+import { BASE_SHIP_DEFENSE } from '../../space-battle/models/index.js';
 
 export type CrewRole = 'pilot' | 'engineer' | 'gunner' | 'boarder';
 export type CrewGadget =
@@ -49,14 +50,26 @@ const STARTING_PROFILES: readonly CrewAttributes[] = [
 ];
 
 /**
- * besattningsvarden-i-rymdstrid: two points from the old shared profile move a
- * D6 hit requirement one step. A gunner's Accuracy changes the ship's own
- * shots; a pilot's Agility changes the shots against the ship.
+ * besattningsvarden-i-rymdstrid: the gunner's Accuracy is added to the ship's
+ * D20 attacks, and every point of the pilot's Agility above or below the old
+ * shared 12 moves the ship's Defense from its base of 15.
  */
-export const gunnerAim = (accuracy: number): -1 | 0 | 1 =>
-  accuracy >= 6 ? 1 : accuracy <= 2 ? -1 : 0;
-export const pilotEvasion = (agility: number): -1 | 0 | 1 =>
-  agility >= 14 ? 1 : agility <= 10 ? -1 : 0;
+export function crewCombatValues(
+  gunner: CrewPerson | undefined,
+  pilot: CrewPerson | undefined,
+): { accuracy?: number; defense?: number } {
+  return {
+    ...(gunner ? { accuracy: gunner.attributes.accuracy } : {}),
+    ...(pilot
+      ? {
+          defense: Math.max(
+            0,
+            BASE_SHIP_DEFENSE + pilot.attributes.agility - 12,
+          ),
+        }
+      : {}),
+  };
+}
 
 export function startingCrew(ships: readonly ShipUnit[]): CrewPerson[] {
   const people: CrewPerson[] = [];

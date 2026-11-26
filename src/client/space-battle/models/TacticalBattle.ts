@@ -35,32 +35,66 @@ export const SHIP_PROFILES: Readonly<Record<CombatShipType, ShipProfile>> =
     // raptor-talig-mot-pirater: survives three Raider cannon hits of 2 damage.
     Raptor: { size: 1, hull: 7, movement: 3 },
   });
+// rymdstrid-med-d20: dice are D20 attack rolls; bonus adjusts each roll.
 export const WEAPONS = Object.freeze({
-  Cannon: { min: 1, max: 3, arc: 120, dice: 2, threshold: 4, area: 0 },
-  Missiles: { min: 2, max: 6, arc: 60, dice: 3, threshold: 4, area: 1 },
-  'Raider cannon': { min: 1, max: 3, arc: 120, dice: 2, threshold: 5, area: 0 },
-  'Light cannon': { min: 1, max: 3, arc: 120, dice: 1, threshold: 4, area: 0 },
+  Cannon: { min: 1, max: 3, arc: 120, dice: 2, bonus: 0, area: 0 },
+  Missiles: { min: 2, max: 6, arc: 60, dice: 3, bonus: 0, area: 1 },
+  'Raider cannon': { min: 1, max: 3, arc: 120, dice: 2, bonus: -3, area: 0 },
+  'Light cannon': { min: 1, max: 3, arc: 120, dice: 1, bonus: 0, area: 0 },
 });
 
-/** besattningsvarden-i-rymdstrid: crew skill moves a D6 requirement within 2+ to 6+. */
-function hitThreshold(
-  base: number,
-  rear: boolean,
-  source: Pick<BattlePiece, 'aim'>,
-  target: Pick<BattlePiece, 'evasion'>,
-): number {
-  return Math.min(
-    6,
-    Math.max(
-      2,
-      base - Number(rear) - (source.aim ?? 0) + (target.evasion ?? 0),
-    ),
-  );
+/**
+ * rymdstrid-med-d20: ships resolve attacks like boarding. A ship without crew
+ * values fights with the old average gunner and pilot, which keeps the odds of
+ * the former D6 rules: a 4+ became 11+ and a rear attack adds about one sixth.
+ */
+export const BASE_SHIP_DEFENSE = 15;
+export const DEFAULT_GUNNER_ACCURACY = 4;
+export const REAR_ATTACK_BONUS = 3;
+
+/** Natural 1 misses, natural 20 hits as a critical for double damage. */
+export function resolveAttack(
+  die: number,
+  bonus: number,
+  defense: number,
+): {
+  readonly hit: boolean;
+  readonly damage: number;
+  readonly critical: boolean;
+} {
+  const critical = die === 20;
+  const hit = critical || (die !== 1 && die + bonus >= defense);
+  return { hit, damage: critical ? 2 : Number(hit), critical };
 }
-const crewStep = (value: number | undefined): { aim?: -1 | 1 } =>
-  value === 1 || value === -1 ? { aim: value } : {};
-const pilotStep = (value: number | undefined): { evasion?: -1 | 1 } =>
-  value === 1 || value === -1 ? { evasion: value } : {};
+
+/** The percentage shown before a shot, as in boarding. */
+export function attackChance(bonus: number, defense: number): number {
+  return Math.max(5, Math.min(95, (21 - Math.max(2, defense - bonus)) * 5));
+}
+
+/** Expected hull damage per attack die, including critical hits. */
+const expectedDamage = (hit: { dice: number; chance: number }): number =>
+  (hit.dice * (hit.chance + 5)) / 100;
+
+function attackOdds(
+  weaponBonus: number,
+  rear: boolean,
+  source: Pick<BattlePiece, 'accuracy'>,
+  target: Pick<BattlePiece, 'defense'>,
+): { bonus: number; defense: number; chance: number } {
+  const bonus =
+    (source.accuracy ?? DEFAULT_GUNNER_ACCURACY) +
+    weaponBonus +
+    (rear ? REAR_ATTACK_BONUS : 0);
+  const defense = target.defense ?? BASE_SHIP_DEFENSE;
+  return { bonus, defense, chance: attackChance(bonus, defense) };
+}
+
+const validCrewValue = (value: unknown): boolean =>
+  value === undefined ||
+  (Number.isSafeInteger(value) &&
+    (value as number) >= 0 &&
+    (value as number) <= 30);
 
 export interface BattleFleet {
   readonly id: string;
@@ -76,10 +110,10 @@ export interface BattleFleet {
     readonly missiles?: number;
     readonly weapons?: readonly WeaponName[];
     readonly armored?: boolean;
-    /** besattningsvarden-i-rymdstrid: the gunner lowers this ship's hit requirement. */
-    readonly aim?: number;
-    /** besattningsvarden-i-rymdstrid: the pilot raises the requirement to hit this ship. */
-    readonly evasion?: number;
+    /** besattningsvarden-i-rymdstrid: the active gunner's Accuracy. */
+    readonly accuracy?: number;
+    /** besattningsvarden-i-rymdstrid: Defense from the active pilot. */
+    readonly defense?: number;
     /** permanenta-skador: hull already lost before this battle. */
     readonly damage?: number;
   }[];
@@ -95,8 +129,8 @@ export interface BattlePiece {
   readonly hasMissiles?: boolean;
   readonly weapons?: readonly WeaponName[];
   readonly armored?: boolean;
-  readonly aim?: -1 | 1;
-  readonly evasion?: -1 | 1;
+  readonly accuracy?: number;
+  readonly defense?: number;
   readonly position: BattleHex | null;
   readonly facing: number;
   readonly speed?: number;
@@ -283,16 +317,21 @@ export type BattleCommand =
       readonly at: BattleHex;
       readonly weapon: WeaponName;
     };
+/** rymdstrid-med-d20: each die is a D20 + bonus roll against defense. */
 export interface ShotPreview {
   readonly reason: string | null;
   readonly dice: number;
-  readonly threshold: number;
+  readonly bonus: number;
+  readonly defense: number;
+  readonly chance: number;
   readonly rear: boolean;
 }
 export interface ImpactHit {
   readonly id: string;
   readonly dice: number;
-  readonly threshold: number;
+  readonly bonus: number;
+  readonly defense: number;
+  readonly chance: number;
   readonly rear: boolean;
   readonly wreck?: boolean;
 }
@@ -525,8 +564,8 @@ export class TacticalBattle {
               : missiles > 0,
             ...(ship.weapons ? { weapons: [...ship.weapons] } : {}),
             armored,
-            ...crewStep(ship.aim),
-            ...pilotStep(ship.evasion),
+            ...(ship.accuracy !== undefined ? { accuracy: ship.accuracy } : {}),
+            ...(ship.defense !== undefined ? { defense: ship.defense } : {}),
             position: null,
             facing: f.side === 'player' ? 0 : 3,
             speed: 0,
@@ -650,8 +689,8 @@ export class TacticalBattle {
             p.firedRound < 1 ||
             p.firedRound > state.round)) ||
         (p.armored !== undefined && typeof p.armored !== 'boolean') ||
-        (p.aim !== undefined && p.aim !== 1 && p.aim !== -1) ||
-        (p.evasion !== undefined && p.evasion !== 1 && p.evasion !== -1) ||
+        !validCrewValue(p.accuracy) ||
+        !validCrewValue(p.defense) ||
         (p.armored === true && !armored) ||
         (p.hasMissiles !== undefined && typeof p.hasMissiles !== 'boolean') ||
         (p.escapeEdge !== undefined &&
@@ -863,8 +902,9 @@ export class TacticalBattle {
     this.#random = value >>> 0;
     return this.#random / 0x100000000;
   }
+  /** rymdstrid-med-d20: attacks and initiative use the boarding D20. */
   #die(): number {
-    return Math.floor(this.#next() * 6) + 1;
+    return Math.floor(this.#next() * 20) + 1;
   }
   #piece(id: string): Piece {
     const piece = this.#pieces.find((p) => p.id === id);
@@ -1068,7 +1108,7 @@ export class TacticalBattle {
       player = this.#die();
       enemy = this.#die();
       this.#log.push(
-        `Initiative, round ${this.#round}: player D6 [${player}], enemy D6 [${enemy}]${player === enemy ? ' — reroll.' : '.'}`,
+        `Initiative, round ${this.#round}: player D20 [${player}], enemy D20 [${enemy}]${player === enemy ? ' — reroll.' : '.'}`,
       );
     } while (player === enemy);
     this.#turn = player > enemy ? 'player' : 'enemy';
@@ -1218,7 +1258,7 @@ export class TacticalBattle {
     return Object.freeze({
       reason,
       dice: profile?.dice ?? 0,
-      threshold: hitThreshold(profile?.threshold ?? 4, rear, source, target),
+      ...attackOdds(profile?.bonus ?? 0, rear, source, target),
       rear,
     });
   }
@@ -1314,7 +1354,9 @@ export class TacticalBattle {
             {
               id: target.id,
               dice: 0,
-              threshold: 0,
+              bonus: 0,
+              defense: 0,
+              chance: 0,
               rear: false,
               wreck: true,
             },
@@ -1337,7 +1379,9 @@ export class TacticalBattle {
                 {
                   id: target.id,
                   dice: preview.dice,
-                  threshold: preview.threshold,
+                  bonus: preview.bonus,
+                  defense: preview.defense,
+                  chance: preview.chance,
                   rear: preview.rear,
                 },
               ],
@@ -1367,7 +1411,7 @@ export class TacticalBattle {
         return {
           id: piece.id,
           dice: piece.status === 'wreck' ? 0 : profile.dice,
-          threshold: hitThreshold(profile.threshold, rear, source, piece),
+          ...attackOdds(profile.bonus, rear, source, piece),
           rear,
           ...(piece.status === 'wreck' ? { wreck: true } : {}),
         };
@@ -1436,7 +1480,7 @@ export class TacticalBattle {
   #applyHullDamage(
     target: Piece,
     damage: number,
-    dice: readonly number[] = [],
+    critical = false,
   ): 'active' | 'wreck' | 'exploded' {
     if (target.status === 'wreck') {
       target.status = 'destroyed';
@@ -1446,7 +1490,8 @@ export class TacticalBattle {
     }
     if (target.status !== 'active' || damage <= 0) return 'active';
     const stamp = `${target.id}:${this.#log.length}:${target.hull}`;
-    const enginesKnockedOut = damage >= 2 && dice.some((die) => die === 6);
+    // motor-utslagen-vrak / rymdstrid-med-d20: a critical hit stops the engines.
+    const enginesKnockedOut = critical;
     target.hull = Math.max(0, target.hull - damage);
     const outcome = hullLossOutcome(
       enginesKnockedOut,
@@ -1959,13 +2004,15 @@ export class TacticalBattle {
       const dice = hit.wreck
         ? []
         : Array.from({ length: hit.dice }, () => this.#die());
-      const damage = hit.wreck
-        ? 0
-        : dice.filter((die) => die >= hit.threshold).length;
+      const rolls = dice.map((die) =>
+        resolveAttack(die, hit.bonus, hit.defense),
+      );
+      const damage = rolls.reduce((sum, roll) => sum + roll.damage, 0);
+      const criticals = rolls.filter((roll) => roll.critical).length;
       total += damage;
       const loss = hit.wreck
         ? this.#applyHullDamage(target, 1)
-        : this.#applyHullDamage(target, damage, dice);
+        : this.#applyHullDamage(target, damage, criticals > 0);
       const phrase =
         loss === 'exploded'
           ? hit.wreck
@@ -1987,12 +2034,13 @@ export class TacticalBattle {
         previousHull,
         destroyed: loss === 'exploded',
       });
+      const roll = `${hit.dice}D20 [${dice.join(', ')}] + ${hit.bonus} vs ${hit.defense}${hit.rear ? ' (rear)' : ''}${criticals ? `, ${criticals > 1 ? `${criticals} criticals` : 'critical'}` : ''}`;
       const outcome = hit.wreck
         ? '0 damage, wreck explodes'
-        : `${hit.dice}D6 [${dice.join(', ')}], hit ${hit.threshold}+${hit.rear ? ' (rear)' : ''}: ${damage} damage${phrase}`;
+        : `${roll}: ${damage} damage${phrase}`;
       notes.push(
         command.weapon === 'Missiles'
-          ? `${battlePieceLabel(target, this.#pieces)} ${hit.wreck ? 'wreck explodes' : `${hit.dice}D6 [${dice.join(', ')}], hit ${hit.threshold}+${hit.rear ? ' (rear)' : ''}, ${damage} hits${phrase}`}`
+          ? `${battlePieceLabel(target, this.#pieces)} ${hit.wreck ? 'wreck explodes' : `${roll}, ${damage} damage${phrase}`}`
           : outcome,
       );
     }
@@ -2499,7 +2547,7 @@ export class TacticalBattle {
             let score = -1;
             for (const hit of preview.hits) {
               const ship = this.#piece(hit.id);
-              const expected = (hit.dice * (7 - hit.threshold)) / 6;
+              const expected = expectedDamage(hit);
               const kill = Math.max(0, hit.dice - ship.hull + 1) * 12;
               const value = expected * 10 + kill;
               score += ship.side === p.side ? -value : value;
@@ -2516,7 +2564,7 @@ export class TacticalBattle {
           if (!at) continue;
           const preview = this.shot(p.id, enemy.id, weapon, position, facing);
           if (preview.reason) continue;
-          const expected = (preview.dice * (7 - preview.threshold)) / 6;
+          const expected = expectedDamage(preview);
           const kill = Math.max(0, preview.dice - enemy.hull + 1) * 12;
           const score = expected * 10 + kill;
           if (!bestShot || score > bestShot.score)
@@ -2556,8 +2604,7 @@ export class TacticalBattle {
           const preview = this.shot(enemy.id, p.id, weapon);
           p.position = old;
           p.facing = oldFacing;
-          if (!preview.reason)
-            risk += (preview.dice * (7 - preview.threshold)) / 6;
+          if (!preview.reason) risk += expectedDamage(preview);
         }
       const score =
         (shot?.score ?? 0) -
@@ -2761,7 +2808,7 @@ export class TacticalBattle {
               let score = -1;
               for (const hit of preview.hits) {
                 const ship = this.#piece(hit.id);
-                const expected = (hit.dice * (7 - hit.threshold)) / 6;
+                const expected = expectedDamage(hit);
                 const value =
                   expected * 10 + Math.max(0, hit.dice - ship.hull + 1) * 12;
                 score += ship.side === p.side ? -value : value;
@@ -2776,7 +2823,7 @@ export class TacticalBattle {
           if (!at) continue;
           const preview = this.shot(p.id, enemy.id, weapon);
           if (preview.reason) continue;
-          const expected = (preview.dice * (7 - preview.threshold)) / 6;
+          const expected = expectedDamage(preview);
           const score =
             expected * 10 + Math.max(0, preview.dice - enemy.hull + 1) * 12;
           if (!bestShot || score > bestShot.score)
@@ -2811,8 +2858,7 @@ export class TacticalBattle {
             enemy.weapons,
           )) {
             const preview = this.shot(enemy.id, p.id, weapon);
-            if (!preview.reason)
-              risk += (preview.dice * (7 - preview.threshold)) / 6;
+            if (!preview.reason) risk += expectedDamage(preview);
           }
         let wreckAction: BattleCommand | null = null;
         if (!shot && node.actions.length >= moves) {

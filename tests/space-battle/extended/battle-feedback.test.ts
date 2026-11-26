@@ -205,7 +205,7 @@ it.each(['0 damage', '2 damage, destroyed'])(
     battle.actAutomatically();
     const initial = battle.snapshot;
     const view = new BattleView(document.body, vi.fn());
-    const shot = `Fighter 1: Cannon → Space pirate 1. 2D6 [1, 2], hit 4+: ${result}.`;
+    const shot = `Fighter 1: Cannon → Space pirate 1. 2D20 [1, 12] + 4 vs 15: ${result}.`;
     view.render({
       ...initial,
       phase: result.startsWith('2') ? 'complete' : 'fighting',

@@ -1,7 +1,6 @@
 import { engineCount } from './ShipEquipment.js';
 import {
-  gunnerAim,
-  pilotEvasion,
+  crewCombatValues,
   startingCrew,
   restoreCrew,
   type CrewPerson,
@@ -1660,11 +1659,9 @@ export class Game {
                 ),
             armored: unit.armored === true,
             // besattningsvarden-i-rymdstrid: the active gunner and pilot fight.
-            aim: gunnerAim(
-              this.#crewIn(unit.id, 'gunner')?.attributes.accuracy ?? 4,
-            ),
-            evasion: pilotEvasion(
-              this.#crewIn(unit.id, 'pilot')?.attributes.agility ?? 12,
+            ...crewCombatValues(
+              this.#crewIn(unit.id, 'gunner'),
+              this.#crewIn(unit.id, 'pilot'),
             ),
             ...(unit.damage ? { damage: unit.damage } : {}),
           })),

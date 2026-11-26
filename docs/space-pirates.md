@@ -68,7 +68,7 @@ deltar tillsammans på en separat stridskarta.
 
 Spelaren placerar sina skepp, aktiverar dem växelvis med fienden och använder
 riktning, vapen och skydd. Pirater väljer `Dock` när babord- eller
-styrbordskontakt mot ett bordningsbart skepp är laglig. Öppna D6-slag avgör
+styrbordskontakt mot ett bordningsbart skepp är laglig. Öppna D20-slag avgör
 träffar. Civila skepp är obeväpnade men kan skyddas och fly. Förstörda skepp
 lämnar vrak. Erövrad last lastas av vid ägd planet. Se
 [taktisk strid](space-battle/tactical-combat.md) och

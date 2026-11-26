@@ -92,7 +92,8 @@ engelska.
 
 - Space pirates finns vid stjärnorna, bär byte och kan anfalla.
 - Möten mellan flottor avgörs i en taktisk rymdstrid där spelaren styr
-  skeppen. Ett skadat fientligt skepp kan bordas.
+  skeppen. Ett skadat fientligt skepp kan bordas. Rymdstrid och bordning
+  använder samma tärningsslag.
 - En påbörjad bordning spelas färdigt innan rymdstriden fortsätter.
 - Bordningens kontroller hålls inom den synliga skärmen.
 
