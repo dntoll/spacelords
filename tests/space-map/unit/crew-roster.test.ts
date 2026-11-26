@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { Game } from '../../../src/client/space-map/models/Game.js';
 import { createExampleGalaxy } from '../../../src/client/space-map/models/exampleGalaxy.js';
 
-describe('besattningens-start-och-roller / besattning-med-lika-startegenskaper', () => {
+describe('besattningens-start-och-roller / besattning-med-varierade-startegenskaper', () => {
   it('starts twelve unique people on the specified ships and saves them', () => {
     const game = new Game(createExampleGalaxy());
     const ships = game.fleetSnapshot().shipUnits!;
@@ -19,9 +19,37 @@ describe('besattningens-start-och-roller / besattning-med-lika-startegenskaper',
         count,
       );
     }
-    expect(
-      new Set(people.map((person) => JSON.stringify(person.attributes))).size,
-    ).toBe(1);
+    // besattning-med-varierade-startegenskaper: people differ, yet nobody is
+    // simply better than another and every value stays in a playable range.
+    for (const key of [
+      'maxHitPoints',
+      'agility',
+      'accuracy',
+      'defense',
+    ] as const)
+      expect(
+        new Set(people.map((person) => person.attributes[key])).size,
+      ).toBeGreaterThan(1);
+    for (const person of people) {
+      const { maxHitPoints, agility, accuracy, defense } = person.attributes;
+      expect(person.hitPoints).toBe(maxHitPoints);
+      expect(maxHitPoints).toBeGreaterThanOrEqual(8);
+      expect(maxHitPoints).toBeLessThanOrEqual(12);
+      expect(agility).toBeGreaterThanOrEqual(10);
+      expect(agility).toBeLessThanOrEqual(14);
+      expect(accuracy).toBeGreaterThanOrEqual(2);
+      expect(accuracy).toBeLessThanOrEqual(6);
+      expect(defense).toBeGreaterThanOrEqual(9);
+      expect(defense).toBeLessThanOrEqual(13);
+      // Deviations from the old shared profile (10/12/4/11) cancel out.
+      expect(
+        maxHitPoints -
+          10 +
+          (agility - 12) +
+          2 * (accuracy - 4) +
+          2 * (defense - 11),
+      ).toBe(0);
+    }
     expect(Game.restore(game.exportState()).exportState().crew).toEqual(people);
   });
 

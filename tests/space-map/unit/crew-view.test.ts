@@ -201,3 +201,25 @@ it('dragbar-personlig-utrustning: dragging exchanges equipment and cancelling do
   Reflect.deleteProperty(document, 'elementFromPoint');
   page.remove();
 });
+
+it('besattningsvarden-forklaras: Crew explains what every value does in boarding', () => {
+  const crew = renderCrew(
+    new Game(createExampleGalaxy()).fleetSnapshot(),
+    vi.fn(),
+  );
+  const legend = crew.querySelector('.crew-stat-legend')!;
+  for (const [label, effect] of [
+    ['HP', /damage/i],
+    ['Accuracy', /D20/],
+    ['Defense', /hit/i],
+    ['Agility', /action points/i],
+  ] as const) {
+    const term = [...legend.querySelectorAll('dt')].find(
+      (entry) => entry.textContent === label,
+    );
+    expect(term?.nextElementSibling?.textContent).toMatch(effect);
+  }
+  // The explanation also follows each bar, so it is reachable from Fleet.
+  const row = crew.querySelector<HTMLElement>('.crew-stat')!;
+  expect(row.title).toMatch(/damage/i);
+});

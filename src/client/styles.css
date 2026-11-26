@@ -3010,9 +3010,11 @@ body:has(.discovery-controls) .selection-panel {
   min-width: 44px;
   min-height: 44px;
 }
-.fleet-ship-handle {
+.fleet-ship-handle,
+.fleet-ship-title-handle {
   touch-action: none;
   cursor: grab;
+  user-select: none;
 }
 .fleet-ship-image {
   position: relative;
@@ -3306,6 +3308,21 @@ body:has(.discovery-controls) .selection-panel {
   background-size: 400% 300%;
 }
 
+/* besattningsvarden-forklaras */
+.crew-stat-legend {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.2rem 0.6rem;
+  margin: 0 0 1rem;
+  font-size: 0.8rem;
+}
+.crew-stat-legend dt {
+  font-weight: bold;
+}
+.crew-stat-legend dd {
+  margin: 0;
+}
+
 /* dragbar-personlig-utrustning / besattningsstaplar */
 .crew-equipment {
   display: flex;
@@ -3337,6 +3354,15 @@ body:has(.discovery-controls) .selection-panel {
 .crew-stat progress {
   width: 100%;
   accent-color: #7ad3b4;
+}
+/* dragbar-personlig-utrustning: personal slots flow in their cell, while the
+   ghost must stay fixed under the pointer despite the slot rule above. */
+.crew-equipment .crew-equipment-slot {
+  transform: none;
+}
+.crew-equipment-slot.fleet-drag-ghost {
+  position: fixed;
+  transform: translate(-50%, -50%);
 }
 .crew-slot-portrait.fleet-drag-ghost {
   width: 56px;

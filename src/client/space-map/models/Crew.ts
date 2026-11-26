@@ -24,7 +24,30 @@ export interface CrewPerson {
   } | null;
 }
 
-/** besattning-med-lika-startegenskaper: every starting person shares the same values. */
+type CrewAttributes = CrewPerson['attributes'];
+
+/**
+ * besattning-med-varierade-startegenskaper: each starting person has a fixed
+ * profile. A strength is paid for by a weakness, weighing one hit point or
+ * action point like half a point of accuracy or defense, so nobody is simply
+ * better than the old shared profile of 10 HP, 12 agility, 4 accuracy and 11
+ * defense.
+ */
+const STARTING_PROFILES: readonly CrewAttributes[] = [
+  { maxHitPoints: 8, agility: 14, accuracy: 4, defense: 11 },
+  { maxHitPoints: 12, agility: 12, accuracy: 3, defense: 11 },
+  { maxHitPoints: 10, agility: 10, accuracy: 5, defense: 11 },
+  { maxHitPoints: 12, agility: 10, accuracy: 3, defense: 12 },
+  { maxHitPoints: 9, agility: 13, accuracy: 6, defense: 9 },
+  { maxHitPoints: 8, agility: 14, accuracy: 3, defense: 12 },
+  { maxHitPoints: 11, agility: 11, accuracy: 5, defense: 10 },
+  { maxHitPoints: 9, agility: 13, accuracy: 4, defense: 11 },
+  { maxHitPoints: 11, agility: 13, accuracy: 3, defense: 11 },
+  { maxHitPoints: 10, agility: 12, accuracy: 6, defense: 9 },
+  { maxHitPoints: 10, agility: 14, accuracy: 4, defense: 10 },
+  { maxHitPoints: 12, agility: 12, accuracy: 4, defense: 10 },
+];
+
 export function startingCrew(ships: readonly ShipUnit[]): CrewPerson[] {
   const people: CrewPerson[] = [];
   const names = [
@@ -74,8 +97,8 @@ export function startingCrew(ships: readonly ShipUnit[]): CrewPerson[] {
         name: names[index - 1]!,
         shipId: ship.id,
         roles: [role],
-        attributes: { maxHitPoints: 10, agility: 12, accuracy: 4, defense: 11 },
-        hitPoints: 10,
+        attributes: { ...STARTING_PROFILES[index - 1]! },
+        hitPoints: STARTING_PROFILES[index - 1]!.maxHitPoints,
         status: 'active',
         weapon: gadget ? 'rifle' : null,
         gadget: gadget

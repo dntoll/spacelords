@@ -53,7 +53,7 @@ export function renderFleetEquipment(
   page.append(heading);
   const hint = document.createElement('p');
   hint.textContent =
-    'Drag crew or equipment between slots to move or swap them. Select two slots to move without dragging. Drag the handle to reorder ships.';
+    'Drag crew or equipment between slots to move or swap them. Select two slots to move without dragging. Drag a ship by its name onto another ship to take its place.';
   page.append(hint);
   const details = document.createElement('aside');
   details.className = 'fleet-item-details';
@@ -135,7 +135,7 @@ export function renderFleetEquipment(
   function enableDrag(
     handle: HTMLElement,
     makeGhost: () => HTMLElement,
-    drop: (target: Element | null, y: number) => void,
+    drop: (target: Element | null) => void,
     selector: string,
   ): void {
     let start: { x: number; y: number } | null = null;
@@ -204,7 +204,7 @@ export function renderFleetEquipment(
         : null;
       cleanup();
       if (wasDragging) {
-        drop(target, event.clientY);
+        drop(target);
         // A synthesized click after a drag must not select an item.
         setTimeout(() => {
           dragging = false;
@@ -453,34 +453,29 @@ export function renderFleetEquipment(
     );
     header.append(handle, title, up, down);
     card.append(header);
-    enableDrag(
-      handle,
-      () => {
-        const ghost = document.createElement('div');
-        ghost.className = 'fleet-ship-ghost';
-        const image = document.createElement('img');
-        image.src = SHIP_IMAGES[ship.type];
-        image.alt = '';
-        ghost.append(image, document.createTextNode(ship.type));
-        return ghost;
-      },
-      (target, y) => {
-        const targetId = (target as HTMLElement | null)?.dataset.shipId;
-        const targetIndex = ships.findIndex((entry) => entry.id === targetId);
-        if (targetIndex < 0 || !target) return;
-        const after =
-          y >
-          target.getBoundingClientRect().top +
-            target.getBoundingClientRect().height / 2;
-        const insertion = targetIndex + Number(after);
-        const index = Math.max(
-          0,
-          Math.min(ships.length - 1, insertion - Number(shipIndex < insertion)),
-        );
-        emit({ type: 'reorder-ship', shipId: ship.id, index });
-      },
-      '.fleet-ship',
-    );
+    // fleet-skeppsordning: the handle and the name both start a reorder; a
+    // ship dropped anywhere on another ship takes that ship's place.
+    title.classList.add('fleet-ship-title-handle');
+    for (const grip of [handle, title])
+      enableDrag(
+        grip,
+        () => {
+          const ghost = document.createElement('div');
+          ghost.className = 'fleet-ship-ghost';
+          const image = document.createElement('img');
+          image.src = SHIP_IMAGES[ship.type];
+          image.alt = '';
+          ghost.append(image, document.createTextNode(ship.type));
+          return ghost;
+        },
+        (target) => {
+          const targetId = (target as HTMLElement | null)?.dataset.shipId;
+          const index = ships.findIndex((entry) => entry.id === targetId);
+          if (index < 0 || index === shipIndex) return;
+          emit({ type: 'reorder-ship', shipId: ship.id, index });
+        },
+        '.fleet-ship',
+      );
 
     const layout = document.createElement('div');
     layout.className = 'fleet-ship-layout';
@@ -683,6 +678,14 @@ export function renderFleetEquipment(
   return page;
 }
 
+/** besattningsvarden-forklaras: what each personal value does in boarding. */
+const CREW_STAT_EFFECTS = {
+  HP: 'Damage a person can take in boarding before going down.',
+  Accuracy: 'Added to the D20 roll for shots and grenade throws in boarding.',
+  Defense: 'The total an enemy shot must reach to hit this person.',
+  Agility: 'Action points each boarding turn, before equipment changes them.',
+} as const;
+
 /** crew-med-utrustning-och-skeppsbyte: the same controls work in Fleet and Crew. */
 function crewPersonControls(
   fleet: FleetSnapshot,
@@ -711,6 +714,7 @@ function crewPersonControls(
   ] as const) {
     const row = document.createElement('label');
     row.className = 'crew-stat';
+    row.title = CREW_STAT_EFFECTS[label];
     row.textContent = `${label} ${value}${label === 'HP' ? `/${max}` : ''}`;
     const bar = document.createElement('progress');
     bar.max = Math.max(max, value);
@@ -754,6 +758,16 @@ export function renderCrew(
   const heading = document.createElement('h1');
   heading.textContent = 'Crew';
   page.append(heading);
+  const legend = document.createElement('dl');
+  legend.className = 'crew-stat-legend';
+  for (const [label, effect] of Object.entries(CREW_STAT_EFFECTS)) {
+    const term = document.createElement('dt');
+    term.textContent = label;
+    const description = document.createElement('dd');
+    description.textContent = effect;
+    legend.append(term, description);
+  }
+  page.append(legend);
   for (const person of fleet.people ?? [])
     page.append(crewPersonControls(fleet, person));
   if (!fleet.people?.length) {
@@ -777,21 +791,27 @@ function bindCrewEquipment(page: HTMLElement, emit: IntentHandler): void {
   let suppressClick = false;
   let direction = 0;
   let timer: ReturnType<typeof setInterval> | undefined;
+  // A person's portrait in Fleet accepts the item into the same personal slot.
   const exchange = (
     source: HTMLButtonElement,
     target: HTMLButtonElement | null,
   ) => {
+    const portrait = target?.classList.contains('fleet-crew-slot');
+    const secondId = portrait
+      ? target?.dataset.crewPerson
+      : target?.dataset.person;
     if (
       !target ||
+      !secondId ||
       source === target ||
-      source.dataset.slot !== target.dataset.slot ||
-      source.dataset.person === target.dataset.person
+      (!portrait && source.dataset.slot !== target.dataset.slot) ||
+      source.dataset.person === secondId
     )
       return;
     emit({
       type: 'crew-swap-equipment',
       firstId: source.dataset.person!,
-      secondId: target.dataset.person!,
+      secondId,
       slot: source.dataset.slot as 'weapon' | 'gadget',
     });
   };
@@ -857,7 +877,9 @@ function bindCrewEquipment(page: HTMLElement, emit: IntentHandler): void {
       const target =
         document
           .elementFromPoint(event.clientX, event.clientY)
-          ?.closest<HTMLButtonElement>('.crew-equipment-slot') ?? null;
+          ?.closest<HTMLButtonElement>(
+            '.crew-equipment-slot, .fleet-crew-slot',
+          ) ?? null;
       exchange(gesture.source, target);
       suppressClick = true;
       setTimeout(() => {
