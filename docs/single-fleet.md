@@ -17,7 +17,7 @@ skärmar och mekaniker är utgångspunkter, men uppfyller ännu inte dessa nya
 beteendekrav. `enda-spelarflottan` och `flottstyrning-med-ap-pa-starmap` är
 **Fullständigt implementerat** (se [flottor](areas/fleets.md)).
 `fleet-som-skeppsoversikt` och `skeppsslots-for-utrustning-och-personer` är
-**Delvis implementerat**: fler skeppsegenskaper och dragning av personplatser återstår.
+**Delvis implementerat**: fler skeppsegenskaper och nya slottyper för frakt- och civila skepp återstår.
 `startflotta-med-raptor` är **Fullständigt implementerat** (2026-11-23): ett
 nytt spel börjar med en Raptor, en Fighter och en Transport ship vid Tellus. Raptor ser en hex åt alla
 håll, som Telescope I, och utforskar planeter vid ankomst. Den har fart 2,
@@ -51,6 +51,9 @@ Light cannon och kan docka för bordning. Flykt från fångenskap och övrig utr
 - `crew-med-utrustning-och-skeppsbyte` är **Fullständigt implementerat**:
   Fleet och Crew visar personerna. Mellan strider kan spelaren flytta dem
   mellan skepp och byta personlig utrustning mellan dem.
+- `dragbar-besattning` är **Fullständigt implementerat**: i Fleet flyttas personer genom att dras mellan rollrutorna, även mellan skepp. Upptagna rutor byter personer och ett val av två rutor fungerar också. Skeppens begränsningar gäller fortsatt. Detta ersätter val av skepp och roller i Crew Details.
+- `dragbar-personlig-utrustning` är **Fullständigt implementerat**: Crew visar vapen och utrustning i rutor som kan dras eller väljas mellan personer. Samma utrustningstyp byter plats.
+- `besattningsstaplar` är **Fullständigt implementerat**: personens hälsa, träffsäkerhet, försvar och rörlighet visas med staplar och värden.
 - `besattningens-start-och-roller` är **Fullständigt implementerat**:
   Raptor startar med pilot, engineer, gunner och fyra bordare, Fighter med
   pilot, engineer och gunner samt Transport ship med pilot och engineer. Alla

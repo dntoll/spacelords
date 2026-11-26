@@ -3305,3 +3305,40 @@ body:has(.discovery-controls) .selection-panel {
 .crew-portrait {
   background-size: 400% 300%;
 }
+
+/* dragbar-personlig-utrustning / besattningsstaplar */
+.crew-equipment {
+  display: flex;
+  gap: 0.6rem;
+}
+.crew-equipment > div {
+  display: grid;
+  gap: 0.2rem;
+  font-size: 0.75rem;
+}
+.crew-equipment-slot {
+  position: relative;
+  width: 60px;
+  padding: 3px;
+  font-size: 0.65rem;
+  overflow-wrap: anywhere;
+  touch-action: none;
+}
+.fleet-crew-slot {
+  touch-action: none;
+}
+.crew-stat {
+  display: grid;
+  grid-template-columns: 7rem minmax(4rem, 12rem);
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+}
+.crew-stat progress {
+  width: 100%;
+  accent-color: #7ad3b4;
+}
+.crew-slot-portrait.fleet-drag-ghost {
+  width: 56px;
+  height: 56px;
+}

@@ -53,7 +53,7 @@ export function renderFleetEquipment(
   page.append(heading);
   const hint = document.createElement('p');
   hint.textContent =
-    'Drag equipment to move or swap it. Select an item for details, then an empty slot to move it. Drag the handle to reorder ships.';
+    'Drag crew or equipment between slots to move or swap them. Select two slots to move without dragging. Drag the handle to reorder ships.';
   page.append(hint);
   const details = document.createElement('aside');
   details.className = 'fleet-item-details';
@@ -61,6 +61,7 @@ export function renderFleetEquipment(
   details.setAttribute('aria-live', 'polite');
   details.hidden = true;
   page.append(details);
+  bindCrewEquipment(page, emit);
   const showDetails = (slotName: string, content: Equipment | null) => {
     details.replaceChildren();
     details.hidden = false;
@@ -109,6 +110,7 @@ export function renderFleetEquipment(
   } | null = null;
   let dragging = false;
   let selectedCrew: HTMLButtonElement | null = null;
+  let addingRole = false;
   // fleet-direktmarkering: background clicks clear the current inspection.
   const clearSelection = () => {
     selected?.button.classList.remove('selected');
@@ -117,6 +119,7 @@ export function renderFleetEquipment(
     selectedCrew?.classList.remove('selected');
     selectedCrew?.setAttribute('aria-pressed', 'false');
     selectedCrew = null;
+    addingRole = false;
     details.hidden = true;
   };
   page.addEventListener('clear-fleet-selection', clearSelection);
@@ -219,6 +222,205 @@ export function renderFleetEquipment(
       }
     });
   }
+
+  const renderCrewSlots = (
+    ship: NonNullable<FleetSnapshot['shipUnits']>[number],
+  ): HTMLElement => {
+    const roleOverview = document.createElement('div');
+    roleOverview.className = 'fleet-crew crew-role-overview';
+    roleOverview.setAttribute('role', 'group');
+    roleOverview.setAttribute('aria-label', 'Crew');
+    const crewTitle = document.createElement('span');
+    crewTitle.className = 'fleet-storage-title';
+    crewTitle.textContent = 'Crew';
+    roleOverview.append(crewTitle);
+    for (const role of ['pilot', 'engineer', 'gunner', 'boarder'] as const) {
+      const members = (fleet.people ?? []).filter(
+        (person) => person.shipId === ship.id && person.roles.includes(role),
+      );
+      for (let index = 0; index < (role === 'boarder' ? 4 : 1); index++) {
+        const person = members[index];
+        const slotLabel =
+          role === 'boarder'
+            ? `Boarder ${index + 1}`
+            : role[0]!.toUpperCase() + role.slice(1);
+        const wrapper = document.createElement('div');
+        wrapper.className = 'fleet-crew-cell';
+        const label = document.createElement('span');
+        label.className = 'fleet-crew-label';
+        label.textContent = slotLabel;
+        const slot = document.createElement('button');
+        slot.type = 'button';
+        slot.className = 'fleet-equipment-slot fleet-crew-slot';
+        slot.setAttribute(
+          'aria-label',
+          `${ship.type} ${slotLabel}: ${person?.name ?? 'Empty'}`,
+        );
+        slot.setAttribute('aria-pressed', 'false');
+        slot.dataset.crewShip = ship.id;
+        slot.dataset.crewRole = role;
+        slot.dataset.crewPerson = person?.id ?? '';
+        if (person) {
+          const portrait = document.createElement('span');
+          portrait.className = 'crew-slot-portrait';
+          portrait.setAttribute('aria-hidden', 'true');
+          setCrewPortrait(portrait, person.id);
+          slot.append(portrait);
+          enableDrag(
+            slot,
+            () => {
+              const ghost = document.createElement('span');
+              ghost.className = 'crew-slot-portrait';
+              setCrewPortrait(ghost, person.id);
+              return ghost;
+            },
+            (target) => {
+              const destination = target as HTMLElement | null;
+              const toShip = destination?.dataset.crewShip;
+              const toRole = destination?.dataset.crewRole as
+                typeof role | undefined;
+              if (!toShip || !toRole || destination === slot) return;
+              emit({
+                type: 'crew-place',
+                personId: person.id,
+                fromShip: ship.id,
+                fromRole: role,
+                toShip,
+                toRole,
+                occupantId: destination?.dataset.crewPerson || null,
+              });
+            },
+            '.fleet-crew-slot',
+          );
+          slot.addEventListener('click', () => {
+            if (dragging) return;
+            if (selectedCrew && selectedCrew !== slot) {
+              const fromShip = selectedCrew.dataset.crewShip!;
+              const fromRole = (selectedCrew.dataset.crewRole || null) as
+                typeof role | null;
+              emit({
+                type: 'crew-place',
+                personId: selectedCrew.dataset.crewPerson!,
+                fromShip,
+                fromRole,
+                toShip: ship.id,
+                toRole: role,
+                occupantId: person.id,
+              });
+              clearSelection();
+              return;
+            }
+            if (selectedCrew === slot) {
+              clearSelection();
+              return;
+            }
+            clearSelection();
+            selectedCrew = slot;
+            slot.classList.add('selected');
+            slot.setAttribute('aria-pressed', 'true');
+            details.replaceChildren(crewPersonControls(fleet, person));
+            const addRole = document.createElement('button');
+            addRole.type = 'button';
+            addRole.textContent = 'Assign another role';
+            addRole.addEventListener('click', () => {
+              addingRole = true;
+              addRole.textContent = 'Select an empty role on this ship';
+            });
+            details.append(addRole);
+            details.hidden = false;
+          });
+        } else
+          slot.addEventListener('click', () => {
+            if (!selectedCrew) return;
+            if (addingRole) {
+              if (selectedCrew.dataset.crewShip === ship.id)
+                emit({
+                  type: 'crew-role',
+                  personId: selectedCrew.dataset.crewPerson!,
+                  role,
+                  assigned: true,
+                });
+              clearSelection();
+              return;
+            }
+            emit({
+              type: 'crew-place',
+              personId: selectedCrew.dataset.crewPerson!,
+              fromShip: selectedCrew.dataset.crewShip!,
+              fromRole: (selectedCrew.dataset.crewRole || null) as
+                typeof role | null,
+              toShip: ship.id,
+              toRole: role,
+              occupantId: null,
+            });
+            clearSelection();
+          });
+        wrapper.append(label, slot);
+        roleOverview.append(wrapper);
+      }
+    }
+    for (const person of (fleet.people ?? []).filter(
+      (entry) =>
+        entry.shipId === ship.id &&
+        entry.roles.length === 0 &&
+        entry.status === 'active',
+    )) {
+      const cell = document.createElement('div');
+      cell.className = 'fleet-crew-cell';
+      const label = document.createElement('span');
+      label.className = 'fleet-crew-label';
+      label.textContent = 'Unassigned';
+      const slot = document.createElement('button');
+      slot.type = 'button';
+      slot.className = 'fleet-equipment-slot fleet-crew-slot';
+      slot.dataset.crewShip = ship.id;
+      slot.dataset.crewRole = '';
+      slot.dataset.crewPerson = person.id;
+      slot.setAttribute(
+        'aria-label',
+        `${ship.type} Unassigned: ${person.name}`,
+      );
+      const portrait = document.createElement('span');
+      portrait.className = 'crew-slot-portrait';
+      setCrewPortrait(portrait, person.id);
+      slot.append(portrait);
+      enableDrag(
+        slot,
+        () => {
+          const ghost = portrait.cloneNode(true) as HTMLElement;
+          return ghost;
+        },
+        (target) => {
+          const destination = target as HTMLElement | null;
+          const toShip = destination?.dataset.crewShip;
+          const toRole = destination?.dataset.crewRole as
+            'pilot' | 'engineer' | 'gunner' | 'boarder' | undefined;
+          if (toShip && toRole)
+            emit({
+              type: 'crew-place',
+              personId: person.id,
+              fromShip: ship.id,
+              fromRole: null,
+              toShip,
+              toRole,
+              occupantId: destination?.dataset.crewPerson || null,
+            });
+        },
+        '.fleet-crew-slot',
+      );
+      slot.addEventListener('click', () => {
+        if (dragging) return;
+        clearSelection();
+        selectedCrew = slot;
+        slot.classList.add('selected');
+        details.replaceChildren(crewPersonControls(fleet, person));
+        details.hidden = false;
+      });
+      cell.append(label, slot);
+      roleOverview.append(cell);
+    }
+    return roleOverview;
+  };
 
   ships.forEach((ship, shipIndex) => {
     const card = document.createElement('article');
@@ -437,61 +639,7 @@ export function renderFleetEquipment(
     ship.cargoSlots?.forEach((item, index) => addSlot(index, item));
     ship.weaponSlots?.forEach((item, index) => addSlot('weapon', item, index));
     card.append(layout);
-    const roleOverview = document.createElement('div');
-    roleOverview.className = 'fleet-crew crew-role-overview';
-    roleOverview.setAttribute('role', 'group');
-    roleOverview.setAttribute('aria-label', 'Crew');
-    const crewTitle = document.createElement('span');
-    crewTitle.className = 'fleet-storage-title';
-    crewTitle.textContent = 'Crew';
-    roleOverview.append(crewTitle);
-    for (const role of ['pilot', 'engineer', 'gunner', 'boarder'] as const) {
-      const members = (fleet.people ?? []).filter(
-        (person) => person.shipId === ship.id && person.roles.includes(role),
-      );
-      for (let index = 0; index < (role === 'boarder' ? 4 : 1); index++) {
-        const person = members[index];
-        const slotLabel =
-          role === 'boarder'
-            ? `Boarder ${index + 1}`
-            : role[0]!.toUpperCase() + role.slice(1);
-        const wrapper = document.createElement('div');
-        wrapper.className = 'fleet-crew-cell';
-        const label = document.createElement('span');
-        label.className = 'fleet-crew-label';
-        label.textContent = slotLabel;
-        const slot = document.createElement('button');
-        slot.type = 'button';
-        slot.className = 'fleet-equipment-slot fleet-crew-slot';
-        slot.setAttribute(
-          'aria-label',
-          `${ship.type} ${slotLabel}: ${person?.name ?? 'Empty'}`,
-        );
-        slot.setAttribute('aria-pressed', 'false');
-        if (person) {
-          const portrait = document.createElement('span');
-          portrait.className = 'crew-slot-portrait';
-          portrait.setAttribute('aria-hidden', 'true');
-          setCrewPortrait(portrait, person.id);
-          slot.append(portrait);
-          slot.addEventListener('click', () => {
-            if (selectedCrew === slot) {
-              clearSelection();
-              return;
-            }
-            clearSelection();
-            selectedCrew = slot;
-            slot.classList.add('selected');
-            slot.setAttribute('aria-pressed', 'true');
-            details.replaceChildren(crewPersonControls(fleet, person, emit));
-            details.hidden = false;
-          });
-        } else slot.disabled = true;
-        wrapper.append(label, slot);
-        roleOverview.append(wrapper);
-      }
-    }
-    card.append(roleOverview);
+    card.append(renderCrewSlots(ship));
     const crew = document.createElement('details');
     crew.dataset.crewShip = ship.id;
     const summary = document.createElement('summary');
@@ -499,7 +647,7 @@ export function renderFleetEquipment(
     crew.append(summary);
     for (const person of fleet.people ?? [])
       if (person.shipId === ship.id)
-        crew.append(crewPersonControls(fleet, person, emit));
+        crew.append(crewPersonControls(fleet, person));
     card.append(crew);
     page.append(card);
   });
@@ -521,7 +669,7 @@ export function renderFleetEquipment(
     rejoin.addEventListener('click', () =>
       emit({ type: 'rejoin-ship', shipId: ship.id }),
     );
-    card.append(title, rejoin);
+    card.append(title, rejoin, renderCrewSlots(ship));
     if (rejoin.disabled) {
       const hint = document.createElement('p');
       hint.textContent = 'Assign an active pilot and engineer to rejoin.';
@@ -529,7 +677,7 @@ export function renderFleetEquipment(
     }
     for (const person of fleet.people ?? [])
       if (person.shipId === ship.id)
-        card.append(crewPersonControls(fleet, person, emit));
+        card.append(crewPersonControls(fleet, person));
     page.append(card);
   }
   return page;
@@ -539,7 +687,6 @@ export function renderFleetEquipment(
 function crewPersonControls(
   fleet: FleetSnapshot,
   person: NonNullable<FleetSnapshot['people']>[number],
-  emit: IntentHandler,
 ): HTMLElement {
   const section = document.createElement('article');
   section.className = 'crew-person';
@@ -550,76 +697,50 @@ function crewPersonControls(
   portrait.setAttribute('aria-hidden', 'true');
   setCrewPortrait(portrait, person.id);
   const info = document.createElement('p');
-  info.textContent = `HP ${person.hitPoints}/${person.attributes.maxHitPoints} · ${person.status} · Accuracy ${person.attributes.accuracy} · Defense ${person.attributes.defense} · Agility ${person.attributes.agility}`;
-  section.append(portrait, name, info);
-  const shipLabel = document.createElement('label');
-  shipLabel.textContent = 'Ship ';
-  const shipSelect = document.createElement('select');
-  shipSelect.setAttribute('aria-label', `${person.name} ship`);
-  for (const ship of [
+  const ship = [
     ...(fleet.shipUnits ?? []),
     ...(fleet.abandonedShips ?? []),
-  ]) {
-    const option = document.createElement('option');
-    option.value = ship.id;
-    option.textContent = ship.type;
-    option.selected = ship.id === person.shipId;
-    shipSelect.append(option);
-  }
-  shipSelect.addEventListener('change', () =>
-    emit({ type: 'crew-move', personId: person.id, shipId: shipSelect.value }),
-  );
-  shipLabel.append(shipSelect);
-  section.append(shipLabel);
-  const roles = document.createElement('div');
-  roles.className = 'crew-roles';
-  for (const role of ['pilot', 'engineer', 'gunner', 'boarder'] as const) {
-    const label = document.createElement('label');
-    const input = document.createElement('input');
-    input.type = 'checkbox';
-    input.checked = person.roles.includes(role);
-    input.disabled = person.status !== 'active' && !input.checked;
-    input.addEventListener('change', () =>
-      emit({
-        type: 'crew-role',
-        personId: person.id,
-        role,
-        assigned: input.checked,
-      }),
-    );
-    label.append(input, document.createTextNode(` ${role}`));
-    roles.append(label);
-  }
-  section.append(roles);
-  for (const slot of ['weapon', 'gadget'] as const) {
+  ].find((entry) => entry.id === person.shipId);
+  info.textContent = `${ship?.type ?? 'Unknown ship'} · ${person.status} · ${person.roles.join(', ') || 'Unassigned'}`;
+  section.append(portrait, name, info);
+  for (const [label, value, max] of [
+    ['HP', person.hitPoints, person.attributes.maxHitPoints],
+    ['Accuracy', person.attributes.accuracy, 20],
+    ['Defense', person.attributes.defense, 20],
+    ['Agility', person.attributes.agility, 20],
+  ] as const) {
     const row = document.createElement('label');
-    const item = slot === 'weapon' ? person.weapon : person.gadget?.type;
-    row.textContent = `${slot}: ${item ?? 'Empty'} · swap with `;
-    const select = document.createElement('select');
-    select.setAttribute('aria-label', `${person.name} swap ${slot}`);
-    const placeholder = document.createElement('option');
-    placeholder.value = '';
-    placeholder.textContent = 'Choose person';
-    select.append(placeholder);
-    for (const target of fleet.people ?? []) {
-      if (target.id === person.id || target.status === 'dead') continue;
-      const option = document.createElement('option');
-      option.value = target.id;
-      option.textContent = target.name;
-      select.append(option);
-    }
-    select.addEventListener('change', () => {
-      if (select.value)
-        emit({
-          type: 'crew-swap-equipment',
-          firstId: person.id,
-          secondId: select.value,
-          slot,
-        });
-    });
-    row.append(select);
+    row.className = 'crew-stat';
+    row.textContent = `${label} ${value}${label === 'HP' ? `/${max}` : ''}`;
+    const bar = document.createElement('progress');
+    bar.max = Math.max(max, value);
+    bar.value = value;
+    bar.setAttribute('aria-label', `${person.name} ${label}`);
+    row.append(bar);
     section.append(row);
   }
+  const equipment = document.createElement('div');
+  equipment.className = 'crew-equipment';
+  for (const slot of ['weapon', 'gadget'] as const) {
+    const item = slot === 'weapon' ? person.weapon : person.gadget?.type;
+    const cell = document.createElement('div');
+    const label = document.createElement('span');
+    label.textContent = slot === 'weapon' ? 'Weapon' : 'Gadget';
+    const control = document.createElement('button');
+    control.type = 'button';
+    control.className = 'fleet-equipment-slot crew-equipment-slot';
+    control.dataset.person = person.id;
+    control.dataset.slot = slot;
+    control.dataset.filled = String(!!item);
+    control.textContent = item ? item.replaceAll('-', ' ') : 'Empty';
+    control.setAttribute(
+      'aria-label',
+      `${person.name} ${slot}: ${item ?? 'Empty'}`,
+    );
+    cell.append(label, control);
+    equipment.append(cell);
+  }
+  section.append(equipment);
   return section;
 }
 
@@ -629,15 +750,126 @@ export function renderCrew(
 ): HTMLElement {
   const page = document.createElement('section');
   page.className = 'crew-page';
+  bindCrewEquipment(page, emit);
   const heading = document.createElement('h1');
   heading.textContent = 'Crew';
   page.append(heading);
   for (const person of fleet.people ?? [])
-    page.append(crewPersonControls(fleet, person, emit));
+    page.append(crewPersonControls(fleet, person));
   if (!fleet.people?.length) {
     const empty = document.createElement('p');
     empty.textContent = 'No crew aboard.';
     page.append(empty);
   }
   return page;
+}
+
+// dragbar-personlig-utrustning: pointer gestures and two taps share the same exchange.
+function bindCrewEquipment(page: HTMLElement, emit: IntentHandler): void {
+  let selected: HTMLButtonElement | null = null;
+  let gesture: {
+    source: HTMLButtonElement;
+    id: number;
+    x: number;
+    y: number;
+    ghost: HTMLElement | null;
+  } | null = null;
+  let suppressClick = false;
+  let direction = 0;
+  let timer: ReturnType<typeof setInterval> | undefined;
+  const exchange = (
+    source: HTMLButtonElement,
+    target: HTMLButtonElement | null,
+  ) => {
+    if (
+      !target ||
+      source === target ||
+      source.dataset.slot !== target.dataset.slot ||
+      source.dataset.person === target.dataset.person
+    )
+      return;
+    emit({
+      type: 'crew-swap-equipment',
+      firstId: source.dataset.person!,
+      secondId: target.dataset.person!,
+      slot: source.dataset.slot as 'weapon' | 'gadget',
+    });
+  };
+  page.addEventListener('click', (event) => {
+    const slot = (event.target as Element).closest<HTMLButtonElement>(
+      '.crew-equipment-slot',
+    );
+    if (!slot || suppressClick) return;
+    if (selected && selected !== slot) {
+      exchange(selected, slot);
+      selected.classList.remove('selected');
+      selected = null;
+    } else {
+      selected?.classList.remove('selected');
+      selected =
+        slot.dataset.filled === 'true' && selected !== slot ? slot : null;
+      selected?.classList.add('selected');
+    }
+  });
+  page.addEventListener('pointerdown', (event) => {
+    const source = (event.target as Element).closest<HTMLButtonElement>(
+      '.crew-equipment-slot',
+    );
+    if (!source || source.dataset.filled !== 'true' || event.button !== 0)
+      return;
+    gesture = {
+      source,
+      id: event.pointerId,
+      x: event.clientX,
+      y: event.clientY,
+      ghost: null,
+    };
+    source.setPointerCapture(event.pointerId);
+    timer = setInterval(() => {
+      if (gesture?.ghost && direction) page.scrollTop += direction;
+    }, 30);
+  });
+  page.addEventListener('pointermove', (event) => {
+    if (!gesture || gesture.id !== event.pointerId) return;
+    if (
+      !gesture.ghost &&
+      Math.hypot(event.clientX - gesture.x, event.clientY - gesture.y) >= 8
+    ) {
+      gesture.ghost = gesture.source.cloneNode(true) as HTMLElement;
+      gesture.ghost.classList.add('fleet-drag-ghost');
+      document.body.append(gesture.ghost);
+    }
+    if (gesture.ghost) {
+      gesture.ghost.style.left = `${event.clientX}px`;
+      gesture.ghost.style.top = `${event.clientY}px`;
+      const bounds = page.getBoundingClientRect();
+      direction =
+        event.clientY < bounds.top + 52
+          ? -14
+          : event.clientY > bounds.bottom - 52
+            ? 14
+            : 0;
+    }
+  });
+  const finish = (event: PointerEvent, commit: boolean) => {
+    if (!gesture || gesture.id !== event.pointerId) return;
+    if (gesture.ghost && commit) {
+      const target =
+        document
+          .elementFromPoint(event.clientX, event.clientY)
+          ?.closest<HTMLButtonElement>('.crew-equipment-slot') ?? null;
+      exchange(gesture.source, target);
+      suppressClick = true;
+      setTimeout(() => {
+        suppressClick = false;
+      }, 0);
+    }
+    clearInterval(timer);
+    direction = 0;
+    gesture.ghost?.remove();
+    gesture = null;
+  };
+  page.addEventListener('pointerup', (event) => finish(event, true));
+  page.addEventListener('pointercancel', (event) => finish(event, false));
+  page.addEventListener('lostpointercapture', (event) => finish(event, false));
 }

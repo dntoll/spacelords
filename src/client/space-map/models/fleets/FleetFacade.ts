@@ -35,6 +35,23 @@ export class FleetFacade {
   moveCrew(personId: string, shipId: string): void {
     this.host.game.moveCrew(personId, shipId);
   }
+  placeCrew(
+    personId: string,
+    fromShip: string,
+    fromRole: 'pilot' | 'engineer' | 'gunner' | 'boarder' | null,
+    toShip: string,
+    toRole: 'pilot' | 'engineer' | 'gunner' | 'boarder',
+    occupantId: string | null,
+  ): void {
+    this.host.game.placeCrew(
+      personId,
+      fromShip,
+      fromRole,
+      toShip,
+      toRole,
+      occupantId,
+    );
+  }
   swapCrewEquipment(
     firstId: string,
     secondId: string,

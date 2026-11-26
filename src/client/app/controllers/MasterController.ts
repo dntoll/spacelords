@@ -466,6 +466,16 @@ export class MasterController {
       case 'rejoin-ship':
         this.#fleets.rejoinShip(intent.shipId);
         break;
+      case 'crew-place':
+        this.#fleets.placeCrew(
+          intent.personId,
+          intent.fromShip,
+          intent.fromRole,
+          intent.toShip,
+          intent.toRole,
+          intent.occupantId,
+        );
+        break;
       case 'crew-role':
         this.#fleets.assignCrewRole(
           intent.personId,
