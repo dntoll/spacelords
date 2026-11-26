@@ -83,3 +83,16 @@ Bildprompter:
 - `Use case: stylized-concept. Asset type: transparent inventory image for a science-fiction spaceship video game. Subject: Cannon: a larger spaceship cannon with a chunky futuristic barrel and warm amber details. Style: illustrated game art, worn steel and muted blue-gray with amber accents, matching a lived-in spaceship, isolated three-quarter top view. Single module, centered fully in frame, actual transparent background. No words, labels, frame or watermark.`
 - `Use case: stylized-concept. Asset type: transparent inventory illustration for a fictional spaceship game. Subject: an improvised pirate starship Raider cannon, a compact rusty science-fiction turret assembled from mismatched industrial metal, glowing amber details. Style: crisp hand-painted game art, centered single isolated module in three-quarter view, actual transparent background. No labels, frame, or watermark.`
 - `Use case: stylized-concept. Asset type: inventory illustration for a fictional science-fiction video game. Draw one compact starship missile launcher, an imaginary mechanical box containing two small stylized projectiles in round bays. Strongly stylized hand-painted game art, worn blue-grey industrial metal and amber lights. Single isolated object in three-quarter view, transparent background, no text, no logos, no people, no photorealism.`
+
+## Besättningsbilder i Fleet och Crew
+
+`fleet-besattningsrutor`: tolv individuella porträtt visas i Crew-platserna
+och i personinformationen. Bilden `src/client/space-map/assets/crew/crew-portraits.png`
+är en bildkarta med fyra kolumner och tre rader. Personernas stabila ID
+bestämmer vilket porträtt som används även efter skeppsbyte och laddning.
+Bilden skapades med den inbyggda bildgeneratorn; tidigare separata porträtt
+påträffades inte i projektet eller dess Git-historik.
+
+Bildprompt (inbyggd imagegen):
+
+- `Use case: stylized-concept. Asset: a single 4-column by 3-row sprite sheet of twelve distinct individual spaceship crew head-and-shoulders portraits, for small square inventory slots in a mobile science-fiction game. Exactly 12 separate square cells, equal size, perfectly aligned edge-to-edge without gutters, each with one centered face and shoulders, never crossing cell boundaries. Diverse adult men and women of varied appearances, practical civilian spacer clothing, lived-in patched industrial space uniforms; no helmets obscuring faces. Unified detailed painterly game illustration, worn teal blue-gray and warm amber lighting, coherent spacefaring crew, dark unobtrusive background in each cell. Legible recognizable faces at small size. No text, labels, numbers, borders, graphic UI or watermark.`

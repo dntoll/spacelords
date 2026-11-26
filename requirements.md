@@ -39,6 +39,7 @@ kraven med stabila namn och status. Statusen nedan sammanfattar området.
   `fleet-visuella-platser`, `fleet-drag-och-rullning` och `fleet-skeppsordning` är **Fullständigt implementerat**.
   `fleet-kompakt-skeppsyta` är **Fullständigt implementerat**: mindre tomrum ovanför och nedanför skeppen i Fleet.
   `fleet-kompakta-skepp` är **Fullständigt implementerat**: skeppsbilden ligger bredvid utrustningen och personplatserna visas med personinformation.
+  `fleet-besattningsrutor` är **Fullständigt implementerat**: Crew visas som kvadratiska platser med individuella porträtt och personinformation.
   `fleet-platsinformation` är **Fullständigt implementerat**: varje plats visar funktion och markerad utrustning visar namn, bild och egenskaper.
   `fleet-direktmarkering` är **Fullständigt implementerat**: en fylld ruta väljs direkt och klick på bakgrunden avmarkerar.
   `fleet-placering-vapen-och-motor` och `fleet-vapenbilder` är **Fullständigt implementerat**: motorplatsen ligger mitt bak och vapenplatserna över och under Storage, med egna vapenbilder.

@@ -3249,12 +3249,6 @@ body:has(.discovery-controls) .selection-panel {
   flex-wrap: wrap;
   gap: 0.4rem;
 }
-.crew-role-overview span {
-  padding: 0.3rem;
-  background: #10232e;
-  border: 1px solid #52737c;
-  border-radius: 0.25rem;
-}
 .crew-portrait {
   background-size: 720px auto;
   background-position: -32px -4px;
@@ -3263,4 +3257,51 @@ body:has(.discovery-controls) .selection-panel {
 .crew-page {
   position: absolute;
   inset: 0;
+}
+
+/* fleet-besattningsrutor: crew uses the same square inventory presentation as Storage. */
+.fleet-crew {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(44px, 56px));
+  gap: 0.35rem;
+  width: fit-content;
+  max-width: 100%;
+  margin: 1.2rem 0 0.5rem calc(min(22%, 110px) + 0.5rem);
+  padding: 0.45rem;
+  border: 1px solid #9fb7ce;
+  border-radius: 4px;
+  background: #10232e88;
+}
+.fleet-crew-cell {
+  min-width: 0;
+  text-align: center;
+}
+.fleet-crew-label {
+  display: block;
+  color: #fff;
+  font-size: 9px;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+.fleet-crew .fleet-crew-slot {
+  position: relative;
+  display: block;
+  width: 100%;
+  transform: none;
+  padding: 2px;
+}
+.fleet-crew-slot:disabled {
+  opacity: 0.65;
+}
+.crew-slot-portrait {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background-size: 400% 300%;
+  background-repeat: no-repeat;
+  pointer-events: none;
+}
+.crew-portrait {
+  background-size: 400% 300%;
 }
