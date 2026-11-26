@@ -37,6 +37,7 @@ kraven med stabila namn och status. Statusen nedan sammanfattar området.
   Planen anger vilka delar som måste diskuteras och låsas med användaren
   före implementation (`single-fleet-beslut-fore-implementation`).
   `fleet-visuella-platser`, `fleet-drag-och-rullning` och `fleet-skeppsordning` är **Fullständigt implementerat**.
+  `fleet-kompakt-skeppsyta` är **Fullständigt implementerat**: mindre tomrum ovanför och nedanför skeppen i Fleet.
   `fleet-platsinformation` är **Fullständigt implementerat**: varje plats visar funktion och markerad utrustning visar namn, bild och egenskaper.
   `fleet-direktmarkering` är **Fullständigt implementerat**: en fylld ruta väljs direkt och klick på bakgrunden avmarkerar.
   `fleet-placering-vapen-och-motor` och `fleet-vapenbilder` är **Fullständigt implementerat**: motorplatsen ligger mitt bak och vapenplatserna över och under Storage, med egna vapenbilder.
