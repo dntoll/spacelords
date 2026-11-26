@@ -3017,11 +3017,12 @@ body:has(.discovery-controls) .selection-panel {
 .fleet-ship-image {
   position: relative;
   width: min(100%, 440px);
-  aspect-ratio: 1;
+  /* fleet-kompakt-skeppsyta: trim the empty top and bottom of square sprites. */
+  aspect-ratio: 5 / 4;
   margin: auto;
   background-position: center;
   background-repeat: no-repeat;
-  background-size: contain;
+  background-size: 100% auto;
 }
 .fleet-equipment-slot {
   position: absolute;
@@ -3140,7 +3141,7 @@ body:has(.discovery-controls) .selection-panel {
 .fleet-storage {
   position: absolute;
   left: 27%;
-  top: 32%;
+  top: 27.5%;
   width: 70%;
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));

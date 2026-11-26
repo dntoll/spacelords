@@ -304,7 +304,7 @@ export function renderFleetEquipment(
         wrapper.classList.add('fleet-engine-position');
       } else if (slot === 'weapon') {
         wrapper.classList.add('fleet-weapon-position');
-        wrapper.style.top = weaponIndex === 0 ? '18%' : '80%';
+        wrapper.style.top = weaponIndex === 0 ? '10%' : '87.5%';
       } else wrapper.classList.add('fleet-storage-slot');
       if (content) {
         const icon = document.createElement('img');

@@ -237,6 +237,29 @@ test('fleet-vapenplatser: drag a weapon into storage while scrolling', async ({
   ).toBeVisible();
 });
 
+test('fleet-kompakt-skeppsyta: ship images leave less vertical space and equipment remains inside', async ({
+  page,
+}) => {
+  await page.goto('./');
+  await startFirstSlot(page);
+  await page.getByRole('button', { name: 'Fleet', exact: true }).click();
+  const fighter = page
+    .locator('.fleet-ship')
+    .filter({ has: page.getByRole('heading', { name: 'Fighter' }) });
+  const image = await fighter.locator('.fleet-ship-image').boundingBox();
+  const slots = await fighter.locator('.fleet-equipment-slot').all();
+  if (!image) throw new Error('Missing ship image');
+  expect(image.height / image.width).toBeLessThan(0.85);
+  for (const slot of slots) {
+    const bounds = await slot.boundingBox();
+    if (!bounds) throw new Error('Missing equipment slot');
+    expect(bounds.y).toBeGreaterThanOrEqual(image.y);
+    expect(bounds.y + bounds.height).toBeLessThanOrEqual(
+      image.y + image.height,
+    );
+  }
+});
+
 test('fleet-placering-vapen-och-motor: weapon slots flank storage and engine sits at the rear', async ({
   page,
 }) => {
