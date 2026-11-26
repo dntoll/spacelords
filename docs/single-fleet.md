@@ -52,12 +52,22 @@ Light cannon och kan docka för bordning. Flykt från fångenskap och övrig utr
   Defense och Agility. En styrka vägs upp av en svaghet (en HP- eller
   agility-poäng väger som en halv poäng accuracy eller defense), så ingen är
   bättre än den tidigare gemensamma profilen 10/12/4/11 i alla avseenden.
-  Värdena påverkar i dag bara bordning; påverkan i rymdstrid är inte beslutad.
+  Värdena används i bordning och, via gunner och pilot, i rymdstrid
+  (`besattningsvarden-i-rymdstrid`).
+- `besattningsvarden-i-rymdstrid` är **Fullständigt implementerat**: skeppets
+  aktiva gunner med Accuracy 6 eller mer sänker skeppets träffkrav med ett
+  steg (exempelvis 4+ till 3+), och 2 eller mindre höjer det. Skeppets aktiva
+  pilot med Agility 14 eller mer höjer fiendens träffkrav mot skeppet med ett
+  steg, och 10 eller mindre sänker det. Två poäng från den tidigare gemensamma
+  profilen (Accuracy 4, Agility 12) ger alltså ett steg. Kravet hålls mellan
+  2+ och 6+. Piratskepp saknar besättningsvärden. Effekterna sparas med
+  pågående strid; äldre sparade strider saknar dem och påverkas inte.
 - `besattningsvarden-forklaras` är **Fullständigt implementerat**: Crew
   förklarar vad varje värde gör i bordning, och förklaringen finns även vid
   varje stapel: HP är skada personen tål, Accuracy läggs till D20-slaget för
   skott och granatkast, Defense är summan ett fiendeskott måste nå och Agility
-  ger action points per bordningstur.
+  ger action points per bordningstur. Texten beskriver även gunnerns och
+  pilotens effekt i rymdstrid.
 - `crew-med-utrustning-och-skeppsbyte` är **Fullständigt implementerat**:
   Fleet och Crew visar personerna. Mellan strider kan spelaren flytta dem
   mellan skepp och byta personlig utrustning mellan dem.

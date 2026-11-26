@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { Game } from '../../../src/client/space-map/models/Game.js';
 import { createExampleGalaxy } from '../../../src/client/space-map/models/exampleGalaxy.js';
+import {
+  gunnerAim,
+  pilotEvasion,
+} from '../../../src/client/space-map/models/Crew.js';
 
 describe('besattningens-start-och-roller / besattning-med-varierade-startegenskaper', () => {
   it('starts twelve unique people on the specified ships and saves them', () => {
@@ -302,4 +306,41 @@ it('dragbar-besattning: an unassigned crew member can take an empty role and a f
   expect(
     game.exportState().crew!.find((p) => p.id === person.id)!.roles,
   ).toEqual(['engineer']);
+});
+
+describe('besattningsvarden-i-rymdstrid', () => {
+  it('turns gunner accuracy and pilot agility into one-step battle effects', () => {
+    expect([2, 3, 4, 5, 6].map(gunnerAim)).toEqual([-1, 0, 0, 0, 1]);
+    expect([10, 11, 12, 13, 14].map(pilotEvasion)).toEqual([-1, 0, 0, 0, 1]);
+  });
+
+  it('sends the active gunner and pilot of each ship into the battle', () => {
+    const state = new Game(createExampleGalaxy()).exportState();
+    const pirate = state.pirates![0]!;
+    const game = Game.restore({
+      ...state,
+      pirates: [pirate],
+      fleets: [{ ...state.fleets[0]!, position: pirate.position }],
+    });
+    game.startTurn();
+    for (let step = 0; step < 30 && !game.tacticalBattle; step++) {
+      if (game.phase === 'interrupted') game.continueTurn();
+      const frame = game.nextTurnFrame();
+      if (!frame) break;
+      game.applyFrame(frame);
+    }
+    const pieces = game.tacticalBattle!.pieces;
+    const ships = game.fleetSnapshot().shipUnits!;
+    const piece = (type: string) =>
+      pieces.find(
+        (entry) => entry.id === ships.find((ship) => ship.type === type)!.id,
+      )!;
+    // Alex (Accuracy 6) guns the Fighter; Avery and Jamie (Agility 14) fly
+    // the Raptor and the Transport ship; Cameron (Agility 13) is average.
+    expect(piece('Fighter').aim).toBe(1);
+    expect(piece('Fighter').evasion).toBeUndefined();
+    expect(piece('Raptor').aim).toBeUndefined();
+    expect(piece('Raptor').evasion).toBe(1);
+    expect(piece('Transport ship').evasion).toBe(1);
+  });
 });

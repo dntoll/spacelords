@@ -33,7 +33,7 @@ kraven med stabila namn och status. Statusen nedan sammanfattar området.
   `flottstyrning-med-ap-pa-starmap` är **Fullständigt implementerat** (en
   flotta, AP, turordning och piraternas aktivering), liksom
   `startflotta-med-raptor` (Raptor, Fighter och Transport ship vid start);
-  `fleet-som-skeppsoversikt` och `skeppsslots-for-utrustning-och-personer` är **Delvis implementerat**; fler egenskaper och nya slottyper för frakt- och civila skepp återstår. `besattning-med-flera-roller`, `besattning-med-varierade-startegenskaper` (ersätter `besattning-med-lika-startegenskaper`), `besattningsvarden-forklaras`, `crew-med-utrustning-och-skeppsbyte`, `besattningens-start-och-roller`, `kvarlamnade-skepp-pa-kartan` och `besattningsskador-och-lakning` är **Fullständigt implementerat**. Övriga nya beteendekrav är **Ej implementerat**.
+  `fleet-som-skeppsoversikt` och `skeppsslots-for-utrustning-och-personer` är **Delvis implementerat**; fler egenskaper och nya slottyper för frakt- och civila skepp återstår. `besattning-med-flera-roller`, `besattning-med-varierade-startegenskaper` (ersätter `besattning-med-lika-startegenskaper`), `besattningsvarden-forklaras`, `besattningsvarden-i-rymdstrid`, `crew-med-utrustning-och-skeppsbyte`, `besattningens-start-och-roller`, `kvarlamnade-skepp-pa-kartan` och `besattningsskador-och-lakning` är **Fullständigt implementerat**. Övriga nya beteendekrav är **Ej implementerat**.
   Planen anger vilka delar som måste diskuteras och låsas med användaren
   före implementation (`single-fleet-beslut-fore-implementation`).
   `fleet-visuella-platser`, `fleet-drag-och-rullning` och `fleet-skeppsordning` är **Fullständigt implementerat**.

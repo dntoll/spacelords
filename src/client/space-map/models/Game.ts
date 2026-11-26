@@ -1,5 +1,7 @@
 import { engineCount } from './ShipEquipment.js';
 import {
+  gunnerAim,
+  pilotEvasion,
   startingCrew,
   restoreCrew,
   type CrewPerson,
@@ -848,7 +850,10 @@ export class Game {
     );
   }
   #hasRole(shipId: string, role: CrewRole): boolean {
-    return this.#crewPeople.some(
+    return !!this.#crewIn(shipId, role);
+  }
+  #crewIn(shipId: string, role: CrewRole): CrewPerson | undefined {
+    return this.#crewPeople.find(
       (person) =>
         person.shipId === shipId &&
         person.status === 'active' &&
@@ -1654,6 +1659,13 @@ export class Game {
                   0,
                 ),
             armored: unit.armored === true,
+            // besattningsvarden-i-rymdstrid: the active gunner and pilot fight.
+            aim: gunnerAim(
+              this.#crewIn(unit.id, 'gunner')?.attributes.accuracy ?? 4,
+            ),
+            evasion: pilotEvasion(
+              this.#crewIn(unit.id, 'pilot')?.attributes.agility ?? 12,
+            ),
             ...(unit.damage ? { damage: unit.damage } : {}),
           })),
         };

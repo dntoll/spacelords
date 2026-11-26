@@ -48,6 +48,16 @@ const STARTING_PROFILES: readonly CrewAttributes[] = [
   { maxHitPoints: 12, agility: 12, accuracy: 4, defense: 10 },
 ];
 
+/**
+ * besattningsvarden-i-rymdstrid: two points from the old shared profile move a
+ * D6 hit requirement one step. A gunner's Accuracy changes the ship's own
+ * shots; a pilot's Agility changes the shots against the ship.
+ */
+export const gunnerAim = (accuracy: number): -1 | 0 | 1 =>
+  accuracy >= 6 ? 1 : accuracy <= 2 ? -1 : 0;
+export const pilotEvasion = (agility: number): -1 | 0 | 1 =>
+  agility >= 14 ? 1 : agility <= 10 ? -1 : 0;
+
 export function startingCrew(ships: readonly ShipUnit[]): CrewPerson[] {
   const people: CrewPerson[] = [];
   const names = [

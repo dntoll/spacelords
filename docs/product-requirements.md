@@ -22,7 +22,8 @@ rymdstrid, bordningar och utveckling av skepp och besättning står i centrum.
 - `Crew` visar personer som kan utrustas och flyttas mellan skepp. Samma
   person kan ha flera roller, även i bordningsstyrkan. Personer börjar
   med olika egenskapsvärden där styrkor vägs upp av svagheter, och spelet
-  förklarar vad värdena gör. Tolv personer bemannar startflottan. Skador och
+  förklarar vad värdena gör. Gunnerns träffsäkerhet och pilotens rörlighet
+  påverkar även rymdstrid. Tolv personer bemannar startflottan. Skador och
   personlig utrustning följer med mellan bordningar, och skador läker under
   resan. Skepp utan nödvändig besättning lämnas kvar och kan återtas.
 - `Research` gäller tekniker för skepp och bordning. Planetforskning tas bort

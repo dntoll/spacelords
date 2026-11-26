@@ -678,12 +678,14 @@ export function renderFleetEquipment(
   return page;
 }
 
-/** besattningsvarden-forklaras: what each personal value does in boarding. */
+/** besattningsvarden-forklaras / besattningsvarden-i-rymdstrid: what each value does. */
 const CREW_STAT_EFFECTS = {
   HP: 'Damage a person can take in boarding before going down.',
-  Accuracy: 'Added to the D20 roll for shots and grenade throws in boarding.',
+  Accuracy:
+    'Added to the D20 roll for shots and grenade throws in boarding. As gunner, 6 or more lets ship weapons hit on one lower, 2 or less on one higher.',
   Defense: 'The total an enemy shot must reach to hit this person.',
-  Agility: 'Action points each boarding turn, before equipment changes them.',
+  Agility:
+    'Action points each boarding turn, before equipment changes them. As pilot, 14 or more makes the ship one harder to hit, 10 or less one easier.',
 } as const;
 
 /** crew-med-utrustning-och-skeppsbyte: the same controls work in Fleet and Crew. */

@@ -42,6 +42,26 @@ export const WEAPONS = Object.freeze({
   'Light cannon': { min: 1, max: 3, arc: 120, dice: 1, threshold: 4, area: 0 },
 });
 
+/** besattningsvarden-i-rymdstrid: crew skill moves a D6 requirement within 2+ to 6+. */
+function hitThreshold(
+  base: number,
+  rear: boolean,
+  source: Pick<BattlePiece, 'aim'>,
+  target: Pick<BattlePiece, 'evasion'>,
+): number {
+  return Math.min(
+    6,
+    Math.max(
+      2,
+      base - Number(rear) - (source.aim ?? 0) + (target.evasion ?? 0),
+    ),
+  );
+}
+const crewStep = (value: number | undefined): { aim?: -1 | 1 } =>
+  value === 1 || value === -1 ? { aim: value } : {};
+const pilotStep = (value: number | undefined): { evasion?: -1 | 1 } =>
+  value === 1 || value === -1 ? { evasion: value } : {};
+
 export interface BattleFleet {
   readonly id: string;
   readonly side: BattleSide;
@@ -56,6 +76,10 @@ export interface BattleFleet {
     readonly missiles?: number;
     readonly weapons?: readonly WeaponName[];
     readonly armored?: boolean;
+    /** besattningsvarden-i-rymdstrid: the gunner lowers this ship's hit requirement. */
+    readonly aim?: number;
+    /** besattningsvarden-i-rymdstrid: the pilot raises the requirement to hit this ship. */
+    readonly evasion?: number;
     /** permanenta-skador: hull already lost before this battle. */
     readonly damage?: number;
   }[];
@@ -71,6 +95,8 @@ export interface BattlePiece {
   readonly hasMissiles?: boolean;
   readonly weapons?: readonly WeaponName[];
   readonly armored?: boolean;
+  readonly aim?: -1 | 1;
+  readonly evasion?: -1 | 1;
   readonly position: BattleHex | null;
   readonly facing: number;
   readonly speed?: number;
@@ -499,6 +525,8 @@ export class TacticalBattle {
               : missiles > 0,
             ...(ship.weapons ? { weapons: [...ship.weapons] } : {}),
             armored,
+            ...crewStep(ship.aim),
+            ...pilotStep(ship.evasion),
             position: null,
             facing: f.side === 'player' ? 0 : 3,
             speed: 0,
@@ -622,6 +650,8 @@ export class TacticalBattle {
             p.firedRound < 1 ||
             p.firedRound > state.round)) ||
         (p.armored !== undefined && typeof p.armored !== 'boolean') ||
+        (p.aim !== undefined && p.aim !== 1 && p.aim !== -1) ||
+        (p.evasion !== undefined && p.evasion !== 1 && p.evasion !== -1) ||
         (p.armored === true && !armored) ||
         (p.hasMissiles !== undefined && typeof p.hasMissiles !== 'boolean') ||
         (p.escapeEdge !== undefined &&
@@ -1188,7 +1218,7 @@ export class TacticalBattle {
     return Object.freeze({
       reason,
       dice: profile?.dice ?? 0,
-      threshold: (profile?.threshold ?? 4) - Number(rear),
+      threshold: hitThreshold(profile?.threshold ?? 4, rear, source, target),
       rear,
     });
   }
@@ -1337,7 +1367,7 @@ export class TacticalBattle {
         return {
           id: piece.id,
           dice: piece.status === 'wreck' ? 0 : profile.dice,
-          threshold: profile.threshold - Number(rear),
+          threshold: hitThreshold(profile.threshold, rear, source, piece),
           rear,
           ...(piece.status === 'wreck' ? { wreck: true } : {}),
         };
