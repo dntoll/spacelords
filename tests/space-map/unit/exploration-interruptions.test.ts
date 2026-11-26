@@ -1,3 +1,4 @@
+import { staffFleet } from '../../fixtures/staff-fleet.js';
 import { completeTacticalBattles } from '../../fixtures/tactical-combat.js';
 import { describe, expect, it } from 'vitest';
 import {
@@ -24,19 +25,21 @@ const empty = {
 };
 function contact(fighters = 1) {
   const state = new Game(createExampleGalaxy()).exportState();
-  return Game.restore({
-    ...state,
-    pirates: [state.pirates![0]!],
-    fleets: [
-      {
-        ...state.fleets[0]!,
-        position: { q: 7, r: -4 },
-        destination: { q: 10, r: -4 },
-        shipUnits: [],
-        ships: { ...empty, Fighter: fighters, 'Exploration ship': 1 },
-      },
-    ],
-  });
+  return Game.restore(
+    staffFleet({
+      ...state,
+      pirates: [state.pirates![0]!],
+      fleets: [
+        {
+          ...state.fleets[0]!,
+          position: { q: 7, r: -4 },
+          destination: { q: 10, r: -4 },
+          shipUnits: [],
+          ships: { ...empty, Fighter: fighters, 'Exploration ship': 1 },
+        },
+      ],
+    }),
+  );
 }
 function interrupt(game: Game) {
   game.startTurn();

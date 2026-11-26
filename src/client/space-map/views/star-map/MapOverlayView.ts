@@ -38,6 +38,14 @@ export function renderMapOverlays(
     model.screen === 'fleets',
     remembered.map((memory) => memory.pirate.id),
   );
+  for (const ship of model.fleet.abandonedLocations ?? []) {
+    const point = HexGeometry.toPoint(ship.position);
+    sketch.noStroke();
+    sketch.fill('#ffdc88');
+    sketch.textSize(16 / model.camera.zoom);
+    sketch.textAlign(sketch.CENTER, sketch.CENTER);
+    sketch.text('◆', point.x, point.y);
+  }
   for (const memory of memories.filter((contact) => contact.moved)) {
     const point = HexGeometry.toPoint(memory.position);
     sketch.noStroke();

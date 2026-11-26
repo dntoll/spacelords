@@ -1,5 +1,10 @@
 import { engineCount } from './ShipEquipment.js';
-import { startingCrew, type CrewPerson, type CrewRole } from './Crew.js';
+import {
+  startingCrew,
+  restoreCrew,
+  type CrewPerson,
+  type CrewRole,
+} from './Crew.js';
 export { engineCount } from './ShipEquipment.js';
 import {
   TurnSimulation,
@@ -125,6 +130,10 @@ export type TurnStage = 'round' | 'player' | 'enemy';
 
 export interface GameState {
   readonly crew?: readonly CrewPerson[];
+  readonly abandonedShips?: readonly {
+    readonly position: { readonly q: number; readonly r: number };
+    readonly ship: ShipUnit;
+  }[];
   readonly surveyedPlanets?: readonly string[];
   /** forskningstid: rounds spent per unfinished technology; absent in older saves. */
   readonly researchProgress?: Readonly<Record<string, number>>;
@@ -172,6 +181,7 @@ export interface GameState {
 /** Private mutable game state; views receive only immutable snapshots. */
 export class Game {
   #crewPeople: CrewPerson[] = [];
+  #abandonedShips: { position: HexCoordinate; ship: ShipUnit }[] = [];
   #surveyedPlanets = new Set<string>();
   #research = new ResearchPlan();
   #round = 1;
@@ -248,6 +258,7 @@ export class Game {
     return structuredClone({
       version: 18,
       crew: this.#crewPeople,
+      abandonedShips: this.#abandonedShips,
       surveyedPlanets: [...this.#surveyedPlanets],
       knownTerrain: [...this.#knownTerrain],
       researchProgress: Object.fromEntries(this.#research.progress),
@@ -409,7 +420,11 @@ export class Game {
     game.#fleet.name = game.#fleet.name.trim().slice(0, 40) || 'Fleet';
     game.#fleet.ships = { ...zeroShips(), ...game.#fleet.ships };
     game.#normalizeShips();
-    game.#crewPeople = [...(copy.crew ?? [])];
+    game.#crewPeople = restoreCrew(copy.crew);
+    game.#abandonedShips = (copy.abandonedShips ?? []).map((entry) => ({
+      position: position(entry.position),
+      ship: entry.ship,
+    }));
     game.#explored = new Set(copy.explored);
     const planetIds = new Set(
       galaxy.systems.flatMap((system) =>
@@ -502,6 +517,11 @@ export class Game {
           ? copy.turnStage
           : 'round';
       game.#validateTacticalParticipants();
+      if (copy.crew === undefined) {
+        for (const piece of game.#simulation.tacticalBattles[0]?.snapshot
+          .pieces ?? [])
+          if (piece.side === 'player') game.#restrictShipCrew(piece.id);
+      }
       // avbryt-gammal-bordning-vid-laddning
       const boarding = game.#simulation.boarding;
       if (boarding?.outdated) game.#resolveBoarding(boarding);
@@ -762,8 +782,44 @@ export class Game {
           }),
         ),
       ),
+      abandonedLocations: Object.freeze(
+        this.#abandonedShips.map((entry) =>
+          Object.freeze({ position: entry.position, type: entry.ship.type }),
+        ),
+      ),
+      abandonedShips: Object.freeze(
+        this.#abandonedShips
+          .filter((entry) => entry.position.key === fleet.position?.key)
+          .map((entry) => structuredClone(entry.ship)),
+      ),
+      people: Object.freeze(
+        this.#crewPeople
+          .filter(
+            (person) =>
+              fleet.shipUnits!.some((ship) => ship.id === person.shipId) ||
+              this.#abandonedShips.some(
+                (entry) =>
+                  entry.ship.id === person.shipId &&
+                  entry.position.key === fleet.position?.key,
+              ),
+          )
+          .map((person) =>
+            Object.freeze({
+              ...person,
+              roles: Object.freeze([...person.roles]),
+              attributes: Object.freeze({ ...person.attributes }),
+              gadget: person.gadget
+                ? Object.freeze({ ...person.gadget })
+                : null,
+            }),
+          ),
+      ),
       speed: this.#speed(fleet),
-      crew: this.#crew(fleet.ships),
+      crew: this.#crewPeople.filter(
+        (person) =>
+          person.status !== 'dead' &&
+          fleet.shipUnits!.some((ship) => ship.id === person.shipId),
+      ).length,
       cargo: Object.freeze(this.#cargo(fleet.id)),
     });
   }
@@ -781,10 +837,93 @@ export class Game {
     }
     return [...ordered, ...ships.filter((ship) => byId.has(ship.id))];
   }
+  #shipAvailable(shipId: string): boolean {
+    return (
+      this.#fleet.shipUnits!.some((ship) => ship.id === shipId) ||
+      this.#abandonedShips.some(
+        (entry) =>
+          entry.ship.id === shipId &&
+          entry.position.key === this.#fleet.position?.key,
+      )
+    );
+  }
+  #hasRole(shipId: string, role: CrewRole): boolean {
+    return this.#crewPeople.some(
+      (person) =>
+        person.shipId === shipId &&
+        person.status === 'active' &&
+        person.roles.includes(role),
+    );
+  }
+  rejoinShip(shipId: string): boolean {
+    if (this.#phase !== 'planning') return false;
+    const index = this.#abandonedShips.findIndex(
+      (entry) =>
+        entry.ship.id === shipId &&
+        entry.position.key === this.#fleet.position?.key,
+    );
+    if (index < 0) return false;
+    const entry = this.#abandonedShips[index]!;
+    if (!this.#hasRole(shipId, 'pilot') || !this.#hasRole(shipId, 'engineer'))
+      return false;
+    this.#fleet.shipUnits!.push(entry.ship);
+    this.#fleet.ships[entry.ship.type]++;
+    this.#abandonedShips.splice(index, 1);
+    return true;
+  }
+  moveCrew(personId: string, shipId: string): boolean {
+    if (this.#phase !== 'planning') return false;
+    const person = this.#crewPeople.find((entry) => entry.id === personId);
+    if (!person || person.status === 'dead' || !this.#shipAvailable(shipId))
+      return false;
+    if (!this.#shipAvailable(person.shipId)) return false;
+    if (person.shipId === shipId) return true;
+    if (
+      this.#crewPeople.filter(
+        (entry) => entry.shipId === shipId && entry.status !== 'dead',
+      ).length >= 7
+    )
+      return false;
+    this.#crewPeople = this.#crewPeople.map((entry) =>
+      entry.id === personId ? { ...entry, shipId, roles: [] } : entry,
+    );
+    return true;
+  }
+  swapCrewEquipment(
+    firstId: string,
+    secondId: string,
+    slot: 'weapon' | 'gadget',
+  ): boolean {
+    if (this.#phase !== 'planning') return false;
+    const first = this.#crewPeople.find((entry) => entry.id === firstId);
+    const second = this.#crewPeople.find((entry) => entry.id === secondId);
+    if (
+      !first ||
+      !second ||
+      !this.#shipAvailable(first.shipId) ||
+      !this.#shipAvailable(second.shipId) ||
+      first.status === 'dead' ||
+      second.status === 'dead'
+    )
+      return false;
+    this.#crewPeople = this.#crewPeople.map((entry) =>
+      entry.id === firstId
+        ? { ...entry, [slot]: second[slot] }
+        : entry.id === secondId
+          ? { ...entry, [slot]: first[slot] }
+          : entry,
+    );
+    return true;
+  }
   assignCrewRole(personId: string, role: CrewRole, assigned = true): boolean {
     if (this.#phase !== 'planning') return false;
     const person = this.#crewPeople.find((entry) => entry.id === personId);
-    if (!person || person.status !== 'active') return false;
+    if (
+      !person ||
+      !this.#shipAvailable(person.shipId) ||
+      (assigned && person.status !== 'active')
+    )
+      return false;
     if (person.roles.includes(role) === assigned) return true;
     const occupants = this.#crewPeople.filter(
       (entry) => entry.shipId === person.shipId && entry.roles.includes(role),
@@ -1114,6 +1253,7 @@ export class Game {
   }
   #afterBoarding(engagement: BoardingEngagement): BoardingBattleState {
     const state = engagement.battle.snapshot;
+    this.#syncCrewFromBoarding(engagement);
     if (state.round > engagement.seenRound) {
       engagement.seenRound = state.round;
     }
@@ -1144,6 +1284,25 @@ export class Game {
     const defender = battle.snapshot.pieces.find(
       (piece) => piece.id === pending.defenderId,
     )!;
+    const playerShip = attacker.side === 'player' ? attacker : defender;
+    const boarders = this.#crewPeople.filter(
+      (person) =>
+        person.shipId === playerShip.id &&
+        person.status === 'active' &&
+        person.roles.includes('boarder'),
+    );
+    if (!boarders.length) {
+      if (attacker.side === 'player') {
+        battle.unlockDock(attacker.id);
+        this.#event('No boarders are assigned. The ships undock.');
+      } else {
+        this.#captureBattleShip(attacker, 'enemy');
+        this.#captureBattleShip(defender, 'enemy');
+        this.#event('The undefended ship was captured.');
+        battle.finishIfDecided();
+      }
+      return;
+    }
     this.#simulation!.boarding = BoardingEngagement.start(
       attacker.id,
       defender.id,
@@ -1151,8 +1310,80 @@ export class Game {
       defender.type,
       attacker.side === 'player',
       battle.snapshot.random,
+      boarders.map((person) => ({
+        id: person.id,
+        label: person.name,
+        hitPoints: person.hitPoints,
+        maxHitPoints: person.attributes.maxHitPoints,
+        agility: person.attributes.agility,
+        accuracy: person.attributes.accuracy,
+        defense: person.attributes.defense,
+        loadout: {
+          weapon: person.weapon,
+          gadget: person.gadget?.type ?? null,
+          uses: person.gadget?.uses ?? null,
+        },
+      })),
     );
     battle.setShift('boarding', 2);
+  }
+  #syncCrewFromBoarding(engagement: BoardingEngagement): void {
+    const participants = engagement.battle.snapshot.people.filter(
+      (person) => person.side === 'player',
+    );
+    this.#crewPeople = this.#crewPeople.map((person) => {
+      const participant = participants.find((entry) => entry.id === person.id);
+      if (!participant) return person;
+      return {
+        ...person,
+        hitPoints: participant.hitPoints,
+        status:
+          participant.status === 'evacuated' ? 'active' : participant.status,
+        roles: participant.status === 'dead' ? [] : person.roles,
+        weapon: participant.loadout.weapon,
+        gadget: participant.loadout.gadget
+          ? { type: participant.loadout.gadget, uses: participant.loadout.uses }
+          : null,
+      };
+    });
+  }
+  #restrictCrewAfterBoarding(engagement: BoardingEngagement): void {
+    const playerId = engagement.playerIsAttacker
+      ? engagement.attackerId
+      : engagement.defenderId;
+    this.#restrictShipCrew(playerId);
+  }
+  #restrictShipCrew(playerId: string): void {
+    const battle = this.#simulation?.tacticalBattles[0];
+    const piece = battle?.snapshot.pieces.find(
+      (entry) => entry.id === playerId,
+    );
+    if (!battle || !piece || piece.side !== 'player') return;
+    const canFire = this.#hasRole(playerId, 'gunner');
+    if (!canFire && piece.weapons?.includes('Missiles')) {
+      const unitIndex = this.#fleet.shipUnits!.findIndex(
+        (unit) => unit.id === playerId,
+      );
+      if (unitIndex >= 0) {
+        const unit = this.#fleet.shipUnits![unitIndex]!;
+        let salvos = piece.missiles;
+        const weaponSlots = unit.weaponSlots?.map((weapon) => {
+          if (weapon?.type !== 'Missiles') return weapon;
+          const remaining = Math.min(weapon.salvos ?? 0, salvos);
+          salvos -= remaining;
+          return { ...weapon, salvos: remaining };
+        });
+        this.#fleet.shipUnits![unitIndex] = {
+          ...unit,
+          ...(weaponSlots ? { weaponSlots } : {}),
+        };
+      }
+    }
+    battle.restrictCrew(
+      playerId,
+      this.#hasRole(playerId, 'pilot') && this.#hasRole(playerId, 'engineer'),
+      canFire,
+    );
   }
   #boardingShipDestroyed(pieceId: string): void {
     const simulation = this.#simulation;
@@ -1166,6 +1397,8 @@ export class Game {
       battle.unlockDock(pieceId);
       return;
     }
+    this.#syncCrewFromBoarding(engagement);
+    this.#restrictCrewAfterBoarding(engagement);
     this.#event('A locked ship was destroyed. Boarding ends.');
     battle.unlockDock(pieceId);
     simulation.boarding = null;
@@ -1174,6 +1407,8 @@ export class Game {
   #resolveBoarding(engagement: BoardingEngagement): void {
     const simulation = this.#simulation!;
     const battle = simulation.tacticalBattles[0]!;
+    this.#syncCrewFromBoarding(engagement);
+    this.#restrictCrewAfterBoarding(engagement);
     const outcome = engagement.battle.snapshot.outcome;
     const attacker = battle.snapshot.pieces.find(
       (piece) => piece.id === engagement.attackerId,
@@ -1323,17 +1558,24 @@ export class Game {
                   : 'Rocket engine'
               ],
             powered:
+              this.#hasRole(unit.id, 'pilot') &&
+              this.#hasRole(unit.id, 'engineer') &&
               unit.engines['Rocket engine'] + unit.engines['Ion pulse engine'] >
-              0,
+                0,
             towing: false,
-            weapons: (unit.weaponSlots ?? []).flatMap((weapon) =>
-              weapon ? [weapon.type] : [],
-            ),
-            missiles: (unit.weaponSlots ?? []).reduce(
-              (sum, weapon) =>
-                sum + (weapon?.type === 'Missiles' ? (weapon.salvos ?? 0) : 0),
-              0,
-            ),
+            weapons: this.#hasRole(unit.id, 'gunner')
+              ? (unit.weaponSlots ?? []).flatMap((weapon) =>
+                  weapon ? [weapon.type] : [],
+                )
+              : [],
+            missiles: !this.#hasRole(unit.id, 'gunner')
+              ? 0
+              : (unit.weaponSlots ?? []).reduce(
+                  (sum, weapon) =>
+                    sum +
+                    (weapon?.type === 'Missiles' ? (weapon.salvos ?? 0) : 0),
+                  0,
+                ),
             armored: unit.armored === true,
             ...(unit.damage ? { damage: unit.damage } : {}),
           })),
@@ -1428,6 +1670,11 @@ export class Game {
         continue;
       }
       const fleet = this.#fleetState(participant.id);
+      this.#crewPeople = this.#crewPeople.map((person) =>
+        killed.has(person.shipId)
+          ? { ...person, hitPoints: 0, status: 'dead', roles: [] }
+          : person,
+      );
       const lostUnits = fleet.shipUnits!.filter((unit) => killed.has(unit.id));
       for (const unit of lostUnits) fleet.ships[unit.type]--;
       // permanenta-skador: survivors keep the hull they lost.
@@ -1438,7 +1685,11 @@ export class Game {
           if (!piece) return unit;
           let remainingSalvos = piece.missiles;
           const weaponSlots = unit.weaponSlots?.map((weapon) => {
-            if (weapon?.type !== 'Missiles') return weapon;
+            if (
+              weapon?.type !== 'Missiles' ||
+              !this.#hasRole(unit.id, 'gunner')
+            )
+              return weapon;
             const salvos = Math.min(weapon.salvos ?? 0, remainingSalvos);
             remainingSalvos -= salvos;
             return { ...weapon, salvos };
@@ -1832,6 +2083,35 @@ export class Game {
         continue;
       }
       const fleet = this.#fleetState(movement.fleetId);
+      const leftBehind = fleet.shipUnits!.filter(
+        (ship) =>
+          !this.#hasRole(ship.id, 'pilot') ||
+          !this.#hasRole(ship.id, 'engineer'),
+      );
+      for (const ship of leftBehind) {
+        this.#abandonedShips.push({ position: movement.from, ship });
+        fleet.ships[ship.type]--;
+      }
+      fleet.shipUnits = fleet.shipUnits!.filter(
+        (ship) => !leftBehind.includes(ship),
+      );
+      const travelling = new Set(fleet.shipUnits.map((ship) => ship.id));
+      this.#crewPeople = this.#crewPeople.map((person) => {
+        if (!travelling.has(person.shipId) || person.status === 'dead')
+          return person;
+        const hitPoints = Math.min(
+          person.attributes.maxHitPoints,
+          person.hitPoints + 1,
+        );
+        return {
+          ...person,
+          hitPoints,
+          status:
+            person.status === 'incapacitated' && hitPoints > 0
+              ? 'active'
+              : person.status,
+        };
+      });
       fleet.position = movement.to;
       this.#recordArrival(fleet);
     }
@@ -2274,25 +2554,26 @@ export class Game {
   }
   #speed(fleet: PursuingFleet): number {
     const speeds =
-      fleet.shipUnits?.map((unit) =>
-        unit.engines['Rocket engine'] + unit.engines['Ion pulse engine'] === 0
-          ? 0
-          : SHIPS[unit.type].speed +
-            (unit.engines['Ion pulse engine'] > 0
-              ? ENGINE_SPEED_BONUS['Ion pulse engine']
-              : ENGINE_SPEED_BONUS['Rocket engine']),
-      ) ??
+      fleet.shipUnits
+        ?.filter(
+          (unit) =>
+            fleet.id !== this.#fleet.id ||
+            (this.#hasRole(unit.id, 'pilot') &&
+              this.#hasRole(unit.id, 'engineer')),
+        )
+        .map((unit) =>
+          unit.engines['Rocket engine'] + unit.engines['Ion pulse engine'] === 0
+            ? 0
+            : SHIPS[unit.type].speed +
+              (unit.engines['Ion pulse engine'] > 0
+                ? ENGINE_SPEED_BONUS['Ion pulse engine']
+                : ENGINE_SPEED_BONUS['Rocket engine']),
+        ) ??
       Object.entries(fleet.ships).flatMap(([type, count]) =>
         count > 0 ? [SHIPS[type as ShipType].speed] : [],
       );
     const normal = speeds.length === 0 ? 0 : Math.min(...speeds);
     return normal;
-  }
-  #crew(ships: Record<ShipType, number>): number {
-    return (Object.keys(ships) as ShipType[]).reduce(
-      (total, type) => total + ships[type] * SHIPS[type].crew,
-      0,
-    );
   }
   #shipCount(ships: Partial<Record<ShipType, number>>): number {
     return Object.values(ships).reduce((a, b) => a + b, 0);

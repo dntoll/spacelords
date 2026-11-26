@@ -1,3 +1,4 @@
+import { staffFleet } from '../../fixtures/staff-fleet.js';
 import { BoardingEngagement } from '../../../src/client/boarding/models/battle/BoardingEngagement.js';
 import { describe, expect, it, vi } from 'vitest';
 import { composeBoardingMaps } from '../../../src/client/boarding/models/map/BoardingComposer.js';
@@ -412,34 +413,36 @@ describe('bordningsbeloning-last-teknik-karta', () => {
     const aster = state.pirates!.find(
       (pirate) => pirate.id === 'pirate-aster',
     )!;
-    let game = Game.restore({
-      ...state,
-      pirates: [
-        {
-          ...nadir,
-          position: { q: 8, r: -3 },
-          count: 0,
-          transports: 1,
-          hold: { ...emptyStock(), Iron: 7 },
-        },
-        aster,
-      ],
-      fleets: [
-        {
-          ...state.fleets[0]!,
-          position: { q: 8, r: -4 },
-          shipUnits: [],
-          ships: {
-            ...state.fleets[0]!.ships,
-            Fighter: 0,
-            'Exploration ship': 0,
-            Raptor: 0,
-            'Space pirate': 1,
-            'Transport ship': 0,
+    let game = Game.restore(
+      staffFleet({
+        ...state,
+        pirates: [
+          {
+            ...nadir,
+            position: { q: 8, r: -3 },
+            count: 0,
+            transports: 1,
+            hold: { ...emptyStock(), Iron: 7 },
           },
-        },
-      ],
-    });
+          aster,
+        ],
+        fleets: [
+          {
+            ...state.fleets[0]!,
+            position: { q: 8, r: -4 },
+            shipUnits: [],
+            ships: {
+              ...state.fleets[0]!.ships,
+              Fighter: 0,
+              'Exploration ship': 0,
+              Raptor: 0,
+              'Space pirate': 1,
+              'Transport ship': 0,
+            },
+          },
+        ],
+      }),
+    );
     game.startTurn();
     for (let step = 0; !game.tacticalBattle && step < 20; step++) {
       if (game.phase === 'interrupted') game.continueTurn();

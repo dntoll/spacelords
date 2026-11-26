@@ -1,4 +1,8 @@
-import { BoardingBattle, type BoardingBattleState } from './BoardingBattle.js';
+import {
+  BoardingBattle,
+  type BoardingBattleState,
+  type BoardingPerson,
+} from './BoardingBattle.js';
 import {
   composeBoardingMaps,
   type ComposedBoarding,
@@ -63,6 +67,17 @@ export class BoardingEngagement {
     defenderType: CombatShipType,
     playerIsAttacker: boolean,
     seed: number,
+    roster?: readonly Pick<
+      BoardingPerson,
+      | 'id'
+      | 'label'
+      | 'hitPoints'
+      | 'maxHitPoints'
+      | 'agility'
+      | 'accuracy'
+      | 'defense'
+      | 'loadout'
+    >[],
   ): BoardingEngagement {
     const composed = composeBoardingMaps(attackerType, defenderType);
     const battle = BoardingBattle.createCampaign(
@@ -71,6 +86,8 @@ export class BoardingEngagement {
       seed,
       attackerType,
       defenderType,
+      false,
+      roster,
     );
     return new BoardingEngagement(
       attackerId,

@@ -1,3 +1,4 @@
+import { staffFleet } from './staff-fleet.js';
 import {
   Game,
   type GameState,
@@ -8,24 +9,26 @@ import type { BattleState } from '../../src/client/space-battle/models/TacticalB
 export function encounterGame(pirateCount = 1, withRaptor = false): Game {
   const state = new Game(createExampleGalaxy()).exportState();
   const first = state.fleets[0]!;
-  const game = Game.restore({
-    ...state,
-    pirates: [{ ...state.pirates![0]!, count: pirateCount, transports: 0 }],
-    fleets: [
-      {
-        ...first,
-        position: { q: 8, r: -4 },
-        shipUnits: [],
-        ships: {
-          ...first.ships,
-          Raptor: withRaptor ? 1 : 0,
-          'Exploration ship': 1,
-          Fighter: withRaptor ? 1 : 2,
-          'Transport ship': 1,
+  const game = Game.restore(
+    staffFleet({
+      ...state,
+      pirates: [{ ...state.pirates![0]!, count: pirateCount, transports: 0 }],
+      fleets: [
+        {
+          ...first,
+          position: { q: 8, r: -4 },
+          shipUnits: [],
+          ships: {
+            ...first.ships,
+            Raptor: withRaptor ? 1 : 0,
+            'Exploration ship': 1,
+            Fighter: withRaptor ? 1 : 2,
+            'Transport ship': 1,
+          },
         },
-      },
-    ],
-  });
+      ],
+    }),
+  );
   game.startTurn();
   for (let step = 0; !game.tacticalBattle && step < 20; step++) {
     if (game.phase === 'interrupted') game.continueTurn();

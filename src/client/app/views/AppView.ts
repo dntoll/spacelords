@@ -1,5 +1,6 @@
 import {
   renderFleetEquipment,
+  renderCrew,
   discoveryControls,
   renderProduction,
   bindMapSelectionScroll,
@@ -295,6 +296,8 @@ export class AppView implements AppPort {
       if (model.screen === 'map') main.append(this.#mapPage(model.screen));
       else if (model.screen === 'fleets')
         main.append(renderFleetEquipment(model.fleet, this.#emit));
+      else if (model.screen === 'crew')
+        main.append(renderCrew(model.fleet, this.#emit));
       else if (model.screen === 'production') main.append(renderProduction());
       else
         main.append(
@@ -448,10 +451,23 @@ export class AppView implements AppPort {
     if (model.screen === 'fleets' && !changedScreen) {
       const scroll =
         this.#root.querySelector<HTMLElement>('.fleet-ships')?.scrollTop ?? 0;
+      const openCrew = [
+        ...this.#root.querySelectorAll<HTMLDetailsElement>(
+          'details[data-crew-ship][open]',
+        ),
+      ].map((item) => item.dataset.crewShip);
       const next = renderFleetEquipment(model.fleet, this.#emit);
+      for (const item of next.querySelectorAll<HTMLDetailsElement>(
+        'details[data-crew-ship]',
+      ))
+        item.open = openCrew.includes(item.dataset.crewShip);
       this.#root.querySelector('main')?.replaceChildren(next);
       next.scrollTop = scroll;
     }
+    if (model.screen === 'crew' && !changedScreen)
+      this.#root
+        .querySelector('main')
+        ?.replaceChildren(renderCrew(model.fleet, this.#emit));
     if (model.screen === 'map') {
       this.#root
         .querySelector('.map-page')
@@ -738,6 +754,7 @@ export class AppView implements AppPort {
       ['map', 'Star map'],
       ['research', 'Research'],
       ['fleets', 'Fleet'],
+      ['crew', 'Crew'],
       ['production', 'Production'],
     ] as const) {
       const choice = button(
@@ -751,7 +768,9 @@ export class AppView implements AppPort {
                   ? 'open-research'
                   : target === 'fleets'
                     ? 'open-fleets'
-                    : 'open-production',
+                    : target === 'crew'
+                      ? 'open-crew'
+                      : 'open-production',
           }),
         'nav-button',
       );
@@ -893,6 +912,19 @@ export class AppView implements AppPort {
             ),
           ]
         : [];
+    const leftBehind =
+      model.fleet.abandonedLocations?.filter(
+        (ship) => ship.position.key === cell?.position.key,
+      ) ?? [];
+    if (model.screen === 'map' && leftBehind.length) {
+      contents.push(
+        element(
+          'p',
+          'selection-description',
+          `Left behind: ${leftBehind.map((ship) => ship.type).join(', ')}`,
+        ),
+      );
+    }
     const destinationFleet =
       model.destinationFleetId === model.fleet.id ? model.fleet : null;
     if (model.screen === 'map' && model.selectedPlanetInfo) {

@@ -1,3 +1,4 @@
+import { staffFleet } from '../../fixtures/staff-fleet.js';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { MasterController } from '../../../src/client/app/controllers/MasterController.js';
 import { AppModel } from '../../../src/client/app/models/AppModel.js';
@@ -17,34 +18,36 @@ function gameInBoarding(): Game {
   const state = new Game(createExampleGalaxy()).exportState();
   const nadir = state.pirates!.find((pirate) => pirate.id === 'pirate-nadir')!;
   const aster = state.pirates!.find((pirate) => pirate.id === 'pirate-aster')!;
-  let game = Game.restore({
-    ...state,
-    pirates: [
-      {
-        ...nadir,
-        position: { q: 8, r: -3 },
-        count: 0,
-        transports: 1,
-        hold: { ...emptyStock(), Iron: 7 },
-      },
-      aster,
-    ],
-    fleets: [
-      {
-        ...state.fleets[0]!,
-        position: { q: 8, r: -4 },
-        shipUnits: [],
-        ships: {
-          ...state.fleets[0]!.ships,
-          Fighter: 0,
-          'Exploration ship': 0,
-          Raptor: 0,
-          'Space pirate': 1,
-          'Transport ship': 0,
+  let game = Game.restore(
+    staffFleet({
+      ...state,
+      pirates: [
+        {
+          ...nadir,
+          position: { q: 8, r: -3 },
+          count: 0,
+          transports: 1,
+          hold: { ...emptyStock(), Iron: 7 },
         },
-      },
-    ],
-  });
+        aster,
+      ],
+      fleets: [
+        {
+          ...state.fleets[0]!,
+          position: { q: 8, r: -4 },
+          shipUnits: [],
+          ships: {
+            ...state.fleets[0]!.ships,
+            Fighter: 0,
+            'Exploration ship': 0,
+            Raptor: 0,
+            'Space pirate': 1,
+            'Transport ship': 0,
+          },
+        },
+      ],
+    }),
+  );
   game.startTurn();
   for (let step = 0; !game.tacticalBattle && step < 20; step++) {
     if (game.phase === 'interrupted') game.continueTurn();
@@ -332,4 +335,40 @@ describe('bordning under avbruten runda', () => {
     expect(model.snapshot.boardingBattle!.currentActorId).not.toBe(before);
     controller.dispose();
   });
+});
+
+it('besattning-med-flera-roller: losing a boarder also disables their ship roles after boarding', () => {
+  const game = gameInBoarding();
+  const state = game.exportState();
+  const engagement = state.simulation!.boarding!;
+  const victim = engagement.battle.people.find(
+    (person) => person.side === 'player' && person.id.endsWith('-crew-0'),
+  )!;
+  const modified = Game.restore({
+    ...state,
+    simulation: {
+      ...state.simulation!,
+      boarding: {
+        ...engagement,
+        battle: {
+          ...engagement.battle,
+          people: engagement.battle.people.map((person) =>
+            person.id === victim.id
+              ? { ...person, hitPoints: 0, status: 'dead' as const }
+              : person,
+          ),
+        },
+      },
+    },
+  });
+  modified.finishBoarding('aborted');
+  expect(
+    modified.exportState().crew!.find((person) => person.id === victim.id),
+  ).toMatchObject({ hitPoints: 0, status: 'dead', roles: [] });
+  const ship = modified.tacticalBattle!.pieces.find(
+    (piece) => piece.id === engagement.attackerId,
+  )!;
+  expect(ship.movement).toBe(0);
+  expect(ship.weapons).toEqual([]);
+  expect(() => Game.restore(modified.exportState())).not.toThrow();
 });

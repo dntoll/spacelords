@@ -463,6 +463,29 @@ export class MasterController {
       case 'move-equipment':
         this.#fleets.moveEquipment(intent.from, intent.to);
         break;
+      case 'rejoin-ship':
+        this.#fleets.rejoinShip(intent.shipId);
+        break;
+      case 'crew-role':
+        this.#fleets.assignCrewRole(
+          intent.personId,
+          intent.role,
+          intent.assigned,
+        );
+        break;
+      case 'crew-move':
+        this.#fleets.moveCrew(intent.personId, intent.shipId);
+        break;
+      case 'crew-swap-equipment':
+        this.#fleets.swapCrewEquipment(
+          intent.firstId,
+          intent.secondId,
+          intent.slot,
+        );
+        break;
+      case 'open-crew':
+        this.#fleets.openCrew();
+        break;
       case 'open-fleets':
         this.#fleets.openFleets();
         break;

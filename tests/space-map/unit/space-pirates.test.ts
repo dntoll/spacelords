@@ -1,3 +1,4 @@
+import { staffFleet } from '../../fixtures/staff-fleet.js';
 import { completeTacticalBattles } from '../../fixtures/tactical-combat.js';
 import { collectTurnFrames, turnFrames } from '../../fixtures/turn-steps.js';
 import { describe, expect, it } from 'vitest';
@@ -24,25 +25,27 @@ function turn(game: Game) {
 }
 function battle(fighters: number, pirates: number, civilians = 0) {
   const state = new Game(createExampleGalaxy()).exportState();
-  return Game.restore({
-    ...state,
-    pirates: [
-      {
-        id: 'pirate-nadir',
-        systemId: 'nadir',
-        position: { q: 8, r: -3 },
-        count: pirates,
-      },
-    ],
-    fleets: [
-      {
-        ...state.fleets[0]!,
-        position: { q: 8, r: -4 },
-        shipUnits: [],
-        ships: { ...empty, Fighter: fighters, 'Exploration ship': civilians },
-      },
-    ],
-  });
+  return Game.restore(
+    staffFleet({
+      ...state,
+      pirates: [
+        {
+          id: 'pirate-nadir',
+          systemId: 'nadir',
+          position: { q: 8, r: -3 },
+          count: pirates,
+        },
+      ],
+      fleets: [
+        {
+          ...state.fleets[0]!,
+          position: { q: 8, r: -4 },
+          shipUnits: [],
+          ships: { ...empty, Fighter: fighters, 'Exploration ship': civilians },
+        },
+      ],
+    }),
+  );
 }
 
 describe('rymdpirater-per-stjarna / rymdpiraters-patrullering', () => {
@@ -202,34 +205,36 @@ describe('rymdpiraters-sparning', () => {
 describe('flottstrid-per-hex / motorbehov-for-alla-skepp', () => {
   it('retains surviving ship equipment and the original strategic travel budget', () => {
     const state = battle(2, 2).exportState();
-    const game = Game.restore({
-      ...state,
-      fleets: [
-        {
-          ...state.fleets[0]!,
-          position: { q: 7, r: -4 },
-          destination: { q: 10, r: -4 },
-          ships: { ...empty, Fighter: 2, 'Transport ship': 1 },
-          shipUnits: [
-            {
-              id: 'a',
-              type: 'Fighter',
-              engines: { 'Rocket engine': 1, 'Ion pulse engine': 0 },
-            },
-            {
-              id: 'b',
-              type: 'Fighter',
-              engines: { 'Rocket engine': 0, 'Ion pulse engine': 1 },
-            },
-            {
-              id: 't',
-              type: 'Transport ship',
-              engines: { 'Rocket engine': 1, 'Ion pulse engine': 0 },
-            },
-          ],
-        },
-      ],
-    });
+    const game = Game.restore(
+      staffFleet({
+        ...state,
+        fleets: [
+          {
+            ...state.fleets[0]!,
+            position: { q: 7, r: -4 },
+            destination: { q: 10, r: -4 },
+            ships: { ...empty, Fighter: 2, 'Transport ship': 1 },
+            shipUnits: [
+              {
+                id: 'a',
+                type: 'Fighter',
+                engines: { 'Rocket engine': 1, 'Ion pulse engine': 0 },
+              },
+              {
+                id: 'b',
+                type: 'Fighter',
+                engines: { 'Rocket engine': 0, 'Ion pulse engine': 1 },
+              },
+              {
+                id: 't',
+                type: 'Transport ship',
+                engines: { 'Rocket engine': 1, 'Ion pulse engine': 0 },
+              },
+            ],
+          },
+        ],
+      }),
+    );
     const before = game.exportState();
     game.startTurn();
     const frames = turnFrames(game, false);

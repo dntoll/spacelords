@@ -835,20 +835,25 @@ export class BoardingView {
       this.#armedAction === 'weapon',
     );
 
-    const gadgetLabels: Record<BoardingPerson['loadout']['gadget'], string> = {
+    const gadgetLabels: Record<
+      NonNullable<BoardingPerson['loadout']['gadget']>,
+      string
+    > = {
       'frag-grenade': 'Frag grenade',
       'smoke-grenade': 'Smoke grenade',
       'hacker-tools': 'Hack door',
       'med-kit': 'Use Med-pack',
     };
     const uses = actor.loadout.uses;
-    const gadgetLabel = `${gadgetLabels[actor.loadout.gadget]}${uses === null ? '' : ` · ${uses}`}`;
+    const gadgetLabel = `${actor.loadout.gadget ? gadgetLabels[actor.loadout.gadget] : 'No gadget'}${uses === null ? '' : ` · ${uses}`}`;
     const gadgetReason =
-      uses !== null && uses < 1
-        ? 'No uses of this equipment remain.'
-        : remaining < this.#gadgetAp(actor)
-          ? `The action needs ${this.#gadgetAp(actor)} AP.`
-          : this.#selectedEquipmentReason(state, actor, 'gadget');
+      actor.loadout.gadget === null
+        ? 'No gadget equipped.'
+        : uses !== null && uses < 1
+          ? 'No uses of this equipment remain.'
+          : remaining < this.#gadgetAp(actor)
+            ? `The action needs ${this.#gadgetAp(actor)} AP.`
+            : this.#selectedEquipmentReason(state, actor, 'gadget');
     this.#action(
       gadgetLabel,
       actor.loadout.gadget === 'hacker-tools'

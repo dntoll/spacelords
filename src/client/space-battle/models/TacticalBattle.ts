@@ -987,6 +987,22 @@ export class TacticalBattle {
     return this.#shift;
   }
 
+  /** besattning-med-flera-roller: lost crew cannot operate the ship after boarding. */
+  restrictCrew(pieceId: string, canMove: boolean, canFire: boolean): void {
+    const piece = this.#pieces.find((entry) => entry.id === pieceId);
+    if (!piece || piece.side !== 'player') return;
+    if (!canMove) {
+      piece.movement = 0;
+      piece.speed = 0;
+    }
+    if (!canFire) {
+      piece.weapons = [];
+      piece.hasMissiles = false;
+      piece.missiles = 0;
+      delete piece.overwatch;
+    }
+  }
+
   unlockDock(pieceId: string): void {
     const piece = this.#pieces.find((entry) => entry.id === pieceId);
     const partnerId = piece?.dockedWith;
