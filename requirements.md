@@ -33,7 +33,7 @@ kraven med stabila namn och status. Statusen nedan sammanfattar området.
   `flottstyrning-med-ap-pa-starmap` är **Fullständigt implementerat** (en
   flotta, AP, turordning och piraternas aktivering), liksom
   `startflotta-med-raptor` (Raptor, Fighter och Transport ship vid start);
-  `fleet-som-skeppsoversikt` och `skeppsslots-for-utrustning-och-personer` är **Delvis implementerat**; fler egenskaper och personer återstår. Övriga nya beteendekrav är **Ej implementerat**.
+  `fleet-som-skeppsoversikt` och `skeppsslots-for-utrustning-och-personer` är **Delvis implementerat**; fler egenskaper och personer återstår. `besattning-med-flera-roller` och `besattning-med-lika-startegenskaper` är **Delvis implementerat**: en sparad startbesättning och rolltilldelning finns i modellen, men vyer och spelmekanik återstår. Övriga nya beteendekrav är **Ej implementerat**.
   Planen anger vilka delar som måste diskuteras och låsas med användaren
   före implementation (`single-fleet-beslut-fore-implementation`).
   `fleet-visuella-platser`, `fleet-drag-och-rullning` och `fleet-skeppsordning` är **Fullständigt implementerat**.

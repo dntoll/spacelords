@@ -42,13 +42,25 @@ Light cannon och kan docka för bordning. Flykt från fångenskap, övrig utrust
   flottans drift förbrukar ändliga resurser, däribland bränsle. Spelaren
   behöver förflytta sig och hitta ny försörjning för att hålla flottan igång.
   Vilka övriga resurser som finns, kostnader och tidsskala är inte bestämda.
-- `besattning-med-flera-roller` är **Ej implementerat**: samma person kan
-  användas i flera roller, inklusive ombord på skepp och i bordningsstyrkan.
-  Exakta roller och regler för samtidiga uppgifter återstår att bestämma.
-- `besattning-med-lika-startegenskaper` är **Ej implementerat**: personer
-  har egenskaper men börjar med samma egenskapsvärden i den första
-  implementationen. Individuella skillnader är en möjlig senare utveckling;
-  egenskaper, progression och eventuella senare skillnader är inte beslutade.
+- `besattning-med-flera-roller` är **Delvis implementerat**: startpersoner kan
+  tilldelas flera roller i modellen med begränsat antal platser. Vyer,
+  personförflyttning och rollernas effekter på spelmekaniken återstår.
+- `besattning-med-lika-startegenskaper` är **Delvis implementerat**: tolv
+  startpersoner med lika egenskaper och beständig identitet sparas. De är ännu
+  inte kopplade till bordning, personvyer, skador eller progression.
+
+Beslutat för kommande besättningsimplementation: Raptor startar med pilot,
+engineer, gunner och fyra bordare, Fighter med pilot, engineer och gunner,
+och Transport ship med pilot och engineer. Pilot och engineer krävs för
+förflyttning och gunner för skjutning. Personer kan ha flera roller men en
+bordare lämnar skeppsrollerna obemannade under bordning. Skepp som inte kan
+förflyttas lämnas kvar och kan återtas på plats. Skador bevaras och läks med
+1 HP per förflyttad hex; skeppets besättning dör när skeppet förstörs. Äldre
+sparningar får ingen automatisk besättning och kan därför bli ospelbara.
+Personer och personlig utrustning ska kunna flyttas mellan strider i Fleet
+eller Crew; de fyra bordarna börjar med varsin rifle och varsitt av Frag
+grenade, Smoke grenade, Hacker tools och Med kit. Dessa regler är ännu inte
+kopplade till spelmekaniken.
 
 ### Motorer och last
 

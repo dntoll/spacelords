@@ -83,6 +83,16 @@ note right of Research
   framåt förrän forskningskapaciteten är beslutad.
 end note
 
+class CrewPerson {
+  name
+  roles
+  hitPoints
+  status
+  personalEquipment
+}
+Fleet "1" o-- "0..*" CrewPerson
+CrewPerson --> Ship : assigned to
+
 class Fleet {
   position : HexCoordinate [0..1]
   name

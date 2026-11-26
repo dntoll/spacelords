@@ -1,4 +1,5 @@
 import { engineCount } from './ShipEquipment.js';
+import { startingCrew, type CrewPerson, type CrewRole } from './Crew.js';
 export { engineCount } from './ShipEquipment.js';
 import {
   TurnSimulation,
@@ -123,6 +124,7 @@ interface SavedFleet extends Omit<
 export type TurnStage = 'round' | 'player' | 'enemy';
 
 export interface GameState {
+  readonly crew?: readonly CrewPerson[];
   readonly surveyedPlanets?: readonly string[];
   /** forskningstid: rounds spent per unfinished technology; absent in older saves. */
   readonly researchProgress?: Readonly<Record<string, number>>;
@@ -169,6 +171,7 @@ export interface GameState {
 
 /** Private mutable game state; views receive only immutable snapshots. */
 export class Game {
+  #crewPeople: CrewPerson[] = [];
   #surveyedPlanets = new Set<string>();
   #research = new ResearchPlan();
   #round = 1;
@@ -226,6 +229,7 @@ export class Game {
           }
         : unit,
     );
+    this.#crewPeople = startingCrew(this.#fleet.shipUnits);
     this.#updateSight();
     this.#updateSight();
     this.#visiblePirates = new Set(
@@ -243,6 +247,7 @@ export class Game {
       throw new Error('Wait for the turn to finish before saving.');
     return structuredClone({
       version: 18,
+      crew: this.#crewPeople,
       surveyedPlanets: [...this.#surveyedPlanets],
       knownTerrain: [...this.#knownTerrain],
       researchProgress: Object.fromEntries(this.#research.progress),
@@ -404,6 +409,7 @@ export class Game {
     game.#fleet.name = game.#fleet.name.trim().slice(0, 40) || 'Fleet';
     game.#fleet.ships = { ...zeroShips(), ...game.#fleet.ships };
     game.#normalizeShips();
+    game.#crewPeople = [...(copy.crew ?? [])];
     game.#explored = new Set(copy.explored);
     const planetIds = new Set(
       galaxy.systems.flatMap((system) =>
@@ -774,6 +780,28 @@ export class Game {
       }
     }
     return [...ordered, ...ships.filter((ship) => byId.has(ship.id))];
+  }
+  assignCrewRole(personId: string, role: CrewRole, assigned = true): boolean {
+    if (this.#phase !== 'planning') return false;
+    const person = this.#crewPeople.find((entry) => entry.id === personId);
+    if (!person || person.status !== 'active') return false;
+    if (person.roles.includes(role) === assigned) return true;
+    const occupants = this.#crewPeople.filter(
+      (entry) => entry.shipId === person.shipId && entry.roles.includes(role),
+    );
+    if (assigned && occupants.length >= (role === 'boarder' ? 4 : 1))
+      return false;
+    this.#crewPeople = this.#crewPeople.map((entry) =>
+      entry.id === personId
+        ? {
+            ...entry,
+            roles: assigned
+              ? [...entry.roles, role]
+              : entry.roles.filter((item) => item !== role),
+          }
+        : entry,
+    );
+    return true;
   }
   reorderShip(shipId: string, index: number): void {
     if (this.#phase !== 'planning' || !Number.isInteger(index)) return;

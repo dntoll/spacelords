@@ -17,7 +17,7 @@ package "Publik yta (index.js)" as public_surface #FFFFEE {
   rectangle "<b>views/index.js</b>\nDiscoveryView\nFleetMapPanel\nFleetShipsView\nGalaxyMapView\nGameText\nMapGesture\nMapLocationHeading\nMapSelectionScroll\nPlanetImages\nProductionView\nResearchDetailsView\nResearchTreeView\nResearchView\nSaveMapPreview\nSaveSlotsView\nShipImages\nShipView" as public__views
 }
 package "(delat)" as space_map___delat_ {
-  rectangle "<b>models</b>\nCamera\nCatalog\nDetection\nEconomy\nFleetCombat\nFleetPursuit\nGalaxy\nGalaxyTerrain\nGame\nGameSnapshots\nHexNavigation\nMapScreen\nPirateFleet\nPlanet\nShipEquipment\nSpiralGalaxyLayout\nTurnSimulation\nexampleGalaxy" as space_map___delat___models
+  rectangle "<b>models</b>\nCamera\nCatalog\nCrew\nDetection\nEconomy\nFleetCombat\nFleetPursuit\nGalaxy\nGalaxyTerrain\nGame\nGameSnapshots\nHexNavigation\nMapScreen\nPirateFleet\nPlanet\nShipEquipment\nSpiralGalaxyLayout\nTurnSimulation\nexampleGalaxy" as space_map___delat___models
   rectangle "<b>views</b>\nCatalogControls\nFleetCard\nMapArtwork\nMapLocationHeading\nPlanetGlyph\nPlanetImages\nQueueView\nShipImages\nShipView\nStarGlyph\nTerrainMapView" as space_map___delat___views
   rectangle "<b>storage</b>\nBrowserSaveRepository" as space_map___delat___storage
 }
