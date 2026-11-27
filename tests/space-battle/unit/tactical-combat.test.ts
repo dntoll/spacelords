@@ -324,7 +324,8 @@ describe('tactical combat', () => {
           p.id === 'pirate' ? { ...p, position: { q: 3, r: 4 }, facing: 0 } : p,
         ),
     });
-    expect(game.shot('fighter', 'pirate', 'Cannon').threshold).toBe(3);
+    // rymdstrid-med-d20: a rear attack adds 3 to the D20 roll.
+    expect(game.shot('fighter', 'pirate', 'Cannon').bonus).toBe(7);
     expect(game.shot('pirate', 'fighter', 'Raider cannon').reason).toContain(
       'arc',
     );
@@ -362,7 +363,7 @@ describe('tactical combat', () => {
         subject.command({ type: 'forward' });
     }
     expect(restored.snapshot).toEqual(game.snapshot);
-    expect(game.snapshot.log.join(' ')).toMatch(/D6.*\[/);
+    expect(game.snapshot.log.join(' ')).toMatch(/D20.*\[/);
     expect(
       game.snapshot.pieces.find((p) => p.id === 'fighter')!.position,
     ).toEqual({ q: 2, r: 4 });

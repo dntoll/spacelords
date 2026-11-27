@@ -21,7 +21,9 @@ rymdstrid, bordningar och utveckling av skepp och besättning står i centrum.
   behöver förflytta sig för att hitta ny försörjning.
 - `Crew` visar personer som kan utrustas och flyttas mellan skepp. Samma
   person kan ha flera roller, även i bordningsstyrkan. Personer börjar
-  med samma egenskapsvärden. Tolv personer bemannar startflottan. Skador och
+  med olika egenskapsvärden där styrkor vägs upp av svagheter, och spelet
+  förklarar vad värdena gör. Gunnerns träffsäkerhet och pilotens rörlighet
+  påverkar även rymdstrid. Tolv personer bemannar startflottan. Skador och
   personlig utrustning följer med mellan bordningar, och skador läker under
   resan. Skepp utan nödvändig besättning lämnas kvar och kan återtas.
 - `Research` gäller tekniker för skepp och bordning. Planetforskning tas bort
@@ -90,7 +92,8 @@ engelska.
 
 - Space pirates finns vid stjärnorna, bär byte och kan anfalla.
 - Möten mellan flottor avgörs i en taktisk rymdstrid där spelaren styr
-  skeppen. Ett skadat fientligt skepp kan bordas.
+  skeppen. Ett skadat fientligt skepp kan bordas. Rymdstrid och bordning
+  använder samma tärningsslag.
 - En påbörjad bordning spelas färdigt innan rymdstriden fortsätter.
 - Bordningens kontroller hålls inom den synliga skärmen.
 

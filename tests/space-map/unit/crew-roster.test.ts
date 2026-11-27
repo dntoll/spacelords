@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { Game } from '../../../src/client/space-map/models/Game.js';
 import { createExampleGalaxy } from '../../../src/client/space-map/models/exampleGalaxy.js';
 
-describe('besattningens-start-och-roller / besattning-med-lika-startegenskaper', () => {
+describe('besattningens-start-och-roller / besattning-med-varierade-startegenskaper', () => {
   it('starts twelve unique people on the specified ships and saves them', () => {
     const game = new Game(createExampleGalaxy());
     const ships = game.fleetSnapshot().shipUnits!;
@@ -19,9 +19,37 @@ describe('besattningens-start-och-roller / besattning-med-lika-startegenskaper',
         count,
       );
     }
-    expect(
-      new Set(people.map((person) => JSON.stringify(person.attributes))).size,
-    ).toBe(1);
+    // besattning-med-varierade-startegenskaper: people differ, yet nobody is
+    // simply better than another and every value stays in a playable range.
+    for (const key of [
+      'maxHitPoints',
+      'agility',
+      'accuracy',
+      'defense',
+    ] as const)
+      expect(
+        new Set(people.map((person) => person.attributes[key])).size,
+      ).toBeGreaterThan(1);
+    for (const person of people) {
+      const { maxHitPoints, agility, accuracy, defense } = person.attributes;
+      expect(person.hitPoints).toBe(maxHitPoints);
+      expect(maxHitPoints).toBeGreaterThanOrEqual(8);
+      expect(maxHitPoints).toBeLessThanOrEqual(12);
+      expect(agility).toBeGreaterThanOrEqual(10);
+      expect(agility).toBeLessThanOrEqual(14);
+      expect(accuracy).toBeGreaterThanOrEqual(2);
+      expect(accuracy).toBeLessThanOrEqual(6);
+      expect(defense).toBeGreaterThanOrEqual(9);
+      expect(defense).toBeLessThanOrEqual(13);
+      // Deviations from the old shared profile (10/12/4/11) cancel out.
+      expect(
+        maxHitPoints -
+          10 +
+          (agility - 12) +
+          2 * (accuracy - 4) +
+          2 * (defense - 11),
+      ).toBe(0);
+    }
     expect(Game.restore(game.exportState()).exportState().crew).toEqual(people);
   });
 
@@ -274,4 +302,37 @@ it('dragbar-besattning: an unassigned crew member can take an empty role and a f
   expect(
     game.exportState().crew!.find((p) => p.id === person.id)!.roles,
   ).toEqual(['engineer']);
+});
+
+describe('besattningsvarden-i-rymdstrid', () => {
+  it('sends the active gunner accuracy and pilot agility into the battle', () => {
+    const state = new Game(createExampleGalaxy()).exportState();
+    const pirate = state.pirates![0]!;
+    const game = Game.restore({
+      ...state,
+      pirates: [pirate],
+      fleets: [{ ...state.fleets[0]!, position: pirate.position }],
+    });
+    game.startTurn();
+    for (let step = 0; step < 30 && !game.tacticalBattle; step++) {
+      if (game.phase === 'interrupted') game.continueTurn();
+      const frame = game.nextTurnFrame();
+      if (!frame) break;
+      game.applyFrame(frame);
+    }
+    const pieces = game.tacticalBattle!.pieces;
+    const ships = game.fleetSnapshot().shipUnits!;
+    const piece = (type: string) =>
+      pieces.find(
+        (entry) => entry.id === ships.find((ship) => ship.type === type)!.id,
+      )!;
+    // Riley (Accuracy 5) and Avery (Agility 14) crew the Raptor; Alex
+    // (Accuracy 6) and Cameron (Agility 13) the Fighter. The Transport ship
+    // has no gunner and Jamie (Agility 14) as pilot.
+    expect(piece('Raptor')).toMatchObject({ accuracy: 5, defense: 17 });
+    expect(piece('Fighter')).toMatchObject({ accuracy: 6, defense: 16 });
+    expect(piece('Transport ship').defense).toBe(17);
+    for (const entry of pieces.filter((item) => item.side === 'enemy'))
+      expect(entry.defense).toBeUndefined();
+  });
 });

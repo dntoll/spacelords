@@ -835,7 +835,7 @@ snabba. Därefter passerade 556 tester på 19,25 sekunder inklusive start.
 
 `taktisk-stridskarta`, `gemensamt-stridsdeltagande` och
 `sparad-taktisk-strid`: TacticalBattle håller regler, individuella skepp,
-D6-slump och fiendebeslut oberoende av p5 och DOM. Game upptäcker samtidiga
+D20-slump (`rymdstrid-med-d20`) och fiendebeslut oberoende av p5 och DOM. Game upptäcker samtidiga
 möten och tillämpar varje resultat exakt en gång före fortsatt årssimulering.
 Controller samordnar sparning och fiendens aktivering. BattleView använder
 frysta läsmodeller och skickar kommandon; BattleMapView använder p5 i instance mode.
@@ -860,8 +860,7 @@ en hex. Sparversionen är oförändrad och inga sparningar rensas.
 `manoverpoang-och-hastighet`: nya strider sparar `maneuverSystem`, `speed` och
 `lastManeuver` additivt. Status kan vara `wreck`. Saknad `maneuverSystem`
 behåller den tidigare rörelsen. Sparversionen ändras inte och inga sparningar
-rensas. En salva som gör minst två skada och innehåller en 6:a slår ut
-motorerna. Vrakslaget vid skrovslut är ett sidokast som inte flyttar
+rensas. En kritisk träff (naturlig 20) slår ut motorerna. Vrakslaget vid skrovslut är ett sidokast som inte flyttar
 vapentärningarna.
 
 `snabb-testsvit`: testprocesser återanvänds per miljö med isolate: false.

@@ -35,8 +35,9 @@ släpper fram den sparade slutpositionen och nästa stridsorder.
 minst 1. En asteroid försvinner, skadar skeppet en gång med samma belopp och
 släpper igenom det. Vrak är oframkomliga och ger ingen rammningsskada.
 
-`motor-utslagen-vrak`: en salva som gör minst två skada och innehåller en 6:a
-slår ut motorerna. Skeppet blir då ett vrak även om skrov återstår. Krockar
+`motor-utslagen-vrak`: en kritisk träff (naturlig 20, se `rymdstrid-med-d20`)
+slår ut motorerna. Detta ersätter regeln om en salva med minst två skada och
+en 6:a. Skeppet blir då ett vrak även om skrov återstår. Krockar
 slår inte ut motorerna.
 
 `skrovslut-vrak-eller-splitter`: tar skrovet slut utan motorträff blir skeppet
@@ -189,7 +190,7 @@ Omladdning spelar inte gamla
 skott igen och påverkar inte tärningar, skador eller ammunition.
 
 Spelaren leder varje skepp i en turbaserad strid på en egen hexkarta.
-Vapen, manövrering, riktning, skydd och synliga D6-slag avgör utfallet.
+Vapen, manövrering, riktning, skydd och synliga D20-slag avgör utfallet.
 Alla flottor på samma Star map-hex deltar tillsammans.
 
 ## Tydlig återkoppling och teststrid, 2026-10-31
@@ -252,7 +253,7 @@ Stridsregler och sparade riktningar bevaras.
 | `vaxelvisa-skeppsaktiveringar`    | Fullständigt implementerat | Växelvis ett skepp, ett rörelsemoment och en salva i valfri ordning.                         |
 | `riktning-och-vapen`              | Fullständigt implementerat | Fasta vapen, eldbågar, ammunition och svag akter.                                            |
 | `skyddande-stridshinder`          | Fullständigt implementerat | Asteroider och större skepp blockerar skott helt.                                            |
-| `oppna-stridstarningar`           | Fullständigt implementerat | Initiativ och vapensalvor visar D6-slag.                                                     |
+| `oppna-stridstarningar`           | Fullständigt implementerat | Initiativ och vapensalvor visar D20-slag (`rymdstrid-med-d20`).                              |
 | `skeppsvis-retratt`               | Fullständigt implementerat | Enskilda skepp lämnar markerad över- eller nederkant från runda två. Flottan samlas efteråt. |
 | `sparad-taktisk-strid`            | Fullständigt implementerat | Utplacering, skador, ammunition, aktivering och slump sparas.                                |
 | `utforskade-stridsuppgraderingar` | Fullständigt implementerat | Missiler och pansarskrov forskas fram och monteras med Upgrade.                              |
@@ -275,7 +276,7 @@ utanför startzonerna. Alla fria hexar är sammanbundna.
 
 ## Runda och manövrering
 
-Båda sidor slår D6 inför varje stridsrunda. Högst börjar; lika slås om.
+Båda sidor slår D20 inför varje stridsrunda. Högst börjar; lika slås om.
 Sidorna aktiverar växelvis ett valfritt, oanvänt skepp. Varje skepp agerar
 en gång per runda. Den sida som har fler skepp fortsätter när motståndaren
 har aktiverat alla sina.
@@ -302,11 +303,11 @@ motorbonusen. Släp är ingen egen aktiverbar pjäs.
 
 ## Vapen, skydd och tärningar
 
-| Vapen         | Bärare                     | Räckvidd | Främre båge | Salva                               | Träff |
-| ------------- | -------------------------- | -------- | ----------- | ----------------------------------- | ----- |
-| Cannon        | Fighter, Armored Fighter   | 1–3 hex  | 120°        | 2D6, obegränsat                     | 4+    |
-| Missiles      | Fighter med uppgraderingen | 2–6 hex  | 60°         | 3D6 per skepp i området, två salvor | 4+    |
-| Raider cannon | Space pirate               | 1–3 hex  | 120°        | 2D6, obegränsat                     | 5+    |
+| Vapen         | Bärare                     | Räckvidd | Främre båge | Salva                                | Vapenmodifikation |
+| ------------- | -------------------------- | -------- | ----------- | ------------------------------------ | ----------------- |
+| Cannon        | Fighter, Armored Fighter   | 1–3 hex  | 120°        | 2D20, obegränsat                     | 0                 |
+| Missiles      | Fighter med uppgraderingen | 2–6 hex  | 60°         | 3D20 per skepp i området, två salvor | 0                 |
+| Raider cannon | Space pirate               | 1–3 hex  | 120°        | 2D20, obegränsat                     | −3                |
 
 Civila skepp är obeväpnade. Armored Fighter och Armored Transport är samma
 skeppstyper med pansarskrov. Last, storlek och fart är oförändrade. Pansaret
@@ -325,9 +326,20 @@ sig. En tom yta förbrukar salvan utan tärningsslag. Fri skottlinje krävs till
 träffhexen. Skepp i området träffas även om de ligger utanför vapnets båge
 eller en hex bortom maxräckvidden.
 
-Varje lyckad tärning ger en skrovskada.
-Anfall från målets bakre 120° sänker träffkravet med ett. Bågarnas gränser
-ingår. Slagen visas tillsammans med träffkrav, skada och återstående skrov.
+`rymdstrid-med-d20` är **Fullständigt implementerat** och ersätter D6-slagen
+efter uttrycklig ändring från användaren: rymdstrid använder samma tärning
+som bordning. Varje tärning i salvan är ett D20-slag plus skyttens bonus mot
+målets Defense. Bonusen är gunnerns Accuracy (4 utan besättningsvärde), plus
+vapnets modifikation och +3 vid anfall från målets bakre 120°. Bågarnas
+gränser ingår. Skeppets Defense är 15, justerad av piloten enligt
+`besattningsvarden-i-rymdstrid`. Naturlig 1 missar alltid. Naturlig 20 är en
+kritisk träff som ger två skrovskador och slår ut motorerna; övriga träffar
+ger en. Med standardvärdena motsvarar 11+ på D20 tidigare 4+ på D6, och
+Raider cannon motsvarar ungefär tidigare 5+. Förhandsvisningen visar bonus,
+Defense och träffchans i procent, beräknad som i bordning. Slagen visas
+tillsammans med bonus, Defense, kritiska träffar, skada och återstående skrov.
+Pågående sparade strider fortsätter med de nya slagen; deras äldre loggrader
+behålls.
 
 Asteroider bryter skottlinjen helt. I nya strider kan ett skepp köra in i en
 asteroid: asteroiden försvinner och skeppet tar krockskada. I äldre strider är

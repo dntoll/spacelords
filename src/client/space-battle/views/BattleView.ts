@@ -484,7 +484,8 @@ export class BattleView {
           element(
             'p',
             'battle-shot-preview',
-            `${weapon.min}–${weapon.max} hex · ${weapon.arc}° front arc · ${weapon.dice}D6, hit ${preview?.hits[0]?.threshold ?? weapon.threshold}+`,
+            // rymdstrid-med-d20: show the roll and its chance like boarding.
+            `${weapon.min}–${weapon.max} hex · ${weapon.arc}° front arc · ${weapon.dice}D20${shotOdds(preview?.hits[0])}`,
           ),
         );
       }
@@ -789,7 +790,7 @@ export class BattleView {
         'battle-help',
         state.maneuverSystem === true
           ? 'Each maneuver point changes speed by one, then turns or goes straight. Tap a marked maneuver to preview its destination and weapon arc, then tap it again to move. The arrow shows the new heading and the number shows the speed. Done sits amidships and stays unavailable while the ship has both speed and maneuver points. A shot between maneuver points still spends the remaining point. A shot breaks an asteroid. Straight travel moves that many hexes. A faster ship takes a wider turn. The highlighted path shows the maneuver. Ships that collide damage each other. An asteroid breaks and damages the ship. Wrecks block movement, are drawn darker, and explode if shot. Ships shoot a wreck only when they cannot move or shoot another ship. Engines knocked out leave a wreck. Running out of hull explodes the ship most of the time. Tap a marked target to fire. Choose Overwatch to reserve the selected weapon against the first enemy that moves into range. You can also end the turn without firing. Retreat from round two is through the green Escape hexes.'
-          : 'Tap a new target to select it; tap the marked target to fire. Select a weapon using its icon. Missiles hit every ship in the impact hex and its neighbours once, including your own ships. Move then fire, or fire then move. Turning and moving cost 1 movement. Large ships occupy three hexes and must fit completely when turning. Retreat opens in round two through the green Escape hexes at the top or bottom; the whole ship must leave. Each successful D6 causes one hull damage. Rear attacks reduce the required roll by one. Asteroids and larger ships block fire. Surviving ships recover hull and ammunition after combat.',
+          : 'Tap a new target to select it; tap the marked target to fire. Select a weapon using its icon. Missiles hit every ship in the impact hex and its neighbours once, including your own ships. Move then fire, or fire then move. Turning and moving cost 1 movement. Large ships occupy three hexes and must fit completely when turning. Retreat opens in round two through the green Escape hexes at the top or bottom; the whole ship must leave. Each weapon die is a D20 roll plus the gunner’s Accuracy against the target’s Defense, which comes from its pilot. A hit causes one hull damage; a natural 20 is a critical that causes two and knocks out the engines, and a natural 1 always misses. Rear attacks add 3 to the roll. Asteroids and larger ships block fire. Surviving ships recover hull and ammunition after combat.',
       ),
     );
   }
@@ -966,4 +967,12 @@ export class BattleView {
     this.#dialog.close();
     this.#dialog.remove();
   }
+}
+
+function shotOdds(
+  hit: { bonus: number; defense: number; chance: number } | undefined,
+): string {
+  if (!hit) return '';
+  const sign = hit.bonus < 0 ? '−' : '+';
+  return ` ${sign} ${Math.abs(hit.bonus)} vs ${hit.defense} · ${hit.chance}%`;
 }

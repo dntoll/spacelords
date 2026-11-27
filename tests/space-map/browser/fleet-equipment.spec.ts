@@ -131,6 +131,31 @@ test('fleet-skeppsordning: drag a ship down while the list scrolls', async ({
   await expect(page.locator('.fleet-ship h2').nth(1)).toHaveText('Raptor');
 });
 
+test('fleet-skeppsordning: a ship dropped on the next ship takes its place', async ({
+  page,
+}) => {
+  await page.goto('./');
+  await startFirstSlot(page);
+  await page.getByRole('button', { name: 'Fleet', exact: true }).click();
+  const handle = page.getByRole('heading', { name: 'Fighter' });
+  const target = page
+    .locator('.fleet-ship')
+    .filter({ has: page.getByRole('heading', { name: 'Transport ship' }) });
+  const start = await handle.boundingBox();
+  const end = await target.boundingBox();
+  if (!start || !end) throw new Error('Missing ships');
+  await page.mouse.move(start.x + 10, start.y + start.height / 2);
+  await page.mouse.down();
+  // The upper part of the next ship is where a finger naturally lands.
+  await page.mouse.move(end.x + end.width / 2, end.y + 30, { steps: 8 });
+  await page.mouse.up();
+  await expect(page.locator('.fleet-ship h2')).toHaveText([
+    'Transport ship',
+    'Fighter',
+    'Raptor',
+  ]);
+});
+
 test('fleet-platsinformation: slot labels and selected engine details remain visible on mobile', async ({
   page,
 }) => {

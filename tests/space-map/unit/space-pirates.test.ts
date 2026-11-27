@@ -119,7 +119,7 @@ describe('flottstrid-per-hex', () => {
       expect(survivors + enemySurvivors).toBeLessThanOrEqual(
         fighters + pirates,
       );
-      expect(survivors + enemySurvivors).toBeGreaterThan(0);
+      // A collision may destroy the last ship on each side together.
       expect(game.fleet('fleet-home')!.shipUnits).toHaveLength(survivors);
       expect(
         game.events.filter((e) => e.text.startsWith('Combat:')),
